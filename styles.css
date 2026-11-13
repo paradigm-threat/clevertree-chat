@@ -413,23 +413,24 @@ footer {
   .pair-row { grid-template-columns: 1fr; }
 }
 
-/* /trees — horizon forest against horizontally tiled (sharp) wings */
+/* /trees — horizon forest against a full-bleed hills background */
 .trees-body {
   position: relative;
   min-height: 100vh;
   background: linear-gradient(180deg, #4dc4ec 0%, #6ad1ef 22%, #c8ebc0 58%, var(--cream) 100%);
 }
 
-.trees-wings {
+.trees-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url("/images/hero-wings.jpg");
-  background-position: left bottom;
-  background-size: auto 100%;
-  background-repeat: repeat-x;
-  opacity: 0.94;
+  background-color: #6ad1ef;
+  background-image: url("/images/forest-horizon.jpg");
+  background-image: url("/images/forest-horizon.webp");
+  background-position: center bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .trees-wrap {
