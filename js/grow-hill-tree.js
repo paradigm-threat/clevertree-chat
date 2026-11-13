@@ -260,8 +260,8 @@ function growHillTree(canvas, opts) {
   let faller = 0;
   for (let i = 0; i < leaves; i++) {
     if (!lfall[i]) continue;
-    const x = TRUNK_X + ((faller + 0.5) / Math.max(1, falling) - 0.5) * (VW * 0.55) + Math.sin(faller * 2.17) * 6;
-    llandx[i] = Math.max(VIEW_PAD, Math.min(VW - VIEW_PAD, x));
+    // Fall straight down from the tip — no sideways tween to a staged pile.
+    llandx[i] = lx[i];
     llandy[i] = TRUNK_Y - 2 + (faller % 3) * 1.6;
     llandr[i] = lrot[i] + (faller % 2 === 0 ? 1.15 : -1.35);
     faller += 1;
@@ -549,8 +549,7 @@ function growHillTree(canvas, opts) {
       return;
     }
     const t = easeIn(clamp01((u - begin) / (1 - begin)));
-    const sway = Math.sin(t * Math.PI) * (i % 2 === 0 ? 7 : -7);
-    const x = Math.max(4, Math.min(VW - 4, lx[i] + (llandx[i] - lx[i]) * t + sway));
+    const x = llandx[i];
     const y = ly[i] + (llandy[i] - ly[i]) * t;
     drawLeaf(x, y, lrot[i] + (llandr[i] - lrot[i]) * t, llen[i]);
   }
