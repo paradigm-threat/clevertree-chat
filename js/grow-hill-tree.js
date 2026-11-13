@@ -153,10 +153,10 @@ function growHillTree(canvas, opts) {
   const windAmp = windAmpFor(windLevel);
   const alwaysAnimate = options.alwaysAnimate === true ||
     (options.alwaysAnimate !== false && treeAlwaysAnimatePreferred());
-  // Home defaults to pausing sway 30s after grow unless alwaysAnimate / trees page.
-  const swayLimitMs = options.alwaysAnimate === true || options.swayLimitMs === 0
+  // Optional wall-clock cap from grow start (home: 30s then pause). Infinity = keep going.
+  const pauseAfterMs = alwaysAnimate || options.alwaysAnimate === true || options.pauseAfterMs === 0
     ? Infinity
-    : (options.swayLimitMs != null ? options.swayLimitMs : (alwaysAnimate ? Infinity : 30000));
+    : (options.pauseAfterMs != null ? options.pauseAfterMs : Infinity);
   const swayMaxFps = options.swayMaxFps > 0 ? options.swayMaxFps : 0;
   const getWindTime = typeof options.getWindTime === "function"
     ? options.getWindTime
@@ -742,11 +742,18 @@ function growHillTree(canvas, opts) {
   let raf = 0;
   let stopped = false;
   let swayPaused = false;
-  let swayStartedAt = 0;
+  let animStartedAt = 0;
+  let pauseAfterDisabled = alwaysAnimate || pauseAfterMs === Infinity;
   let lastSwayPaint = 0;
   const watcher = new ResizeObserver(() => {
     if (stopped) return;
-    if (layout()) draw(state.u, getWindTime(), state.motion === "sway" || state.motion === "held");
+    if (layout()) {
+      draw(
+        state.u,
+        getWindTime(),
+        state.motion === "sway" || state.motion === "held" || state.motion === "paused"
+      );
+    }
   });
   watcher.observe(canvas);
 
@@ -783,10 +790,26 @@ function growHillTree(canvas, opts) {
   }
   canvas._growStop = stop;
 
-  function notifySway(paused) {
+  function notifyPaused() {
     if (typeof options.onSwayPause === "function") {
-      try { options.onSwayPause(paused, state); } catch (e) {}
+      try { options.onSwayPause(true, state); } catch (e) {}
     }
+  }
+
+  function hitPauseDeadline(t) {
+    if (pauseAfterDisabled || pauseAfterMs === Infinity) return false;
+    if (!animStartedAt) return false;
+    return (t - animStartedAt) >= pauseAfterMs;
+  }
+
+  function pauseMotion(t) {
+    swayPaused = true;
+    state.motion = "paused";
+    state.alive = false;
+    state.u = 1;
+    draw(1, t, windAmp > 0);
+    raf = 0;
+    notifyPaused();
   }
 
   function swayFrame(now) {
@@ -804,13 +827,8 @@ function growHillTree(canvas, opts) {
       return;
     }
     const t = getWindTime();
-    if (swayLimitMs !== Infinity && swayStartedAt && (t - swayStartedAt) >= swayLimitMs) {
-      swayPaused = true;
-      state.motion = "paused";
-      state.alive = false;
-      draw(1, t, windAmp > 0);
-      raf = 0;
-      notifySway(true);
+    if (hitPauseDeadline(t)) {
+      pauseMotion(t);
       return;
     }
     if (swayMaxFps > 0) {
@@ -828,7 +846,7 @@ function growHillTree(canvas, opts) {
     raf = requestAnimationFrame(swayFrame);
   }
 
-  function startSway(fromResume) {
+  function startSway() {
     if (stopped) return;
     if (windAmp <= 0 && !falling) {
       state.motion = "held";
@@ -836,13 +854,14 @@ function growHillTree(canvas, opts) {
       if (layout()) draw(1, getWindTime(), false);
       return;
     }
-    swayPaused = false;
     const t = getWindTime();
-    if (!fromResume || !swayStartedAt) swayStartedAt = t;
-    if (fromResume) swayStartedAt = t;
+    if (hitPauseDeadline(t)) {
+      pauseMotion(t);
+      return;
+    }
+    swayPaused = false;
     state.motion = "sway";
     state.alive = true;
-    notifySway(false);
     if (!raf) raf = requestAnimationFrame(swayFrame);
   }
 
@@ -851,8 +870,10 @@ function growHillTree(canvas, opts) {
     if (o.always === true) {
       setTreeAlwaysAnimatePreferred(true);
       state.alwaysAnimate = true;
+      pauseAfterDisabled = true;
     }
-    startSway(true);
+    swayPaused = false;
+    startSway();
   };
 
   if (reduce) {
@@ -869,10 +890,17 @@ function growHillTree(canvas, opts) {
       raf = requestAnimationFrame(frame);
       return;
     }
-    if (!t0) t0 = now + START_DELAY;
+    if (!t0) {
+      t0 = now + START_DELAY;
+      animStartedAt = t0;
+    }
     if (now < t0) {
       draw(0, now, false);
       raf = requestAnimationFrame(frame);
+      return;
+    }
+    if (hitPauseDeadline(now)) {
+      pauseMotion(now);
       return;
     }
     const u = Math.min(1, (now - t0) / DURATION);
@@ -883,7 +911,7 @@ function growHillTree(canvas, opts) {
       raf = requestAnimationFrame(frame);
     } else {
       raf = 0;
-      startSway(false);
+      startSway();
     }
   }
   raf = requestAnimationFrame(frame);

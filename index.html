@@ -75,7 +75,7 @@
         </picture>
         <canvas class="grow-tree" width="520" height="400" role="img" aria-label="A tree fills out on the hillside. Click to grow another." tabindex="0"></canvas>
         <p class="tree-animate-wrap">
-          <button type="button" class="button tree-animate-btn" id="tree-animate" hidden>Keep trees moving</button>
+          <button type="button" class="button tree-animate-btn" id="tree-animate" hidden>Resume</button>
         </p>
         </div>
       </section>
@@ -123,35 +123,30 @@
     const photo = document.querySelector(".banner-photo");
     const animateBtn = document.getElementById("tree-animate");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    function syncAnimateBtn(paused) {
-      if (!animateBtn) return;
-      const always = treeAlwaysAnimatePreferred();
-      if (always) {
-        animateBtn.hidden = true;
-        return;
-      }
-      animateBtn.hidden = !paused;
-      animateBtn.textContent = "Keep trees moving";
-    }
+    const alwaysOn = treeAlwaysAnimatePreferred();
     if (animateBtn) {
+      animateBtn.hidden = true;
       animateBtn.addEventListener("click", function () {
         setTreeAlwaysAnimatePreferred(true);
+        animateBtn.hidden = true;
         if (tree && typeof tree._growResumeSway === "function") {
           tree._growResumeSway({ always: true });
         }
-        syncAnimateBtn(false);
       });
     }
     if (tree && tree.getContext) {
       growHillTree(tree, {
         reduce: reduce,
         wind: "gentle",
-        alwaysAnimate: treeAlwaysAnimatePreferred(),
+        alwaysAnimate: alwaysOn,
+        duration: 20000,
+        // Front page: 30s of motion, then stop; Resume continues forever.
+        pauseAfterMs: alwaysOn ? 0 : 30000,
         onSwayPause: function (paused) {
-          syncAnimateBtn(paused);
+          if (!animateBtn || treeAlwaysAnimatePreferred()) return;
+          animateBtn.hidden = !paused;
         }
       });
-      syncAnimateBtn(false);
     }
     function capBanner() {
       if (!frame || !photo) return;
