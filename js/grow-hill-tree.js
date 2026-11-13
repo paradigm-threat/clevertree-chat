@@ -1,5 +1,64 @@
 /* Shared hillside tree grower for the home hero and /trees forest. */
+
+var CLEVERTREE_ALWAYS_ANIMATE_KEY = "clevertree-always-animate";
+
+function treeWindAllowed() {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  } catch (e) {}
+  try {
+    if (window.matchMedia("(max-width: 700px)").matches) return false;
+    if (window.matchMedia("(pointer: coarse)").matches &&
+        window.matchMedia("(max-width: 800px)").matches) return false;
+  } catch (e2) {}
+  if (typeof navigator !== "undefined") {
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) return false;
+    if (navigator.deviceMemory && navigator.deviceMemory <= 4) return false;
+  }
+  return true;
+}
+
+function normalizeWind(wind) {
+  if (wind === false || wind === 0 || wind === "calm" || wind === "off") return "calm";
+  if (wind === "strong" || wind === 1) return "strong";
+  if (typeof wind === "number") {
+    if (wind <= 0) return "calm";
+    if (wind >= 0.75) return "strong";
+    return "gentle";
+  }
+  return "gentle";
+}
+
+function effectiveWind(requested, opts) {
+  const o = opts || {};
+  if (o.performance === true || requested === false) return "calm";
+  if (!treeWindAllowed()) return "calm";
+  return normalizeWind(requested != null ? requested : o.wind);
+}
+
+function treeAlwaysAnimatePreferred() {
+  try {
+    return localStorage.getItem(CLEVERTREE_ALWAYS_ANIMATE_KEY) === "1";
+  } catch (e) {
+    return false;
+  }
+}
+
+function setTreeAlwaysAnimatePreferred(on) {
+  try {
+    localStorage.setItem(CLEVERTREE_ALWAYS_ANIMATE_KEY, on ? "1" : "0");
+  } catch (e) {}
+}
+
+function windAmpFor(level) {
+  if (level === "strong") return 0.2;
+  if (level === "gentle") return 0.055;
+  return 0;
+}
+
 function growHillTree(canvas, opts) {
+
   const options = opts && typeof opts === "object" ? opts : {};
   const reduce = !!options.reduce;
   const ctx = canvas.getContext("2d");
@@ -39,6 +98,8 @@ function growHillTree(canvas, opts) {
 
   const lx = new Float32Array(LEAF_N);
   const ly = new Float32Array(LEAF_N);
+  const lox = new Float32Array(LEAF_N);
+  const loy = new Float32Array(LEAF_N);
   const lrot = new Float32Array(LEAF_N);
   const llen = new Float32Array(LEAF_N);
   const lshow = new Float32Array(LEAF_N);
@@ -48,6 +109,12 @@ function growHillTree(canvas, opts) {
   const lcol = new Uint8Array(LEAF_N);
   const lfall = new Uint8Array(LEAF_N);
   const ldep = new Uint8Array(LEAF_N);
+  const lstem = new Uint16Array(LEAF_N);
+  const bx0 = new Float32Array(STEM_N);
+  const by0 = new Float32Array(STEM_N);
+  const bx1 = new Float32Array(STEM_N);
+  const by1 = new Float32Array(STEM_N);
+  const bang = new Float32Array(STEM_N);
 
   const BARK = ["#5c3d22", "#684628", "#755230", "#825e38", "#8f6a42", "#9c764c"];
   const LEAF = ["#1f6b28", "#247a24", "#2f8a28", "#3e9a32", "#4ea628", "#62b41e", "#78c422"];
@@ -82,6 +149,18 @@ function growHillTree(canvas, opts) {
     ? options.sideBias
     : (leanSign != null ? leanSign : (rnd() < 0.5 ? -1 : 1));
   const clickable = options.clickable !== false;
+  const windLevel = effectiveWind(options.wind, options);
+  const windAmp = windAmpFor(windLevel);
+  const alwaysAnimate = options.alwaysAnimate === true ||
+    (options.alwaysAnimate !== false && treeAlwaysAnimatePreferred());
+  // Home defaults to pausing sway 30s after grow unless alwaysAnimate / trees page.
+  const swayLimitMs = options.alwaysAnimate === true || options.swayLimitMs === 0
+    ? Infinity
+    : (options.swayLimitMs != null ? options.swayLimitMs : (alwaysAnimate ? Infinity : 30000));
+  const swayMaxFps = options.swayMaxFps > 0 ? options.swayMaxFps : 0;
+  const getWindTime = typeof options.getWindTime === "function"
+    ? options.getWindTime
+    : function () { return performance.now(); };
   // Tall = long trunk + long limbs; bushy = shorter trunk, still wide reach.
   // Do not starve side length when habit is low (that made “tall” look skinny).
   const upScale = 1.02 + 0.55 * (1 - habit);
@@ -387,6 +466,9 @@ function growHillTree(canvas, opts) {
       if (leafTooClose(px, py)) continue;
       lx[leaves] = px;
       ly[leaves] = py;
+      lox[leaves] = px - sx1[i];
+      loy[leaves] = py - sy1[i];
+      lstem[leaves] = i;
       lrot[leaves] = ang + (k - (per - 1) / 2) * 0.35 + (k % 3 - 1) * 0.4;
       llen[leaves] = base + (k % 4) * 0.55;
       // Bloom just after this stem's length finishes — never on an invisible twig.
@@ -408,7 +490,7 @@ function growHillTree(canvas, opts) {
   let faller = 0;
   for (let i = 0; i < leaves; i++) {
     if (!lfall[i]) continue;
-    // Fall straight down from the tip — no sideways tween to a staged pile.
+    // Base landing under tip; wind drifts applied while falling.
     llandx[i] = lx[i];
     llandy[i] = TRUNK_Y - 2 + (faller % 3) * 1.6;
     llandr[i] = lrot[i] + (faller % 2 === 0 ? 1.15 : -1.35);
@@ -425,11 +507,14 @@ function growHillTree(canvas, opts) {
     branchiness: branchiness,
     asymmetry: asymmetry,
     sideBias: sideBias,
+    wind: windLevel,
+    alwaysAnimate: alwaysAnimate,
     motion: reduce ? "reduced" : "growing",
     alive: !reduce,
     u: reduce ? 1 : 0
   };
   canvas._grow = state;
+  canvas._swayVisible = true;
 
   function clamp01(v) {
     return v < 0 ? 0 : v > 1 ? 1 : v;
@@ -494,7 +579,50 @@ function growHillTree(canvas, opts) {
     ctx.restore();
   }
 
-  function paintStemAt(i, u) {
+  function windPushX(now, salt) {
+    if (windAmp <= 0) return 0;
+    const t = now * 0.001;
+    return Math.sin(t * 1.35 + salt) * (windAmp * 55) +
+      Math.sin(t * 0.55 + salt * 1.7) * (windAmp * 25);
+  }
+
+  function computeBend(now) {
+    const t = now * 0.001;
+    for (let i = 0; i < n; i++) {
+      const depthFade = sdep[i] / Math.max(1, DEPTH);
+      const local = Math.sin(t * 1.2 + i * 0.17) * windAmp * (0.25 + 0.75 * depthFade);
+      const gust = Math.sin(t * 0.35 + sdep[i] * 0.4) * windAmp * 0.35 * depthFade;
+      bang[i] = sang[i] + local + gust;
+      const len = Math.hypot(sx1[i] - sx0[i], sy1[i] - sy0[i]);
+      let x0;
+      let y0;
+      if (sParent[i] < 0) {
+        x0 = sx0[i];
+        y0 = sy0[i];
+      } else {
+        const p = sParent[i];
+        const along = Math.max(0, Math.min(1, sAlong[i]));
+        x0 = bx0[p] + (bx1[p] - bx0[p]) * along;
+        y0 = by0[p] + (by1[p] - by0[p]) * along;
+      }
+      bx0[i] = x0;
+      by0[i] = y0;
+      bx1[i] = x0 + Math.sin(bang[i]) * len;
+      by1[i] = y0 - Math.cos(bang[i]) * len;
+    }
+  }
+
+  function copyRestPose() {
+    for (let i = 0; i < n; i++) {
+      bx0[i] = sx0[i];
+      by0[i] = sy0[i];
+      bx1[i] = sx1[i];
+      by1[i] = sy1[i];
+      bang[i] = sang[i];
+    }
+  }
+
+  function paintStemAt(i, u, bent) {
     const lenGrow = sEnd[i] - sStart[i] || 0.001;
     const lenP = clamp01((u - sStart[i]) / lenGrow);
     if (lenP <= 0) return;
@@ -502,42 +630,99 @@ function growHillTree(canvas, opts) {
     const wGrow = sWidthEnd[i] - sWidthStart[i] || 0.001;
     let widthP;
     if (u < sWidthStart[i]) {
-      // Thin while lengthing; full fatten starts after length done.
       widthP = 0.42 + 0.28 * e;
     } else {
       widthP = 0.7 + 0.3 * easeOut(clamp01((u - sWidthStart[i]) / wGrow));
     }
     ctx.fillStyle = BARK[Math.min(sdep[i], BARK.length - 1)];
+    const x0 = bent ? bx0[i] : sx0[i];
+    const y0 = bent ? by0[i] : sy0[i];
+    const x1 = bent ? bx1[i] : sx1[i];
+    const y1 = bent ? by1[i] : sy1[i];
     const r0 = sw0[i] * widthP;
     const r1 = (sw0[i] + (sw1[i] - sw0[i]) * e) * widthP;
     drawStem(
-      sx0[i],
-      sy0[i],
-      sx0[i] + (sx1[i] - sx0[i]) * e,
-      sy0[i] + (sy1[i] - sy0[i]) * e,
+      x0,
+      y0,
+      x0 + (x1 - x0) * e,
+      y0 + (y1 - y0) * e,
       r0,
       Math.max(0.2, r1)
     );
   }
 
-  function paintLeafAt(i, u) {
+  function leafAttach(i) {
+    const s = lstem[i];
+    return {
+      x: bx1[s] + lox[i],
+      y: by1[s] + loy[i],
+      ang: bang[s]
+    };
+  }
+
+  function paintLeafAt(i, u, now, bent) {
     if (u < lshow[i]) return;
     const bloom = easeOut(clamp01((u - lshow[i]) / 0.035));
     if (bloom <= 0) return;
-    const begin = Math.max(0.84, lshow[i]);
-    const fallingNow = lfall[i] && u >= begin;
     ctx.fillStyle = LEAF[lcol[i]];
-    if (!fallingNow) {
-      drawLeaf(lx[i], ly[i], lrot[i], llen[i] * (0.35 + 0.65 * bloom));
+    const attach = bent ? leafAttach(i) : { x: lx[i], y: ly[i], ang: lrot[i] };
+    const flutter = windAmp > 0
+      ? Math.sin(now * 0.004 + i * 0.9) * windAmp * 8
+      : 0;
+
+    if (lfall[i]) {
+      // Continuous fall cycles after grow; during grow use timeline u.
+      let t;
+      if (u < 1) {
+        const begin = Math.max(0.84, lshow[i]);
+        if (u < begin) {
+          drawLeaf(attach.x + flutter, attach.y, lrot[i], llen[i] * (0.35 + 0.65 * bloom));
+          return;
+        }
+        t = easeIn(clamp01((u - begin) / (1 - begin)));
+      } else {
+        const cycle = 2.8 + (i % 5) * 0.35;
+        const phase = ((now * 0.001) / cycle + (i * 0.137) % 1);
+        const wrapped = phase - Math.floor(phase);
+        // 0..0.72 falling, 0.72..1 resting on ground then restart
+        if (wrapped > 0.72) {
+          const rest = (wrapped - 0.72) / 0.28;
+          const landX = Math.max(
+            VIEW_PAD,
+            Math.min(VW - VIEW_PAD, attach.x + windPushX(now, i * 0.41) * 0.85)
+          );
+          drawLeaf(
+            landX,
+            llandy[i],
+            llandr[i] + flutter * 0.05,
+            llen[i]
+          );
+          return;
+        }
+        t = easeIn(wrapped / 0.72);
+      }
+      const drift = windPushX(now, i * 0.41) * t;
+      const x = Math.max(
+        4,
+        Math.min(VW - 4, attach.x + (llandx[i] - lx[i]) * t + drift)
+      );
+      const y = attach.y + (llandy[i] - attach.y) * t;
+      drawLeaf(x, y, lrot[i] + (llandr[i] - lrot[i]) * t + flutter * 0.08, llen[i]);
       return;
     }
-    const t = easeIn(clamp01((u - begin) / (1 - begin)));
-    const x = llandx[i];
-    const y = ly[i] + (llandy[i] - ly[i]) * t;
-    drawLeaf(x, y, lrot[i] + (llandr[i] - lrot[i]) * t, llen[i]);
+
+    drawLeaf(
+      attach.x + flutter,
+      attach.y + Math.abs(flutter) * 0.15,
+      lrot[i] + flutter * 0.04,
+      llen[i] * (u < 1 ? (0.35 + 0.65 * bloom) : 1)
+    );
   }
 
-  function draw(u) {
+  function draw(u, now, bent) {
+    const tNow = now != null ? now : 0;
+    if (bent && windAmp > 0) computeBend(tNow);
+    else copyRestPose();
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -546,19 +731,22 @@ function growHillTree(canvas, opts) {
     ctx.lineCap = "round";
     for (let d = DEPTH; d >= 0; d--) {
       for (let i = 0; i < leaves; i++) {
-        if (ldep[i] === d) paintLeafAt(i, u);
+        if (ldep[i] === d) paintLeafAt(i, u, tNow, bent);
       }
       for (let i = 0; i < n; i++) {
-        if (sdep[i] === d) paintStemAt(i, u);
+        if (sdep[i] === d) paintStemAt(i, u, bent);
       }
     }
   }
 
   let raf = 0;
   let stopped = false;
+  let swayPaused = false;
+  let swayStartedAt = 0;
+  let lastSwayPaint = 0;
   const watcher = new ResizeObserver(() => {
     if (stopped) return;
-    if (layout()) draw(state.u);
+    if (layout()) draw(state.u, getWindTime(), state.motion === "sway" || state.motion === "held");
   });
   watcher.observe(canvas);
 
@@ -573,6 +761,7 @@ function growHillTree(canvas, opts) {
     canvas.removeEventListener("click", onClick);
     canvas.removeEventListener("keydown", onKey);
     if (canvas._growStop === stop) canvas._growStop = null;
+    canvas._growResumeSway = null;
   }
 
   function onClick(e) {
@@ -594,8 +783,82 @@ function growHillTree(canvas, opts) {
   }
   canvas._growStop = stop;
 
+  function notifySway(paused) {
+    if (typeof options.onSwayPause === "function") {
+      try { options.onSwayPause(paused, state); } catch (e) {}
+    }
+  }
+
+  function swayFrame(now) {
+    if (stopped) return;
+    if (swayPaused) {
+      raf = 0;
+      return;
+    }
+    if (document.hidden || canvas._swayVisible === false) {
+      raf = requestAnimationFrame(swayFrame);
+      return;
+    }
+    if (!layout()) {
+      raf = requestAnimationFrame(swayFrame);
+      return;
+    }
+    const t = getWindTime();
+    if (swayLimitMs !== Infinity && swayStartedAt && (t - swayStartedAt) >= swayLimitMs) {
+      swayPaused = true;
+      state.motion = "paused";
+      state.alive = false;
+      draw(1, t, windAmp > 0);
+      raf = 0;
+      notifySway(true);
+      return;
+    }
+    if (swayMaxFps > 0) {
+      const minDelta = 1000 / swayMaxFps;
+      if (t - lastSwayPaint < minDelta) {
+        raf = requestAnimationFrame(swayFrame);
+        return;
+      }
+      lastSwayPaint = t;
+    }
+    state.u = 1;
+    state.motion = "sway";
+    state.alive = true;
+    draw(1, t, windAmp > 0);
+    raf = requestAnimationFrame(swayFrame);
+  }
+
+  function startSway(fromResume) {
+    if (stopped) return;
+    if (windAmp <= 0 && !falling) {
+      state.motion = "held";
+      state.alive = false;
+      if (layout()) draw(1, getWindTime(), false);
+      return;
+    }
+    swayPaused = false;
+    const t = getWindTime();
+    if (!fromResume || !swayStartedAt) swayStartedAt = t;
+    if (fromResume) swayStartedAt = t;
+    state.motion = "sway";
+    state.alive = true;
+    notifySway(false);
+    if (!raf) raf = requestAnimationFrame(swayFrame);
+  }
+
+  canvas._growResumeSway = function resumeSway(opts2) {
+    const o = opts2 || {};
+    if (o.always === true) {
+      setTreeAlwaysAnimatePreferred(true);
+      state.alwaysAnimate = true;
+    }
+    startSway(true);
+  };
+
   if (reduce) {
-    if (layout()) draw(1);
+    copyRestPose();
+    if (layout()) draw(1, getWindTime(), false);
+    state.motion = "reduced";
     return;
   }
 
@@ -608,18 +871,19 @@ function growHillTree(canvas, opts) {
     }
     if (!t0) t0 = now + START_DELAY;
     if (now < t0) {
-      draw(0);
+      draw(0, now, false);
       raf = requestAnimationFrame(frame);
       return;
     }
     const u = Math.min(1, (now - t0) / DURATION);
     state.u = u;
-    draw(u);
-    if (u < 1) raf = requestAnimationFrame(frame);
-    else {
-      state.alive = false;
-      state.motion = "held";
+    // Light wind during late grow so leaves already feel the breeze.
+    draw(u, now, windAmp > 0 && u > 0.7);
+    if (u < 1) {
+      raf = requestAnimationFrame(frame);
+    } else {
       raf = 0;
+      startSway(false);
     }
   }
   raf = requestAnimationFrame(frame);
@@ -684,4 +948,9 @@ function forestAlternationCatalog() {
 if (typeof window !== "undefined") {
   window.growHillTree = growHillTree;
   window.forestAlternationCatalog = forestAlternationCatalog;
+  window.treeWindAllowed = treeWindAllowed;
+  window.effectiveWind = effectiveWind;
+  window.treeAlwaysAnimatePreferred = treeAlwaysAnimatePreferred;
+  window.setTreeAlwaysAnimatePreferred = setTreeAlwaysAnimatePreferred;
+  window.CLEVERTREE_ALWAYS_ANIMATE_KEY = CLEVERTREE_ALWAYS_ANIMATE_KEY;
 }

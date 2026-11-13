@@ -2,6 +2,7 @@
 (function (global) {
   // Stable scenic stand: far→near via depth; smaller scale = farther.
   // All share delay:0 so they grow together; duration varies playback speed.
+  const WIND_CYCLE = ["gentle", "gentle", "strong", "calm", "gentle", "strong"];
   const FOREST = [
     { x: 0.06, depth: 0.12, scale: 0.34, duration: 16000, habit: 0.15, branchiness: 0.28, asymmetry: 0.55, leanSign: -1, sideBias: -1, seed: 101 },
     { x: 0.18, depth: 0.18, scale: 0.38, duration: 15000, habit: 0.85, branchiness: 0.72, asymmetry: 0.35, leanSign: 1, sideBias: 1, seed: 202 },
@@ -42,7 +43,14 @@
       return a.depth - b.depth;
     });
 
-    sorted.forEach(function (entry) {
+    // Trees page always keeps sway/leaf motion after grow (device gate may still force calm wind).
+    const windAllowed = typeof global.treeWindAllowed === "function" ? global.treeWindAllowed() : true;
+    const getWindTime = function () {
+      return performance.now();
+    };
+
+    const canvases = [];
+    sorted.forEach(function (entry, index) {
       const figure = document.createElement("figure");
       figure.className = "forest-tree";
       figure.setAttribute("role", "listitem");
@@ -60,10 +68,13 @@
         "Tree habit " + entry.habit.toFixed(2) + " at " + Math.round(entry.x * 100) + "% along the horizon"
       );
       canvas.tabIndex = 0;
+      canvas._swayVisible = true;
 
       figure.appendChild(canvas);
       root.appendChild(figure);
+      canvases.push(canvas);
 
+      const wind = windAllowed ? WIND_CYCLE[index % WIND_CYCLE.length] : "calm";
       grow(canvas, {
         reduce: reduce,
         habit: entry.habit,
@@ -74,9 +85,30 @@
         seed: entry.seed,
         duration: reduce ? 1 : entry.duration,
         delay: 0,
-        clickable: true
+        clickable: true,
+        wind: wind,
+        alwaysAnimate: true,
+        swayLimitMs: 0,
+        swayMaxFps: 30,
+        getWindTime: getWindTime
       });
     });
+
+    if (typeof IntersectionObserver === "function") {
+      const io = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            const c = entry.target;
+            if (c && c.tagName === "CANVAS") c._swayVisible = entry.isIntersecting;
+          });
+        },
+        { root: null, threshold: 0.05 }
+      );
+      canvases.forEach(function (c) {
+        io.observe(c);
+      });
+      root._forestIO = io;
+    }
   }
 
   global.FOREST_HORIZON = FOREST;

@@ -74,6 +74,9 @@
           <img class="banner-photo" src="/images/hero.jpg" alt="Clevertree.chat across green hills at sunrise. Knowledge grows like a tree.">
         </picture>
         <canvas class="grow-tree" width="520" height="400" role="img" aria-label="A tree fills out on the hillside. Click to grow another." tabindex="0"></canvas>
+        <p class="tree-animate-wrap">
+          <button type="button" class="button tree-animate-btn" id="tree-animate" hidden>Keep trees moving</button>
+        </p>
         </div>
       </section>
       <section class="intro">
@@ -118,8 +121,38 @@
     const tree = document.querySelector(".grow-tree");
     const frame = document.querySelector(".banner-frame");
     const photo = document.querySelector(".banner-photo");
+    const animateBtn = document.getElementById("tree-animate");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (tree && tree.getContext) growHillTree(tree, { reduce: reduce });
+    function syncAnimateBtn(paused) {
+      if (!animateBtn) return;
+      const always = treeAlwaysAnimatePreferred();
+      if (always) {
+        animateBtn.hidden = true;
+        return;
+      }
+      animateBtn.hidden = !paused;
+      animateBtn.textContent = "Keep trees moving";
+    }
+    if (animateBtn) {
+      animateBtn.addEventListener("click", function () {
+        setTreeAlwaysAnimatePreferred(true);
+        if (tree && typeof tree._growResumeSway === "function") {
+          tree._growResumeSway({ always: true });
+        }
+        syncAnimateBtn(false);
+      });
+    }
+    if (tree && tree.getContext) {
+      growHillTree(tree, {
+        reduce: reduce,
+        wind: "gentle",
+        alwaysAnimate: treeAlwaysAnimatePreferred(),
+        onSwayPause: function (paused) {
+          syncAnimateBtn(paused);
+        }
+      });
+      syncAnimateBtn(false);
+    }
     function capBanner() {
       if (!frame || !photo) return;
       if (reduce) {
