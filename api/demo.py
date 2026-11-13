@@ -5,10 +5,12 @@ In-memory only. No GitHub, no Spot, no real drain. One board per topic per proce
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import sys
 import traceback
+import uuid as uuidlib
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -17,13 +19,21 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from clevertree_chat.demos import DEFAULT_TOPIC, get_demo, known_topics  # noqa: E402
+from clevertree_chat.demos import DEFAULT_TOPIC, get_demo, is_guided, known_topics  # noqa: E402
+from clevertree_chat.urls import normalize_url  # noqa: E402
 
 FILING = "Make your opinion finally heard."
+
+GUIDED_TITLES = {
+    "flock-cameras": "Should cities use camera networks?",
+    "thc-legalization": "Should adult-use cannabis be legal?",
+}
 
 # One board per topic. Cold start resets.
 _BOARDS: dict[str, dict] = {}
 _NEXT_IDS: dict[str, int] = {}
+# Visitor UUIDs minted by this process (extension / chat host).
+_VISITORS: set[str] = set()
 
 
 def _escape(text: str) -> str:
@@ -42,6 +52,7 @@ def _empty_board(topic: str) -> dict:
         "script_complete": False,
         "last_notice": "",
         "pending": None,
+        "page": {"url": "", "normalized": "", "title": ""},
     }
 
 
@@ -49,13 +60,118 @@ def board(topic: str) -> dict:
     if topic not in _BOARDS:
         _BOARDS[topic] = _empty_board(topic)
         _NEXT_IDS.setdefault(topic, 1)
-    return _BOARDS[topic]
+    state = _BOARDS[topic]
+    state.setdefault("page", {"url": "", "normalized": "", "title": ""})
+    return state
 
 
 def reset_board(topic: str) -> dict:
+    previous = _BOARDS.get(topic) or {}
+    page = dict(previous.get("page") or {})
     _BOARDS[topic] = _empty_board(topic)
+    if page.get("url") or page.get("normalized"):
+        _BOARDS[topic]["page"] = page
     _NEXT_IDS[topic] = 1
     return _BOARDS[topic]
+
+
+def identify(visitor: str = "") -> dict:
+    """Mint or validate a visitor UUID. Server is the source of truth for new IDs."""
+    raw = (visitor or "").strip()
+    if raw:
+        try:
+            parsed = str(uuidlib.UUID(raw))
+            _VISITORS.add(parsed)
+            return {"visitor": parsed, "created": False}
+        except ValueError as exc:
+            raise ValueError("visitor must be a UUID") from exc
+    minted = str(uuidlib.uuid4())
+    _VISITORS.add(minted)
+    return {"visitor": minted, "created": True}
+
+
+def _page_title(norm: str, href: str = "") -> str:
+    raw = href or norm
+    try:
+        host = ""
+        path = ""
+        if "://" in raw:
+            parts = urlparse(raw)
+            host = (parts.hostname or "").lower().removeprefix("www.")
+            path = parts.pathname or ""
+        else:
+            # normalized form: suffix/host/path?query
+            bits = norm.split("/", 2)
+            host = bits[1] if len(bits) > 1 else norm
+            path = "/" + bits[2].split("?", 1)[0] if len(bits) > 2 else ""
+        path = path.rstrip("/") if path not in ("", "/") else ""
+        label = host + path
+        return label[:64] + ("…" if len(label) > 64 else "")
+    except Exception:
+        return (norm or "This page")[:64]
+
+
+def _detect_guided(url: str, normalized: str = "") -> str | None:
+    hay = f"{url} {normalized}".lower()
+    if "flock-cameras" in hay:
+        return "flock-cameras"
+    if "thc-legalization" in hay:
+        return "thc-legalization"
+    return None
+
+
+def resolve_page(url: str = "", normalized: str = "", visitor: str = "") -> dict:
+    """Map a tab URL to a server topic id. Guided demos keep fixed slugs."""
+    ident = identify(visitor)
+    raw = (url or "").strip()
+    norm_in = (normalized or "").strip()
+    guided = _detect_guided(raw, norm_in)
+    if guided:
+        state = board(guided)
+        state["page"] = {
+            "url": raw,
+            "normalized": guided,
+            "title": GUIDED_TITLES.get(guided, guided),
+        }
+        return {
+            "visitor": ident["visitor"],
+            "visitor_created": ident["created"],
+            "topic": guided,
+            "guided": True,
+            "url": raw,
+            "normalized": guided,
+            "title": GUIDED_TITLES.get(guided, guided),
+            "exists": state["exists"],
+            "view": build_view(guided, ident["visitor"]),
+        }
+
+    norm = norm_in
+    if not norm and raw:
+        try:
+            if raw.startswith("http://") or raw.startswith("https://"):
+                norm = normalize_url(raw)
+            else:
+                norm = "local/unparsed/"
+        except Exception:
+            norm = "local/unparsed/"
+    if not norm:
+        norm = "local/new-tab/"
+
+    topic = "u-" + hashlib.sha256(norm.encode("utf-8")).hexdigest()[:16]
+    title = _page_title(norm, raw)
+    state = board(topic)
+    state["page"] = {"url": raw, "normalized": norm, "title": title}
+    return {
+        "visitor": ident["visitor"],
+        "visitor_created": ident["created"],
+        "topic": topic,
+        "guided": False,
+        "url": raw,
+        "normalized": norm,
+        "title": title,
+        "exists": state["exists"],
+        "view": build_view(topic, ident["visitor"]),
+    }
 
 
 def _suggestion_rows(state: dict, demo) -> list[dict]:
@@ -100,6 +216,8 @@ def build_view(topic: str, visitor: str = "", focus: str = "") -> dict:
     demo = get_demo(topic)
     state = board(topic)
     script = demo.SCRIPT
+    page = state.get("page") or {}
+    visitor_info = {"uuid": visitor or "", "name": "", "chosen": False}
     if not state["exists"]:
         return {
             "topic": topic,
@@ -112,7 +230,13 @@ def build_view(topic: str, visitor: str = "", focus: str = "") -> dict:
             "sections": {},
             "suggestions": [],
             "notices": [],
-            "visitor": {"name": "", "chosen": False},
+            "visitor": visitor_info,
+            "page": {
+                "url": page.get("url") or "",
+                "normalized": page.get("normalized") or "",
+                "title": page.get("title") or GUIDED_TITLES.get(topic, ""),
+            },
+            "guided": is_guided(topic),
             "created": False,
             "demo": {
                 "step": state["step"],
@@ -198,7 +322,13 @@ def build_view(topic: str, visitor: str = "", focus: str = "") -> dict:
         "sections": sections,
         "suggestions": _suggestion_rows(state, demo),
         "notices": notices,
-        "visitor": {"name": "", "chosen": False},
+        "visitor": visitor_info,
+        "page": {
+            "url": page.get("url") or "",
+            "normalized": page.get("normalized") or "",
+            "title": page.get("title") or GUIDED_TITLES.get(topic, ""),
+        },
+        "guided": is_guided(topic),
         "created": False,
         "demo": {
             "step": state["step"],
@@ -245,6 +375,9 @@ def submit(
     if state.get("pending"):
         raise ValueError("drain the pending post before submitting another")
 
+    ident = identify(visitor)
+    visitor = ident["visitor"]
+
     state["exists"] = True
     starting = "uncategorized"
     if chosen and chosen in state["keys"]:
@@ -254,7 +387,7 @@ def submit(
     _NEXT_IDS[topic] = int(comment_id) + 1
     comment = {
         "id": comment_id,
-        "author_uuid": visitor or "guest",
+        "author_uuid": visitor,
         "author_name": (name or "").strip() or "Visitor",
         "author_id": 0,
         "body": text,
@@ -268,6 +401,9 @@ def submit(
     state["last_notice"] = ""
     return {
         "topic": topic,
+        "visitor": visitor,
+        "visitor_created": ident["created"],
+        "comment_id": comment_id,
         "starting": starting,
         "key": starting,
         "keys": [],
@@ -404,6 +540,16 @@ def dispatch(payload: dict, query: dict) -> tuple[int, dict]:
     action = payload.get("action") or query.get("action") or "view"
     visitor = str(payload.get("visitor") or query.get("visitor") or "")
     topic = str(payload.get("topic") or query.get("topic") or DEFAULT_TOPIC).strip() or DEFAULT_TOPIC
+
+    if action == "identify":
+        return 200, identify(visitor)
+    if action == "resolve":
+        return 200, resolve_page(
+            url=str(payload.get("url") or query.get("url") or ""),
+            normalized=str(payload.get("normalized") or query.get("normalized") or ""),
+            visitor=visitor,
+        )
+
     try:
         get_demo(topic)
     except ValueError as exc:

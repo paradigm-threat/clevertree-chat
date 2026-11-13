@@ -14,7 +14,7 @@ cat >"$STAGE/clevertree_chat/__init__.py" <<'PY'
 """Slim chat-host package surface (Intake deploy)."""
 SERVICE_ID = "clevertree-chat-ai"
 PY
-cp "$ROOT/clevertree_chat/wsutil.py" "$ROOT/clevertree_chat/chat_hub.py" "$ROOT/clevertree_chat/demo_fixtures.py" "$STAGE/clevertree_chat/"
+cp "$ROOT/clevertree_chat/wsutil.py" "$ROOT/clevertree_chat/chat_hub.py" "$ROOT/clevertree_chat/demo_fixtures.py" "$ROOT/clevertree_chat/urls.py" "$STAGE/clevertree_chat/"
 cp "$ROOT/clevertree_chat/demos/"*.py "$STAGE/clevertree_chat/demos/"
 cp "$ROOT/scripts/chat_host.py" "$STAGE/scripts/"
 cp "$ROOT/chat/index.html" "$STAGE/chat/"

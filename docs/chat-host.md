@@ -6,9 +6,14 @@ The guided multi-person debate runs on the **Intake chat host**, not on Vercel.
 |--|--|
 | Process | `python3 scripts/chat_host.py` (default `:8790`) |
 | UI | `/chat`, `/chat/<topic>` |
-| HTTP API | `/api/chat` (same actions as the old demo API: `view`, `preview`, `submit`, `drain`, `replay`) |
+| HTTP API | `/api/chat` (`view`, `preview`, `submit`, `drain`, `replay`, plus `identify` / `resolve` for the extension) |
 | WebSocket | `/api/chat/ws?topic=…&visitor=…` |
 | Events | `hello`, `post.live`, `batch.notice`, `board.snapshot` |
+
+Extension identity:
+
+- `action=identify` — mint or validate a visitor UUID (server-issued).
+- `action=resolve` — normalize a tab URL and return `{ topic, guided, visitor, view, … }`. Freeform pages get `u-<sha256…>` topic ids; guided demos keep fixed slugs.
 
 ## Behavior
 

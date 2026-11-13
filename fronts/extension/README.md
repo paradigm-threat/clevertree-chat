@@ -5,10 +5,11 @@ MV3 Chromium side panel. Simplified Debate board matching the Intake web demos.
 ## What it does
 
 - Opens a **side panel** when you click the toolbar icon.
-- Reads the **active tab URL**, normalizes it (`normalize-url.js`), and mounts a board for that page.
+- Asks the **Intake chat host** to mint the visitor UUID (`action=identify`) and map the tab URL to a topic id (`action=resolve`). IDs are not generated in the extension.
+- Posts and drains go through `/api/chat`; comment ids come from the server. Live updates use `/api/chat/ws`.
 - Board stays **empty until you write**.
 - Guided demos: **Flock demo** / **THC demo** (or when the tab is already an Intake demo URL) — same Continue / Jordan flow as the web host.
-- Talks to `https://intake.myproblem.app` by default (`/api/chat` + WebSocket).
+- Default API base: `https://intake.myproblem.app`.
 
 ## Load unpacked
 

@@ -36,6 +36,7 @@
 
   const store = {
     apiBase: DEFAULT_API,
+    visitor: "",
     topic: "flock-cameras",
     guided: true,
     pageUrl: "",
@@ -55,32 +56,56 @@
     reconnectTimer: 0,
   };
 
-  function visitorId() {
+  function storageGet(keys) {
     return new Promise(function (resolve) {
-      chrome.storage.local.get([VISITOR_KEY], function (data) {
-        let id = data[VISITOR_KEY];
-        if (!id) {
-          id = crypto.randomUUID();
-          chrome.storage.local.set({ [VISITOR_KEY]: id });
-        }
-        resolve(id);
-      });
+      chrome.storage.local.get(keys, resolve);
     });
   }
 
-  function readPrefs() {
+  function storageSet(obj) {
     return new Promise(function (resolve) {
-      chrome.storage.local.get([DEMO_KEY, API_KEY], function (data) {
-        if (data[API_KEY]) store.apiBase = String(data[API_KEY]).replace(/\/$/, "");
-        if (data[DEMO_KEY] === "0") store.demoMode = false;
-        else if (data[DEMO_KEY] === "1") store.demoMode = true;
-        resolve();
-      });
+      chrome.storage.local.set(obj, resolve);
+    });
+  }
+
+  function rememberVisitor(id) {
+    if (!id) return;
+    store.visitor = id;
+    return storageSet({ [VISITOR_KEY]: id });
+  }
+
+  /** Cached UUID only — never mint locally. Server identify/resolve issue IDs. */
+  async function cachedVisitor() {
+    if (store.visitor) return store.visitor;
+    const data = await storageGet([VISITOR_KEY]);
+    if (data[VISITOR_KEY]) {
+      store.visitor = data[VISITOR_KEY];
+      return store.visitor;
+    }
+    return "";
+  }
+
+  async function ensureVisitor() {
+    const known = await cachedVisitor();
+    const data = await apiPost({
+      action: "identify",
+      visitor: known || undefined,
+    });
+    await rememberVisitor(data.visitor);
+    return data.visitor;
+  }
+
+  function readPrefs() {
+    return storageGet([DEMO_KEY, API_KEY, VISITOR_KEY]).then(function (data) {
+      if (data[API_KEY]) store.apiBase = String(data[API_KEY]).replace(/\/$/, "");
+      if (data[VISITOR_KEY]) store.visitor = data[VISITOR_KEY];
+      if (data[DEMO_KEY] === "0") store.demoMode = false;
+      else if (data[DEMO_KEY] === "1") store.demoMode = true;
     });
   }
 
   function writeDemoPref(on) {
-    chrome.storage.local.set({ [DEMO_KEY]: on ? "1" : "0" });
+    return storageSet({ [DEMO_KEY]: on ? "1" : "0" });
   }
 
   function escapeHtml(s) {
@@ -130,8 +155,19 @@
   }
 
   function viewToBoard(view, topicId) {
+    const pageTitle =
+      (view && view.page && view.page.title) ||
+      GUIDED[topicId] ||
+      store.pageLabel ||
+      "This page";
+    if (view && view.page) {
+      if (view.page.normalized) store.pageNorm = view.page.normalized;
+      if (view.page.title) store.pageLabel = view.page.title;
+      if (view.page.url) store.pageUrl = view.page.url;
+    }
+    if (view && typeof view.guided === "boolean") store.guided = view.guided;
     if (!view || !view.exists) {
-      return emptyBoard(topicId, GUIDED[topicId] || store.pageLabel || "This page");
+      return emptyBoard(topicId, pageTitle);
     }
     const sections = view.sections || {};
     const pairs = view.pairs || [];
@@ -228,7 +264,7 @@
     return {
       topic: {
         id: topicId,
-        title: GUIDED[topicId] || store.pageLabel || humanizeKey(topicId),
+        title: pageTitle || GUIDED[topicId] || store.pageLabel || humanizeKey(topicId),
         invite: "Explore the main perspectives, then add your own point.",
       },
       keys: keys,
@@ -250,30 +286,6 @@
     });
   }
 
-  async function topicIdFromNormalized(norm) {
-    const data = new TextEncoder().encode(norm);
-    const digest = await crypto.subtle.digest("SHA-256", data);
-    const hex = Array.from(new Uint8Array(digest))
-      .slice(0, 8)
-      .map(function (b) {
-        return b.toString(16).padStart(2, "0");
-      })
-      .join("");
-    return "u-" + hex;
-  }
-
-  function shortPageLabel(norm, href) {
-    try {
-      const u = new URL(href);
-      const host = u.hostname.replace(/^www\./, "");
-      const path = u.pathname.length > 1 ? u.pathname.replace(/\/$/, "") : "";
-      const label = host + path;
-      return label.length > 64 ? label.slice(0, 61) + "…" : label;
-    } catch (e) {
-      return norm.slice(0, 64);
-    }
-  }
-
   function detectGuidedFromUrl(href) {
     if (!href) return null;
     if (href.indexOf("flock-cameras") >= 0) return "flock-cameras";
@@ -286,50 +298,25 @@
     return tabs && tabs[0] ? tabs[0] : null;
   }
 
-  async function resolveTopicFromTab() {
-    const tab = await activeTab();
-    const href = (tab && tab.url) || "";
-    store.pageUrl = href;
-    const guided = detectGuidedFromUrl(href);
-    if (guided) {
-      store.topic = guided;
-      store.guided = true;
-      store.pageNorm = guided;
-      store.pageLabel = GUIDED[guided];
-      if (store.demoMode === undefined || store.demoMode === null) store.demoMode = true;
-      return;
-    }
-    let norm = href;
-    try {
-      if (href && /^https?:/i.test(href) && typeof normalizeUrl === "function") {
-        norm = normalizeUrl(href);
-      } else if (!href || href.indexOf("chrome") === 0 || href.indexOf("about:") === 0) {
-        norm = "local/new-tab/";
-      }
-    } catch (e) {
-      norm = "local/unparsed/";
-    }
-    store.pageNorm = norm;
-    store.pageLabel = shortPageLabel(norm, href || "https://local/");
-    store.topic = await topicIdFromNormalized(norm);
-    store.guided = false;
-    store.demoMode = false;
-  }
-
-  async function call(payload) {
-    const visitor = await visitorId();
+  async function apiPost(payload) {
     const response = await fetch(store.apiBase + "/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visitor: visitor, topic: store.topic, ...payload }),
+      body: JSON.stringify(payload),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "The debate could not be saved.");
+    if (data.visitor) await rememberVisitor(data.visitor);
     return data;
   }
 
+  async function call(payload) {
+    const visitor = await ensureVisitor();
+    return apiPost({ visitor: visitor, topic: store.topic, ...payload });
+  }
+
   async function getView() {
-    const visitor = await visitorId();
+    const visitor = await ensureVisitor();
     const params = new URLSearchParams({
       topic: store.topic,
       visitor: visitor,
@@ -338,7 +325,36 @@
     const response = await fetch(store.apiBase + "/api/chat?" + params.toString());
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "The debate could not be read.");
+    if (data.visitor && data.visitor.uuid) await rememberVisitor(data.visitor.uuid);
     return data;
+  }
+
+  /** Ask the host for topic + visitor IDs for this tab (or a forced guided demo). */
+  async function resolveOnServer(opts) {
+    const o = opts || {};
+    const visitor = await cachedVisitor();
+    if (o.forcedTopic && GUIDED[o.forcedTopic]) {
+      const data = await apiPost({
+        action: "resolve",
+        url: "https://intake.myproblem.app/chat/" + o.forcedTopic,
+        visitor: visitor || undefined,
+      });
+      return data;
+    }
+    const tab = await activeTab();
+    const href = (tab && tab.url) || "";
+    let normalized = "";
+    try {
+      if (href && /^https?:/i.test(href) && typeof normalizeUrl === "function") {
+        normalized = normalizeUrl(href);
+      }
+    } catch (e) {}
+    return apiPost({
+      action: "resolve",
+      url: href || "",
+      normalized: normalized || undefined,
+      visitor: visitor || undefined,
+    });
   }
 
   function applyView(view, opts) {
@@ -629,7 +645,7 @@
       } catch (e) {}
       store.socket = null;
     }
-    const visitor = await visitorId();
+    const visitor = await ensureVisitor();
     const base = store.apiBase;
     let ws;
     try {
@@ -664,7 +680,7 @@
       } catch (e) {
         return;
       }
-      const visitor = await visitorId();
+      const visitor = await ensureVisitor();
       if (msg.type === "hello") {
         if (msg.view) applyView(msg.view);
         render();
@@ -722,27 +738,35 @@
 
   async function bindTopic(opts) {
     const o = opts || {};
-    if (o.forcedTopic) {
-      store.topic = o.forcedTopic;
-      store.guided = !!GUIDED[o.forcedTopic];
-      store.pageNorm = o.forcedTopic;
-      store.pageLabel = GUIDED[o.forcedTopic] || o.forcedTopic;
-      if (store.guided) store.demoMode = true;
-    } else {
-      await resolveTopicFromTab();
-    }
     store.demoQueue = [];
     store.demoPaused = false;
     store.expandedKeyId = null;
-    store.board = emptyBoard(store.topic, store.pageLabel);
+    store.liveText = "Resolving…";
+    store.liveState = "closed";
     render();
     try {
-      await refresh();
+      const resolved = await resolveOnServer(o);
+      store.topic = resolved.topic;
+      store.guided = !!resolved.guided;
+      store.pageUrl = resolved.url || store.pageUrl || "";
+      store.pageNorm = resolved.normalized || resolved.topic;
+      store.pageLabel = resolved.title || GUIDED[resolved.topic] || resolved.topic;
+      if (store.guided) {
+        if (o.forcedTopic) store.demoMode = true;
+      } else {
+        store.demoMode = false;
+      }
+      if (resolved.view) applyView(resolved.view);
+      else store.board = emptyBoard(store.topic, store.pageLabel);
+      setStatus("");
+      render();
+      if (!resolved.view) await refresh();
     } catch (err) {
-      setStatus(err.message || "Could not load debate.", true);
+      setStatus(err.message || "Could not resolve page on server.", true);
       store.liveState = "error";
       store.liveText = "Error";
       render();
+      return;
     }
     await connectWs();
   }
