@@ -21,7 +21,7 @@ Curator commits use the service id `clevertree-chat-ai`. A person's name is neve
 
 ## Any URL
 
-A browser extension and an HTML snippet are small fronts in `fronts/`. They normalize the tab URL (public suffix first, campaign tags dropped, `id` / `p` / `story` kept) and stay empty until someone types. Product rules for provisional pages, batch canonicalization of mirrors, and topic vs person homes are locked in [`url-pages-and-associations.md`](url-pages-and-associations.md) and [`person-space.md`](person-space.md). The **browser extension** itself is the next plan (packaging and UX not shipped here). The Android voice component in `android/` sends transcript text to the same filing API and asks for audio of the section. It does not write git. No APK is built here.
+A browser extension and an HTML snippet are small fronts in `fronts/`. They normalize the tab URL (public suffix first, campaign tags dropped, `id` / `p` / `story` kept) and stay empty until someone types. Product rules for provisional pages, batch canonicalization of mirrors, and topic vs person homes are locked in [`url-pages-and-associations.md`](url-pages-and-associations.md) and [`person-space.md`](person-space.md). The **browser extension** is an MV3 side panel in [`fronts/extension/`](../fronts/extension/) (simplified Debate board; load unpacked). The Android voice component in `android/` sends transcript text to the same filing API and asks for audio of the section. It does not write git. No APK is built here.
 
 ## Phase 2 gauge, still dry
 

@@ -16,7 +16,7 @@ The front of the product is built for that live moment. The back is built for th
 
 Phase 1 is the tests. Real arguments, including ones like Flock cameras, run until there is a reasonable confidence the AI can handle a topic and write the git files without leaving a mess for a later upgrade to clean up. The model will keep learning after launch. Launch waits on that confidence. The next phases run it on phone hardware and server hardware and measure the real thing.
 
-**Any URL → debate (architecture locked):** normalize the tab URL, open a topic only when someone writes, then let batch associate mirrors and related pages — and classify homes as topic or person. See [`docs/url-pages-and-associations.md`](docs/url-pages-and-associations.md) and [`docs/person-space.md`](docs/person-space.md). **Browser extension — planned next:** capture the current URL into the containable chat; empty until typed; associations remain batch work.
+**Any URL → debate (architecture locked):** normalize the tab URL, open a topic only when someone writes, then let batch associate mirrors and related pages — and classify homes as topic or person. See [`docs/url-pages-and-associations.md`](docs/url-pages-and-associations.md) and [`docs/person-space.md`](docs/person-space.md). **Browser extension:** MV3 side panel in [`fronts/extension/`](fronts/extension/) — load unpacked; captures the tab URL into a simplified Debate board (empty until typed; guided demos on Intake).
 
 Public lines on the page: “A new way to debate.” “Don’t get lost in the weeds.” “Make your opinion finally heard.”
 

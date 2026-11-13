@@ -77,6 +77,9 @@ A person-kind home is that person’s standing debate space. Ownership of its ru
 
 ## Out of scope here
 
-- Browser extension packaging and UX (next plan)
 - Implementing association commits in the batch engine
 - Passkey / handle claim for person-space editors ([`person-space.md`](person-space.md))
+
+## Extension (shipped stub)
+
+MV3 side panel in [`fronts/extension/`](../fronts/extension/): normalize tab URL, empty board until typed, guided demos against Intake. Load unpacked — see [`fronts/extension/README.md`](../fronts/extension/README.md).
