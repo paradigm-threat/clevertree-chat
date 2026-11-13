@@ -1,6 +1,7 @@
 # Clevertree Chat — agent / developer brief
 
-**Repo:** [paradigm-threat/clevertree-chat](https://github.com/paradigm-threat/clevertree-chat) · **Product:** [clevertree.chat](https://clevertree.chat) · **API / demos:** [api.clevertree.chat](https://api.clevertree.chat)
+**Public brief:** [clevertree.chat/dev](https://clevertree.chat/dev)  
+**Repo:** [GitHub](https://github.com/paradigm-threat/clevertree-chat) · [GitLab](https://gitlab.com/clevertree/clevertree-chat) · **Product:** [clevertree.chat](https://clevertree.chat) · **API / demos:** [api.clevertree.chat](https://api.clevertree.chat)
 
 Standing debate, not a reply thread. People post original points; the **batch AI** files them under **perspectives (keys)**, pairs counters, and writes short positions from posted `rules.md` (or Relay defaults). Cleverchat is an **independent product** — MyProblem and others may mount it; it does not depend on them.
 

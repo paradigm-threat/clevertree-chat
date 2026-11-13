@@ -1,4 +1,4 @@
-**New here?** Start with [`AGENTS.md`](AGENTS.md) — short brief for developers and agents (what works, near-future goals, where code lives).
+**New here?** Public brief: [clevertree.chat/dev](https://clevertree.chat/dev) · same content in [`AGENTS.md`](AGENTS.md) ([GitHub](https://github.com/paradigm-threat/clevertree-chat) · [GitLab](https://gitlab.com/clevertree/clevertree-chat)).
 
 Clevertree Chat, called Cleverchat for short, is a standing debate that can live on a page. The site is clevertree.chat. The name can change. The debates stay. People add original posts to an argument. They do not reply to each other. The place a point is answered is the other argument, which has its own short URL.
 

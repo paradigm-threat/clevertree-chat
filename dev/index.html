@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Help build Clevertree Chat — Dev</title>
+  <meta name="description" content="Developer brief for Clevertree Chat: what works, near-future goals, GitHub and GitLab links.">
+  <meta name="theme-color" content="#D4F3FB">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://clevertree.chat/dev">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Clevertree Chat">
+  <meta property="og:title" content="Help build Clevertree Chat">
+  <meta property="og:description" content="Standing debate product. What works today, near-future goals, and where to clone.">
+  <meta property="og:url" content="https://clevertree.chat/dev">
+  <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://clevertree.chat/images/og-default.jpg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header>
+      <a class="wordmark" href="/">
+        <img src="/icon-128x128.png" alt="" width="32" height="32">
+        Clevertree Chat
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="nav-try" href="/trees">Trees</a>
+        <a class="nav-try" href="/extension">Extension</a>
+        <a class="nav-try" href="/dev" aria-current="page">Dev</a>
+        <a class="nav-try" href="/try">See demo</a>
+      </nav>
+    </header>
+    <main id="main" class="try-page">
+      <p class="kicker">Developers · agents</p>
+      <h1>Help build Cleverchat</h1>
+      <p class="lead-quiet">Standing debate, not reply threads. Batch AI files perspectives. Independent of MyProblem.</p>
+
+      <p style="margin-top:1.4rem">
+        <a class="button" href="https://github.com/paradigm-threat/clevertree-chat">GitHub</a>
+        <a class="button" href="https://gitlab.com/clevertree/clevertree-chat" style="margin-left:0.6rem">GitLab</a>
+      </p>
+      <p class="hint" style="margin-top:0.9rem">
+        Full brief (same content as repo <code>AGENTS.md</code>):
+        <a href="https://github.com/paradigm-threat/clevertree-chat/blob/main/AGENTS.md">GitHub</a>
+        ·
+        <a href="https://gitlab.com/clevertree/clevertree-chat/-/blob/main/AGENTS.md">GitLab</a>
+      </p>
+
+      <section class="band" style="padding-top:2rem">
+        <h2>Clone</h2>
+        <ul class="ext-bullets">
+          <li>App: <a href="https://github.com/paradigm-threat/clevertree-chat">github.com/paradigm-threat/clevertree-chat</a> · <a href="https://gitlab.com/clevertree/clevertree-chat">gitlab.com/clevertree/clevertree-chat</a></li>
+          <li>Debate record (comments branch): <a href="https://github.com/paradigm-threat/clevertree-chat-comments">clevertree-chat-comments</a></li>
+          <li>Product: <a href="https://clevertree.chat">clevertree.chat</a> · API / demos: <a href="https://api.clevertree.chat/chat">api.clevertree.chat</a></li>
+        </ul>
+      </section>
+
+      <section class="band">
+        <h2>What works today</h2>
+        <ul class="ext-bullets">
+          <li>Guided demos + PT review boards on the chat host</li>
+          <li>Heuristic batch: keys, <code>other</code> for non-arguments, pairs, positions</li>
+          <li>Browser extension → <code>api.clevertree.chat</code> only</li>
+          <li>~5.4k Paradigm Threat posts on the comments branch</li>
+        </ul>
+      </section>
+
+      <section class="band">
+        <h2>Near-future goals</h2>
+        <ol class="ext-steps">
+          <li><strong>Chat UI in the wild</strong> — durable submit → comments git; fix <code>/api/debate</code>; always-on drain worker.</li>
+          <li><strong>Real batch AI pass</strong> — Spot GPU wake; end-to-end curator (file, summarize, ask on low confidence).</li>
+          <li><strong>Internet investigations</strong> — fetch live counters (today: cite URL only, do not fetch).</li>
+          <li><strong>Anti-bot / anti-spam access</strong> — measure what blocks egress before wiring fetch into the curator.</li>
+          <li><strong>Human loop + spam court + URL associations</strong> — deliver asks; hide/contest; mirror canonicalization.</li>
+        </ol>
+      </section>
+
+      <section class="band">
+        <h2>Locked rules (don’t undo)</h2>
+        <ul class="ext-bullets">
+          <li>Page path = topic. Never mint a key equal to the page slug.</li>
+          <li>File claims immediately; agreement does not suppress axes. Non-arguments → <code>other</code>.</li>
+          <li>Unwritten counters stay suggestions until someone writes them.</li>
+          <li>Low confidence → ask the owner; no private standing exceptions.</li>
+        </ul>
+        <p class="hint" style="margin-top:1rem">
+          Tests: <code>python3 -m unittest discover -s tests -v</code>
+          ·
+          Deploy host: <code>bash infra/deploy-chat-host.sh</code>
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p>Clevertree Chat, called Cleverchat for short. The name can change. The debates stay. · <a href="/dev">Dev</a></p>
+    </footer>
+  </div>
+</body>
+</html>
