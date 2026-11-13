@@ -72,7 +72,6 @@
         asymmetry: entry.asymmetry,
         sideBias: entry.sideBias,
         seed: entry.seed,
-        icons: false,
         duration: reduce ? 1 : entry.duration,
         delay: 0,
         clickable: true

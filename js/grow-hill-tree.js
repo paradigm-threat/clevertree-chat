@@ -45,10 +45,6 @@ function growHillTree(canvas, opts) {
   const lfall = new Uint8Array(LEAF_N);
   const ldep = new Uint8Array(LEAF_N);
 
-  const ix = new Float32Array(6);
-  const iy = new Float32Array(6);
-  const ishow = new Float32Array(6);
-
   const BARK = ["#5c3d22", "#684628", "#755230", "#825e38", "#8f6a42", "#9c764c"];
   const LEAF = ["#1f6b28", "#247a24", "#2f8a28", "#3e9a32", "#4ea628", "#62b41e", "#78c422"];
 
@@ -81,7 +77,6 @@ function growHillTree(canvas, opts) {
   const sideBias = options.sideBias === -1 || options.sideBias === 1
     ? options.sideBias
     : (leanSign != null ? leanSign : (rnd() < 0.5 ? -1 : 1));
-  const showIcons = options.icons !== false;
   const clickable = options.clickable !== false;
   // Tall = long trunk + long limbs; bushy = shorter trunk, still wide reach.
   // Do not starve side length when habit is low (that made “tall” look skinny).
@@ -365,38 +360,6 @@ function growHillTree(canvas, opts) {
     faller += 1;
   }
 
-  // Sit icons on mid-depth forks (branch area), not tip foliage.
-  const branchSites = [];
-  for (let i = 0; i < n; i++) {
-    if (sdep[i] < 3 || sdep[i] > 5) continue;
-    const t = 0.58;
-    branchSites.push({
-      id: i,
-      x: sx0[i] + (sx1[i] - sx0[i]) * t,
-      y: sy0[i] + (sy1[i] - sy0[i]) * t
-    });
-  }
-  branchSites.sort((a, b) => a.x - b.x);
-  const iconBandY = TRUNK_Y - VH * 0.4;
-  for (let b = 0; b < 6; b++) {
-    const lo = Math.floor(branchSites.length * b / 6);
-    const hi = Math.max(lo + 1, Math.floor(branchSites.length * (b + 1) / 6));
-    let best = lo;
-    let bestScore = Infinity;
-    for (let t = lo; t < hi; t++) {
-      const site = branchSites[t];
-      const score = Math.abs(site.y - iconBandY) + Math.abs((t - lo) / (hi - lo) - 0.5) * 8;
-      if (score < bestScore) {
-        bestScore = score;
-        best = t;
-      }
-    }
-    const site = branchSites[best] || { id: 0, x: TRUNK_X, y: iconBandY };
-    ix[b] = Math.max(VIEW_PAD, Math.min(VW - VIEW_PAD, site.x));
-    iy[b] = Math.max(VIEW_PAD, Math.min(VH - VIEW_PAD, site.y));
-    ishow[b] = Math.max(0, sEnd[site.id] - 0.03);
-  }
-
   const state = {
     stems: n,
     leaves: leaves,
@@ -473,152 +436,6 @@ function growHillTree(canvas, opts) {
     ctx.restore();
   }
 
-  function iconFolder() {
-    ctx.beginPath();
-    ctx.moveTo(-6.4, -1);
-    ctx.lineTo(-1.7, -1);
-    ctx.lineTo(-0.2, -3.1);
-    ctx.lineTo(6.4, -3.1);
-    ctx.lineTo(6.4, 5.2);
-    ctx.lineTo(-6.4, 5.2);
-    ctx.closePath();
-    ctx.fillStyle = "#fff6d2";
-    ctx.strokeStyle = "#c89616";
-    ctx.lineWidth = 1.15;
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  function iconNode() {
-    ctx.beginPath();
-    ctx.arc(0, 0, 6.3, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff6d2";
-    ctx.fill();
-    ctx.strokeStyle = "#e2b423";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.strokeStyle = "#c89616";
-    ctx.lineWidth = 1.25;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(0, 4.6);
-    ctx.lineTo(0, -0.2);
-    ctx.moveTo(0, 0.6);
-    ctx.lineTo(-4.6, -4.2);
-    ctx.moveTo(0, 0.1);
-    ctx.lineTo(4.7, -4.4);
-    ctx.stroke();
-    ctx.fillStyle = "#e2b423";
-    const nodes = [[0, 4.6], [-4.6, -4.2], [4.7, -4.4]];
-    for (let i = 0; i < nodes.length; i++) {
-      ctx.beginPath();
-      ctx.arc(nodes[i][0], nodes[i][1], 1.25, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  function iconGear() {
-    ctx.beginPath();
-    const teeth = 8;
-    const rIn = 3.05;
-    const rOut = 5.45;
-    for (let i = 0; i < teeth; i++) {
-      const a = (i / teeth) * Math.PI * 2 - Math.PI / 2;
-      const step = (Math.PI * 2) / teeth;
-      const pt = (ang, r, move) => {
-        const x = Math.cos(ang) * r;
-        const y = Math.sin(ang) * r;
-        if (move) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      };
-      pt(a, rIn, i === 0);
-      pt(a + step * 0.28, rIn, false);
-      pt(a + step * 0.38, rOut, false);
-      pt(a + step * 0.9, rOut, false);
-      pt(a + step, rIn, false);
-    }
-    ctx.closePath();
-    ctx.moveTo(1.45, 0);
-    ctx.arc(0, 0, 1.45, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fillStyle = "#fff6d2";
-    ctx.strokeStyle = "#c89616";
-    ctx.lineWidth = 1.05;
-    ctx.fill("evenodd");
-    ctx.stroke();
-  }
-
-  function iconCheck() {
-    ctx.beginPath();
-    ctx.arc(0, 0, 6.2, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff6d2";
-    ctx.fill();
-    ctx.strokeStyle = "#e2b423";
-    ctx.lineWidth = 1.05;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-4.4, 0.3);
-    ctx.lineTo(-1.3, 3.6);
-    ctx.lineTo(4.8, -3.6);
-    ctx.strokeStyle = "#c89616";
-    ctx.lineWidth = 1.7;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
-  }
-
-  function iconClock() {
-    ctx.beginPath();
-    ctx.arc(0, 0, 5.7, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff6d2";
-    ctx.fill();
-    ctx.strokeStyle = "#c89616";
-    ctx.lineWidth = 1.15;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, -2.5);
-    ctx.lineTo(0, 0.5);
-    ctx.lineTo(2.3, 2.1);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke();
-    ctx.fillStyle = "#e2b423";
-    ctx.beginPath();
-    ctx.arc(0, 0, 0.7, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function iconQuote() {
-    ctx.beginPath();
-    ctx.moveTo(-5.1, -3.5);
-    ctx.lineTo(4.2, -3.5);
-    ctx.quadraticCurveTo(6.3, -3.5, 6.3, -1.6);
-    ctx.lineTo(6.3, 2.1);
-    ctx.quadraticCurveTo(6.3, 4, 4.2, 4);
-    ctx.lineTo(-0.4, 4);
-    ctx.lineTo(-3.4, 6.7);
-    ctx.lineTo(-3.4, 4);
-    ctx.lineTo(-5.1, 4);
-    ctx.quadraticCurveTo(-7.1, 4, -7.1, 2.1);
-    ctx.lineTo(-7.1, -1.6);
-    ctx.quadraticCurveTo(-7.1, -3.5, -5.1, -3.5);
-    ctx.closePath();
-    ctx.fillStyle = "#fff6d2";
-    ctx.strokeStyle = "#c89616";
-    ctx.lineWidth = 1.1;
-    ctx.lineJoin = "round";
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-2.5, -0.5);
-    ctx.lineTo(1.3, -0.5);
-    ctx.moveTo(-2.5, 1.5);
-    ctx.lineTo(2.3, 1.5);
-    ctx.stroke();
-  }
-
-  const icons = [iconFolder, iconNode, iconGear, iconCheck, iconClock, iconQuote];
-
   function paintStemAt(i, u) {
     const grow = sEnd[i] - sStart[i] || 0.001;
     const p = clamp01((u - sStart[i]) / grow);
@@ -665,18 +482,6 @@ function growHillTree(canvas, opts) {
       }
       for (let i = 0; i < n; i++) {
         if (sdep[i] === d) paintStemAt(i, u);
-      }
-    }
-    if (showIcons) {
-      for (let b = 0; b < 6; b++) {
-        const p = easeOut(clamp01((u - ishow[b]) / 0.05));
-        if (p <= 0) continue;
-        ctx.save();
-        ctx.translate(ix[b], iy[b]);
-        const s = p * 1.75;
-        ctx.scale(s, s);
-        icons[b]();
-        ctx.restore();
       }
     }
   }
@@ -793,7 +598,6 @@ function forestAlternationCatalog() {
             sideBias: sideBias,
             sideLabel: sideBias < 0 ? "bias-left" : "bias-right",
             seed: (i * 2654435761) >>> 0,
-            icons: false,
             label: [
               h.habitLabel,
               l.leanLabel,
