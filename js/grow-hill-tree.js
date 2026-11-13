@@ -10,13 +10,12 @@ function growHillTree(canvas, opts) {
   // Wide virtual view so spreading habits are not clipped by the bitmap.
   const VW = 520;
   const VH = 400;
-  const DEPTH = 8;
-  const STEM_N = 520;
-  const LEAF_N = 2600;
-  // Alternate wide forks with thinner, slightly randomized ones so every tree
-  // carries both kinds of complexity; habit still scales tall vs spreading.
-  const RANGE_DEG = [32, 11, 34, 13, 36, 15, 32, 16];
-  const LENGTHS = [62, 50, 40, 30, 22, 16, 11, 8];
+  const DEPTH = 7;
+  const STEM_N = 2200;
+  const LEAF_N = 12000;
+  // Leader + laterals (not equal ±Y forks). Angles in degrees by depth.
+  const RANGE_DEG = [28, 26, 30, 28, 32, 30, 28, 26];
+  const LENGTHS = [58, 48, 40, 32, 25, 18, 13, 9];
   const DURATION = options.duration > 0 ? options.duration : 30000;
   const START_DELAY = options.delay > 0 ? options.delay : 0;
   const TRUNK_X = VW * 0.5;
@@ -71,47 +70,45 @@ function growHillTree(canvas, opts) {
   const leanSign = options.leanSign === -1 || options.leanSign === 1
     ? options.leanSign
     : null;
-  const rootReverse = typeof options.rootReverse === "boolean"
-    ? options.rootReverse
-    : null;
-  const forceFlip = typeof options.forceFlip === "boolean"
-    ? options.forceFlip
-    : null;
-  const widePhase = options.widePhase ? 1 : 0;
+  // 0 = airy, 1 = lush — chance of extra laterals / mid-trunk shoots.
+  const branchiness = options.branchiness != null
+    ? Math.max(0, Math.min(1, Number(options.branchiness)))
+    : 0.35 + rnd() * 0.55;
+  // 0 = milder laterals, 1 = one side clearly dominates (breaks Y symmetry).
+  const asymmetry = options.asymmetry != null
+    ? Math.max(0, Math.min(1, Number(options.asymmetry)))
+    : 0.35 + rnd() * 0.55;
+  const sideBias = options.sideBias === -1 || options.sideBias === 1
+    ? options.sideBias
+    : (leanSign != null ? leanSign : (rnd() < 0.5 ? -1 : 1));
   const showIcons = options.icons !== false;
   const clickable = options.clickable !== false;
-  const upScale = 0.88 + 0.52 * (1 - habit);
-  const sideScale = 0.88 + 0.52 * habit;
+  const upScale = 0.92 + 0.48 * (1 - habit);
+  const sideScale = 0.9 + 0.55 * habit;
   function clampHeading(angle) {
-    const max = 1.2 + 0.65 * habit;
+    const max = 1.05 + 0.75 * habit;
     return angle < -max ? -max : angle > max ? max : angle;
   }
   function stemLength(base, angle, spur) {
     const side = Math.abs(Math.sin(angle));
     const habitScale = upScale * (1 - side) + sideScale * side;
-    const own = 0.94 + 0.22 * rnd();
-    const spurScale = spur ? 0.72 + 0.14 * rnd() : 1;
+    const own = 0.92 + 0.24 * rnd();
+    const spurScale = spur ? 0.55 + 0.22 * rnd() : 1;
     return base * habitScale * own * spurScale;
-  }
-  function turnMag(spread, spur, wideFork) {
-    if (spur) return (0.4 + 0.2 * rnd()) * spread;
-    if (wideFork) return (0.88 + 0.28 * rnd()) * spread;
-    return (0.5 + 0.35 * rnd()) * spread;
   }
 
   const depthIndex = new Uint16Array(DEPTH + 1);
   let n = 0;
   function addStem(s) {
+    if (n >= STEM_N) return null;
     const x1 = s.x + Math.sin(s.angle) * s.length;
     const y1 = s.y - Math.cos(s.angle) * s.length;
-    const tipRatio = s.depth === 0 ? 0.55 : 0.68;
+    const tipRatio = s.depth === 0 ? 0.62 : (s.spur ? 0.55 : 0.72);
     let r1 = s.radius * tipRatio;
     if (r1 < 0.35) r1 = 0.35;
     const di = depthIndex[s.depth]++;
-    const count = s.depth === 0 ? 1 : Math.pow(2, s.depth - 1);
-    const span = count <= 1 ? 0 : di / (count - 1);
-    const start = s.depth === 0 ? 0 : Math.min(0.84, s.depth * 0.1 + span * 0.08);
-    const end = Math.min(1, start + 0.16);
+    const start = s.depth === 0 ? 0 : Math.min(0.82, 0.06 + s.depth * 0.085 + (di % 7) * 0.012);
+    const end = Math.min(1, start + 0.14 + (s.spur ? 0.02 : 0.04));
     sx0[n] = s.x;
     sy0[n] = s.y;
     sx1[n] = x1;
@@ -123,66 +120,149 @@ function growHillTree(canvas, opts) {
     sStart[n] = start;
     sEnd[n] = end;
     n += 1;
-    return { x: x1, y: y1, radius: r1 };
+    return { x: x1, y: y1, radius: r1, bx: s.x, by: s.y };
   }
 
   const trunkLean = (leanSign != null ? leanSign * (2.2 + rnd() * 1.8) : (rnd() * 2 - 1) * 4) * Math.PI / 180;
-  const trunkLen = stemLength(82, trunkLean, false);
+  const trunkLen = stemLength(88, trunkLean, false);
   const trunk = addStem({
     x: TRUNK_X,
     y: TRUNK_Y,
     angle: trunkLean,
     length: trunkLen,
     radius: 15,
-    depth: 0
+    depth: 0,
+    spur: false
   });
   const queue = [{
     x: trunk.x,
     y: trunk.y,
+    bx: TRUNK_X,
+    by: TRUNK_Y,
     angle: trunkLean,
     radius: trunk.radius,
     depth: 0,
-    turnSign: trunkLean >= 0 ? 1 : -1
+    side: sideBias,
+    isLeader: true
   }];
+
   while (queue.length) {
     const s = queue.shift();
     if (s.depth >= DEPTH) continue;
-    const wideFork = (s.depth + widePhase) % 2 === 0;
-    const spread = RANGE_DEG[s.depth] * Math.PI / 180;
-    const habitSpread = spread * (wideFork ? 0.85 + 0.45 * habit : 0.9 + 0.15 * (1 - habit));
+    if (n >= STEM_N - 4) continue;
+    // Weak tips on airy trees stop early so density actually varies.
+    if (!s.isLeader && s.depth >= 3 && rnd() > 0.35 + 0.6 * branchiness) continue;
+    const spread = RANGE_DEG[Math.min(s.depth, RANGE_DEG.length - 1)] * Math.PI / 180;
+    // Spreading habits open laterals more; tall habits keep a stronger vertical leader.
+    const latOpen = (0.55 + 0.7 * habit) * (0.75 + 0.35 * asymmetry);
+    const leaderKeep = 0.08 + 0.14 * (1 - habit);
     const kids = [];
-    if (s.depth === 0) {
-      const left = turnMag(habitSpread, false, true);
-      const right = turnMag(habitSpread, false, true);
-      kids.push({ sign: -1, mag: left, spur: false });
-      kids.push({ sign: 1, mag: right, spur: false });
-      if (rootReverse != null ? rootReverse : rnd() < 0.5) kids.reverse();
-    } else {
-      const flip = forceFlip != null ? forceFlip : rnd() >= 0.2;
-      const mainSign = flip ? -s.turnSign : s.turnSign;
-      kids.push({ sign: mainSign, mag: turnMag(habitSpread, !flip, wideFork), spur: !flip });
-      kids.push({ sign: s.turnSign, mag: turnMag(habitSpread, true, wideFork), spur: true });
-      if (rnd() < 0.5) kids.reverse();
+
+    // Near-straight leader — never an equal left/right Y split.
+    const leaderWobble = (rnd() * 2 - 1) * spread * leaderKeep;
+    kids.push({
+      ox: s.x,
+      oy: s.y,
+      angle: clampHeading(s.angle + leaderWobble),
+      spur: false,
+      isLeader: true,
+      lengthMul: s.isLeader ? 1 : 0.9,
+      radiusMul: 0.78,
+      side: s.side
+    });
+
+    // Dominant lateral on the biased side.
+    const domSign = s.side;
+    const domMag = spread * latOpen * (0.7 + 0.45 * rnd());
+    kids.push({
+      ox: s.x,
+      oy: s.y,
+      angle: clampHeading(s.angle + domSign * domMag),
+      spur: false,
+      isLeader: false,
+      lengthMul: 0.7 + 0.22 * rnd(),
+      radiusMul: 0.58,
+      side: domSign
+    });
+
+    // Opposite lateral — weaker when asymmetry is high (avoids mirrored Y).
+    const oppChance = 0.2 + 0.55 * branchiness - 0.28 * asymmetry;
+    if (rnd() < oppChance) {
+      const oppMag = spread * latOpen * (0.22 + 0.32 * (1 - asymmetry)) * (0.6 + 0.4 * rnd());
+      kids.push({
+        ox: s.x,
+        oy: s.y,
+        angle: clampHeading(s.angle - domSign * oppMag),
+        spur: true,
+        isLeader: false,
+        lengthMul: 0.48 + 0.28 * rnd(),
+        radiusMul: 0.48,
+        side: -domSign
+      });
     }
+
+    // Mid-segment shoot on early wood — fills the canopy, kills the Y silhouette.
+    const midChance = s.depth === 0
+      ? 0.9
+      : (s.depth <= 2 ? 0.35 + 0.45 * branchiness : (s.depth === 3 ? 0.15 + 0.25 * branchiness : 0));
+    if (midChance > 0 && rnd() < midChance) {
+      const along = 0.28 + rnd() * 0.45;
+      const mx = s.bx + (s.x - s.bx) * along;
+      const my = s.by + (s.y - s.by) * along;
+      const midSign = rnd() < 0.55 ? domSign : -domSign;
+      const midMag = spread * (0.45 + 0.55 * habit) * (0.55 + 0.4 * rnd());
+      kids.push({
+        ox: mx,
+        oy: my,
+        angle: clampHeading(s.angle + midSign * midMag),
+        spur: true,
+        isLeader: false,
+        lengthMul: 0.42 + 0.3 * rnd(),
+        radiusMul: 0.42,
+        side: midSign
+      });
+    }
+
+    // Extra tip lateral on lush trees only.
+    if (s.depth >= 1 && s.depth <= 4 && rnd() < 0.08 + 0.4 * branchiness) {
+      const extraSign = rnd() < 0.5 ? domSign : -domSign;
+      const extraMag = spread * (0.35 + 0.4 * rnd());
+      kids.push({
+        ox: s.x,
+        oy: s.y,
+        angle: clampHeading(s.angle + extraSign * extraMag * 0.85),
+        spur: true,
+        isLeader: false,
+        lengthMul: 0.38 + 0.25 * rnd(),
+        radiusMul: 0.4,
+        side: extraSign
+      });
+    }
+
     for (let k = 0; k < kids.length; k++) {
       const kid = kids[k];
-      const nextAngle = clampHeading(s.angle + kid.sign * kid.mag);
-      const length = stemLength(LENGTHS[s.depth], nextAngle, kid.spur);
+      const baseLen = LENGTHS[Math.min(s.depth, LENGTHS.length - 1)] * kid.lengthMul;
+      const length = stemLength(baseLen, kid.angle, kid.spur);
       const made = addStem({
-        x: s.x,
-        y: s.y,
-        angle: nextAngle,
+        x: kid.ox,
+        y: kid.oy,
+        angle: kid.angle,
         length: length,
-        radius: Math.max(0.45, s.radius * 0.72),
-        depth: s.depth + 1
+        radius: Math.max(0.4, s.radius * kid.radiusMul),
+        depth: s.depth + 1,
+        spur: kid.spur
       });
+      if (!made) continue;
       queue.push({
         x: made.x,
         y: made.y,
-        angle: nextAngle,
+        bx: kid.ox,
+        by: kid.oy,
+        angle: kid.angle,
         radius: made.radius,
         depth: s.depth + 1,
-        turnSign: kid.sign
+        side: kid.side,
+        isLeader: kid.isLeader
       });
     }
   }
@@ -233,11 +313,12 @@ function growHillTree(canvas, opts) {
   const tipIds = [];
   for (let i = 0; i < n; i++) {
     if (sdep[i] === DEPTH) tipIds.push(i);
-    if (sdep[i] < 2) continue;
+    if (sdep[i] < 1) continue;
     const ang = sang[i];
     const per = sdep[i] >= 5 ? 5 : 4;
     const base = Math.max(11, 20 - sdep[i] * 1.1);
     for (let k = 0; k < per; k++) {
+      if (leaves >= LEAF_N) break;
       const back = k * 1.3;
       lx[leaves] = sx1[i] - Math.sin(ang) * back;
       ly[leaves] = sy1[i] + Math.cos(ang) * back;
@@ -254,6 +335,7 @@ function growHillTree(canvas, opts) {
       }
       leaves += 1;
     }
+    if (leaves >= LEAF_N) break;
     if (sdep[i] === DEPTH) tipOrdinal += 1;
   }
 
@@ -306,9 +388,9 @@ function growHillTree(canvas, opts) {
     habit: habit,
     seed: seedBits[0],
     leanSign: leanSign != null ? leanSign : (trunkLean >= 0 ? 1 : -1),
-    rootReverse: rootReverse,
-    forceFlip: forceFlip,
-    widePhase: widePhase,
+    branchiness: branchiness,
+    asymmetry: asymmetry,
+    sideBias: sideBias,
     motion: reduce ? "reduced" : "growing",
     alive: !reduce,
     u: reduce ? 1 : 0
@@ -653,7 +735,7 @@ function growHillTree(canvas, opts) {
   }
   raf = requestAnimationFrame(frame);
 }
-/** Deterministic catalog covering habit, lean, wide-phase, flip, and root order. */
+/** Deterministic catalog: habit × lean × branchiness × asymmetry × side bias. */
 function forestAlternationCatalog() {
   const habits = [
     { habit: 0, habitLabel: "tall" },
@@ -666,43 +748,42 @@ function forestAlternationCatalog() {
     { leanSign: -1, leanLabel: "lean-left" },
     { leanSign: 1, leanLabel: "lean-right" }
   ];
-  const phases = [
-    { widePhase: 0, phaseLabel: "wide-on-even" },
-    { widePhase: 1, phaseLabel: "wide-on-odd" }
+  const densities = [
+    { branchiness: 0.25, densityLabel: "airy" },
+    { branchiness: 0.85, densityLabel: "lush" }
   ];
-  const flips = [
-    { forceFlip: true, flipLabel: "cross-fork" },
-    { forceFlip: false, flipLabel: "continue-fork" }
+  const shapes = [
+    { asymmetry: 0.25, shapeLabel: "even-sided" },
+    { asymmetry: 0.85, shapeLabel: "lopsided" }
   ];
   const out = [];
   let i = 0;
   for (const h of habits) {
     for (const l of leans) {
-      for (const p of phases) {
-        for (const f of flips) {
+      for (const d of densities) {
+        for (const s of shapes) {
           i += 1;
-          const rootReverse = i % 2 === 0;
+          const sideBias = i % 2 === 0 ? l.leanSign : -l.leanSign;
           out.push({
             id: i,
             habit: h.habit,
             habitLabel: h.habitLabel,
             leanSign: l.leanSign,
             leanLabel: l.leanLabel,
-            widePhase: p.widePhase,
-            phaseLabel: p.phaseLabel,
-            forceFlip: f.forceFlip,
-            flipLabel: f.flipLabel,
-            rootReverse: rootReverse,
-            rootLabel: rootReverse ? "right-first" : "left-first",
-            // Stable seed per cell so regen keeps the same micro-noise.
+            branchiness: d.branchiness,
+            densityLabel: d.densityLabel,
+            asymmetry: s.asymmetry,
+            shapeLabel: s.shapeLabel,
+            sideBias: sideBias,
+            sideLabel: sideBias < 0 ? "bias-left" : "bias-right",
             seed: (i * 2654435761) >>> 0,
             icons: false,
             label: [
               h.habitLabel,
               l.leanLabel,
-              p.phaseLabel,
-              f.flipLabel,
-              rootReverse ? "right-first" : "left-first"
+              d.densityLabel,
+              s.shapeLabel,
+              sideBias < 0 ? "bias-left" : "bias-right"
             ].join(" · ")
           });
         }

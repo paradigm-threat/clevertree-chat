@@ -41,7 +41,7 @@
     <main id="main" class="trees-page">
       <p class="kicker">Forest</p>
       <h1>Every habit, every fork.</h1>
-      <p class="lead trees-lead">Forty trees against the hillside wings — tall to wide, lean left or right, wide forks on even or odd depths, cross vs continue branching, left-first or right-first root order.</p>
+      <p class="lead trees-lead">Forty trees against the hillside wings — tall to wide, lean left or right, airy vs lush, even-sided vs lopsided, with a side bias. Leader-and-lateral growth, not Y-forks.</p>
       <p class="trees-actions">
         <button type="button" class="button" id="regrow">Regrow forest</button>
         <span class="hint" id="forest-count"></span>
@@ -68,9 +68,9 @@
         figure.setAttribute("role", "listitem");
         figure.dataset.habit = entry.habitLabel;
         figure.dataset.lean = entry.leanLabel;
-        figure.dataset.phase = entry.phaseLabel;
-        figure.dataset.flip = entry.flipLabel;
-        figure.dataset.root = entry.rootLabel;
+        figure.dataset.density = entry.densityLabel;
+        figure.dataset.shape = entry.shapeLabel;
+        figure.dataset.side = entry.sideLabel;
 
         const canvas = document.createElement("canvas");
         canvas.width = 520;
@@ -84,9 +84,9 @@
         cap.innerHTML =
           "<strong>" + entry.habitLabel + "</strong>" +
           "<span>" + entry.leanLabel + "</span>" +
-          "<span>" + entry.phaseLabel + "</span>" +
-          "<span>" + entry.flipLabel + "</span>" +
-          "<span>" + entry.rootLabel + "</span>";
+          "<span>" + entry.densityLabel + "</span>" +
+          "<span>" + entry.shapeLabel + "</span>" +
+          "<span>" + entry.sideLabel + "</span>";
 
         figure.appendChild(canvas);
         figure.appendChild(cap);
@@ -96,9 +96,9 @@
           reduce: reduce,
           habit: entry.habit,
           leanSign: entry.leanSign,
-          widePhase: entry.widePhase,
-          forceFlip: entry.forceFlip,
-          rootReverse: entry.rootReverse,
+          branchiness: entry.branchiness,
+          asymmetry: entry.asymmetry,
+          sideBias: entry.sideBias,
           seed: entry.seed,
           icons: false,
           duration: reduce ? 1 : 12000,
