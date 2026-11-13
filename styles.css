@@ -413,11 +413,11 @@ footer {
   .pair-row { grid-template-columns: 1fr; }
 }
 
-/* /trees — forest against repeating (sharp) hillside wings */
+/* /trees — horizon forest against horizontally tiled (sharp) wings */
 .trees-body {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(180deg, #4dc4ec 0%, #6ad1ef 18%, #e7f6ea 55%, var(--cream) 100%);
+  background: linear-gradient(180deg, #4dc4ec 0%, #6ad1ef 22%, #c8ebc0 58%, var(--cream) 100%);
 }
 
 .trees-wings {
@@ -426,10 +426,10 @@ footer {
   z-index: 0;
   pointer-events: none;
   background-image: url("/images/hero-wings.jpg");
-  background-position: center bottom;
-  background-size: 720px auto;
-  background-repeat: repeat;
-  opacity: 0.92;
+  background-position: left bottom;
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  opacity: 0.94;
 }
 
 .trees-wrap {
@@ -438,11 +438,11 @@ footer {
 }
 
 .trees-page {
-  padding: 1.4rem 0 3.5rem;
+  padding: 1.2rem 0 2.5rem;
 }
 
 .trees-lead {
-  max-width: 42rem;
+  max-width: 40rem;
   color: var(--ink);
   text-shadow: 0 1px 0 rgba(244, 248, 239, 0.55);
 }
@@ -452,60 +452,30 @@ footer {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.9rem 1.2rem;
-  margin: 1.4rem 0 1.8rem;
+  margin: 1.2rem 0 1.4rem;
 }
 
-.forest {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
-  gap: 1.1rem 0.7rem;
-  align-items: end;
+.forest-horizon {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  height: clamp(22rem, 68vh, 42rem);
+  overflow: visible;
 }
 
 .forest-tree {
+  position: absolute;
+  bottom: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
+  transform: translateX(-50%);
+  pointer-events: auto;
 }
 
 .forest-canvas {
-  width: 100%;
-  max-width: 14rem;
-  height: auto;
-  aspect-ratio: 520 / 400;
   display: block;
+  width: auto;
+  height: 100%;
+  aspect-ratio: 520 / 400;
   cursor: pointer;
-  filter: drop-shadow(0 10px 14px rgba(14, 63, 36, 0.18));
-}
-
-.forest-tree figcaption {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.2rem 0.45rem;
-  max-width: 14rem;
-  margin: 0;
-  padding: 0.25rem 0.4rem;
-  border-radius: 0.35rem;
-  background: rgba(244, 248, 239, 0.78);
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.25;
-  text-align: center;
-}
-
-.forest-tree figcaption strong {
-  width: 100%;
-  color: var(--green);
-  font-family: var(--serif);
-  font-weight: 560;
-  font-size: 0.9rem;
-}
-
-@media (min-width: 900px) {
-  .forest {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
+  filter: drop-shadow(0 12px 16px rgba(14, 63, 36, 0.2));
 }

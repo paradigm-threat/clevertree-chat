@@ -14,8 +14,8 @@ function growHillTree(canvas, opts) {
   const STEM_N = 2200;
   const LEAF_N = 12000;
   // Leader + laterals (not equal ±Y forks). Angles in degrees by depth.
-  const RANGE_DEG = [28, 26, 30, 28, 32, 30, 28, 26];
-  const LENGTHS = [58, 48, 40, 32, 25, 18, 13, 9];
+  const RANGE_DEG = [34, 32, 36, 34, 38, 34, 32, 28];
+  const LENGTHS = [64, 56, 48, 40, 32, 24, 16, 11];
   const DURATION = options.duration > 0 ? options.duration : 30000;
   const START_DELAY = options.delay > 0 ? options.delay : 0;
   const TRUNK_X = VW * 0.5;
@@ -83,17 +83,19 @@ function growHillTree(canvas, opts) {
     : (leanSign != null ? leanSign : (rnd() < 0.5 ? -1 : 1));
   const showIcons = options.icons !== false;
   const clickable = options.clickable !== false;
-  const upScale = 0.92 + 0.48 * (1 - habit);
-  const sideScale = 0.9 + 0.55 * habit;
+  // Tall = long trunk + long limbs; bushy = shorter trunk, still wide reach.
+  // Do not starve side length when habit is low (that made “tall” look skinny).
+  const upScale = 1.02 + 0.55 * (1 - habit);
+  const sideScale = 1.08 + 0.22 * habit;
   function clampHeading(angle) {
-    const max = 1.05 + 0.75 * habit;
+    const max = 1.15 + 0.7 * habit;
     return angle < -max ? -max : angle > max ? max : angle;
   }
   function stemLength(base, angle, spur) {
     const side = Math.abs(Math.sin(angle));
     const habitScale = upScale * (1 - side) + sideScale * side;
-    const own = 0.92 + 0.24 * rnd();
-    const spurScale = spur ? 0.55 + 0.22 * rnd() : 1;
+    const own = 0.92 + 0.22 * rnd();
+    const spurScale = spur ? 0.62 + 0.22 * rnd() : 1;
     return base * habitScale * own * spurScale;
   }
 
@@ -124,7 +126,8 @@ function growHillTree(canvas, opts) {
   }
 
   const trunkLean = (leanSign != null ? leanSign * (2.2 + rnd() * 1.8) : (rnd() * 2 - 1) * 4) * Math.PI / 180;
-  const trunkLen = stemLength(88, trunkLean, false);
+  // Tall trunks stretch; bushy trunks stay shorter so the crown reads wide.
+  const trunkLen = stemLength(72 + 42 * (1 - habit), trunkLean, false);
   const trunk = addStem({
     x: TRUNK_X,
     y: TRUNK_Y,
@@ -153,9 +156,9 @@ function growHillTree(canvas, opts) {
     // Weak tips on airy trees stop early so density actually varies.
     if (!s.isLeader && s.depth >= 3 && rnd() > 0.35 + 0.6 * branchiness) continue;
     const spread = RANGE_DEG[Math.min(s.depth, RANGE_DEG.length - 1)] * Math.PI / 180;
-    // Spreading habits open laterals more; tall habits keep a stronger vertical leader.
-    const latOpen = (0.55 + 0.7 * habit) * (0.75 + 0.35 * asymmetry);
-    const leaderKeep = 0.08 + 0.14 * (1 - habit);
+    // Tall still opens laterals (long crown); bushy opens wider.
+    const latOpen = (0.82 + 0.48 * habit) * (0.8 + 0.3 * asymmetry);
+    const leaderKeep = 0.06 + 0.12 * (1 - habit);
     const kids = [];
 
     // Near-straight leader — never an equal left/right Y split.
@@ -166,65 +169,65 @@ function growHillTree(canvas, opts) {
       angle: clampHeading(s.angle + leaderWobble),
       spur: false,
       isLeader: true,
-      lengthMul: s.isLeader ? 1 : 0.9,
+      lengthMul: s.isLeader ? (1.02 + 0.12 * (1 - habit)) : 0.9,
       radiusMul: 0.78,
       side: s.side
     });
 
-    // Dominant lateral on the biased side.
+    // Dominant lateral — long reach on tall trees, not a stub.
     const domSign = s.side;
-    const domMag = spread * latOpen * (0.7 + 0.45 * rnd());
+    const domMag = spread * latOpen * (0.75 + 0.4 * rnd());
     kids.push({
       ox: s.x,
       oy: s.y,
       angle: clampHeading(s.angle + domSign * domMag),
       spur: false,
       isLeader: false,
-      lengthMul: 0.7 + 0.22 * rnd(),
+      lengthMul: 0.95 + 0.2 * rnd() + 0.12 * (1 - habit),
       radiusMul: 0.58,
       side: domSign
     });
 
     // Opposite lateral — weaker when asymmetry is high (avoids mirrored Y).
-    const oppChance = 0.2 + 0.55 * branchiness - 0.28 * asymmetry;
+    const oppChance = 0.18 + 0.5 * branchiness - 0.28 * asymmetry;
     if (rnd() < oppChance) {
-      const oppMag = spread * latOpen * (0.22 + 0.32 * (1 - asymmetry)) * (0.6 + 0.4 * rnd());
+      const oppMag = spread * latOpen * (0.28 + 0.35 * (1 - asymmetry)) * (0.6 + 0.4 * rnd());
       kids.push({
         ox: s.x,
         oy: s.y,
         angle: clampHeading(s.angle - domSign * oppMag),
         spur: true,
         isLeader: false,
-        lengthMul: 0.48 + 0.28 * rnd(),
+        lengthMul: 0.62 + 0.28 * rnd(),
         radiusMul: 0.48,
         side: -domSign
       });
     }
 
-    // Mid-segment shoot on early wood — fills the canopy, kills the Y silhouette.
+    // Mid-segment shoot — bushy trees get more; tall trees still get trunk laterals.
     const midChance = s.depth === 0
-      ? 0.9
-      : (s.depth <= 2 ? 0.35 + 0.45 * branchiness : (s.depth === 3 ? 0.15 + 0.25 * branchiness : 0));
+      ? 0.75 + 0.2 * habit
+      : (s.depth <= 2 ? 0.28 + 0.4 * branchiness + 0.15 * habit : (s.depth === 3 ? 0.12 + 0.22 * branchiness : 0));
     if (midChance > 0 && rnd() < midChance) {
       const along = 0.28 + rnd() * 0.45;
       const mx = s.bx + (s.x - s.bx) * along;
       const my = s.by + (s.y - s.by) * along;
       const midSign = rnd() < 0.55 ? domSign : -domSign;
-      const midMag = spread * (0.45 + 0.55 * habit) * (0.55 + 0.4 * rnd());
+      const midMag = spread * (0.55 + 0.45 * habit) * (0.55 + 0.4 * rnd());
       kids.push({
         ox: mx,
         oy: my,
         angle: clampHeading(s.angle + midSign * midMag),
         spur: true,
         isLeader: false,
-        lengthMul: 0.42 + 0.3 * rnd(),
+        lengthMul: 0.55 + 0.28 * rnd(),
         radiusMul: 0.42,
         side: midSign
       });
     }
 
-    // Extra tip lateral on lush trees only.
-    if (s.depth >= 1 && s.depth <= 4 && rnd() < 0.08 + 0.4 * branchiness) {
+    // Extra tip lateral on lush trees only (kept sparse to limit overlap).
+    if (s.depth >= 1 && s.depth <= 4 && rnd() < 0.06 + 0.32 * branchiness) {
       const extraSign = rnd() < 0.5 ? domSign : -domSign;
       const extraMag = spread * (0.35 + 0.4 * rnd());
       kids.push({
@@ -233,7 +236,7 @@ function growHillTree(canvas, opts) {
         angle: clampHeading(s.angle + extraSign * extraMag * 0.85),
         spur: true,
         isLeader: false,
-        lengthMul: 0.38 + 0.25 * rnd(),
+        lengthMul: 0.42 + 0.22 * rnd(),
         radiusMul: 0.4,
         side: extraSign
       });
@@ -311,23 +314,36 @@ function growHillTree(canvas, opts) {
   let falling = 0;
   let tipOrdinal = 0;
   const tipIds = [];
+  const leafMinDist = 9;
+  function leafTooClose(x, y) {
+    for (let j = 0; j < leaves; j++) {
+      const dx = lx[j] - x;
+      const dy = ly[j] - y;
+      if (dx * dx + dy * dy < leafMinDist * leafMinDist) return true;
+    }
+    return false;
+  }
   for (let i = 0; i < n; i++) {
     if (sdep[i] === DEPTH) tipIds.push(i);
-    if (sdep[i] < 1) continue;
+    // Outer wood only — cuts inner pile-up on the trunk.
+    if (sdep[i] < 2) continue;
     const ang = sang[i];
-    const per = sdep[i] >= 5 ? 5 : 4;
-    const base = Math.max(11, 20 - sdep[i] * 1.1);
+    const per = sdep[i] >= 5 ? 3 : 2;
+    const base = Math.max(10, 17 - sdep[i] * 1.0);
     for (let k = 0; k < per; k++) {
       if (leaves >= LEAF_N) break;
-      const back = k * 1.3;
-      lx[leaves] = sx1[i] - Math.sin(ang) * back;
-      ly[leaves] = sy1[i] + Math.cos(ang) * back;
-      lrot[leaves] = ang + (k - (per - 1) / 2) * 0.48;
-      llen[leaves] = base + (k % 3) * 1.8;
+      const back = k * 2.2;
+      const px = sx1[i] - Math.sin(ang) * back;
+      const py = sy1[i] + Math.cos(ang) * back;
+      if (leafTooClose(px, py)) continue;
+      lx[leaves] = px;
+      ly[leaves] = py;
+      lrot[leaves] = ang + (k - (per - 1) / 2) * 0.55;
+      llen[leaves] = base + (k % 3) * 1.6;
       lshow[leaves] = Math.max(0, Math.min(sEnd[i] - 0.02, 1 - 0.035));
       lcol[leaves] = (sdep[i] + k) % LEAF.length;
       ldep[leaves] = sdep[i];
-      if (sdep[i] === DEPTH && k === 0 && tipOrdinal % 6 === 0) {
+      if (sdep[i] === DEPTH && k === 0 && tipOrdinal % 8 === 0) {
         lfall[leaves] = 1;
         falling += 1;
       } else {

@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Trees — Clevertree Chat</title>
-  <meta name="description" content="A forest of Clevertree habits: tall to wide, lean left or right, and every fork alternation against the hillside wings.">
+  <meta name="description" content="A horizon forest of Clevertrees: tall with long limbs, short and bushy, overlapping in depth against the hillside wings.">
   <meta name="theme-color" content="#6ad1ef">
   <link rel="canonical" href="https://clevertree.chat/trees">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Clevertree Chat">
   <meta property="og:title" content="Trees — Clevertree Chat">
-  <meta property="og:description" content="A forest of Clevertree habits: tall to wide, lean left or right, and every fork alternation against the hillside wings.">
+  <meta property="og:description" content="A horizon forest of Clevertrees: tall with long limbs, short and bushy, overlapping in depth against the hillside wings.">
   <meta property="og:url" content="https://clevertree.chat/trees">
   <meta property="og:image" content="https://clevertree.chat/images/hero-wings.jpg">
   <meta name="twitter:card" content="summary_large_image">
@@ -40,76 +40,32 @@
     </header>
     <main id="main" class="trees-page">
       <p class="kicker">Forest</p>
-      <h1>Every habit, every fork.</h1>
-      <p class="lead trees-lead">Forty trees against the hillside wings — tall to wide, lean left or right, airy vs lush, even-sided vs lopsided, with a side bias. Leader-and-lateral growth, not Y-forks.</p>
+      <h1>One horizon.</h1>
+      <p class="lead trees-lead">Trees grow together along the hillside — smaller ones farther back, taller crowns in front. Tall habits reach with long limbs; wide habits stay short and bushy. Each tree is its own canvas with size, speed, and complexity set in code.</p>
       <p class="trees-actions">
         <button type="button" class="button" id="regrow">Regrow forest</button>
         <span class="hint" id="forest-count"></span>
       </p>
-      <div class="forest" id="forest" role="list"></div>
+      <div class="forest-horizon" id="forest" role="list" aria-label="Horizon forest"></div>
     </main>
     <footer>
       <p>Clevertree Chat, called Cleverchat for short. The name can change. The debates stay.</p>
     </footer>
   </div>
   <script src="/js/grow-hill-tree.js"></script>
+  <script src="/js/forest-horizon.js"></script>
   <script>
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const forest = document.getElementById("forest");
     const countEl = document.getElementById("forest-count");
-    const catalog = forestAlternationCatalog();
-    countEl.textContent = catalog.length + " alternations";
+    countEl.textContent = FOREST_HORIZON.length + " trees";
 
-    function plantForest() {
-      forest.innerHTML = "";
-      catalog.forEach((entry, index) => {
-        const figure = document.createElement("figure");
-        figure.className = "forest-tree";
-        figure.setAttribute("role", "listitem");
-        figure.dataset.habit = entry.habitLabel;
-        figure.dataset.lean = entry.leanLabel;
-        figure.dataset.density = entry.densityLabel;
-        figure.dataset.shape = entry.shapeLabel;
-        figure.dataset.side = entry.sideLabel;
-
-        const canvas = document.createElement("canvas");
-        canvas.width = 520;
-        canvas.height = 400;
-        canvas.className = "forest-canvas";
-        canvas.setAttribute("role", "img");
-        canvas.setAttribute("aria-label", entry.label);
-        canvas.tabIndex = 0;
-
-        const cap = document.createElement("figcaption");
-        cap.innerHTML =
-          "<strong>" + entry.habitLabel + "</strong>" +
-          "<span>" + entry.leanLabel + "</span>" +
-          "<span>" + entry.densityLabel + "</span>" +
-          "<span>" + entry.shapeLabel + "</span>" +
-          "<span>" + entry.sideLabel + "</span>";
-
-        figure.appendChild(canvas);
-        figure.appendChild(cap);
-        forest.appendChild(figure);
-
-        growHillTree(canvas, {
-          reduce: reduce,
-          habit: entry.habit,
-          leanSign: entry.leanSign,
-          branchiness: entry.branchiness,
-          asymmetry: entry.asymmetry,
-          sideBias: entry.sideBias,
-          seed: entry.seed,
-          icons: false,
-          duration: reduce ? 1 : 12000,
-          delay: reduce ? 0 : index * 220,
-          clickable: true
-        });
-      });
+    function plant() {
+      plantForestHorizon(forest, { reduce: reduce, grow: growHillTree });
     }
 
-    document.getElementById("regrow").addEventListener("click", plantForest);
-    plantForest();
+    document.getElementById("regrow").addEventListener("click", plant);
+    plant();
   </script>
 </body>
 </html>
