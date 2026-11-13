@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UI lab — Clevertree Chat</title>
+  <meta name="description" content="Mockup debate board with demo-mode pause, plus alternate Shelf / Reading / Canvas interfaces.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b6b45">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,420;0,9..40,650;0,9..40,700;1,9..40,420&family=Fraunces:opsz,wght@9..144,500;9..144,620&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/try/ui/lab.css">
+</head>
+<body class="ui-lab">
+  <a class="skip" href="#ui-mount" style="position:absolute;left:-999px">Skip to panel</a>
+  <div class="ui-lab-wrap">
+    <div class="ui-lab-top">
+      <a class="wordmark" href="/">
+        <img src="/icon-128x128.png" alt="" width="28" height="28">
+        Clevertree Chat
+      </a>
+      <nav aria-label="Lab">
+        <a href="/try">See demo</a>
+        <a href="/try/ui/mockups/clevertree-desktop-mockup.png">Desktop mockup</a>
+        <a href="/try/ui/mockups/clevertree-mobile-mockup.png">Mobile mockup</a>
+        <a href="/try/ui/design-brief.md">Brief</a>
+      </nav>
+    </div>
+
+    <div class="ui-lab-intro">
+      <h1>UI lab — mockup board + alternates</h1>
+      <p>
+        Primary <strong>Debate board</strong> follows the redesign package mockups.
+        Demo mode (on for first-time visitors) pauses after each update from your submit through simulated server replies.
+        Disable anytime in the demo card or About tab. Other interfaces stay available for comparison.
+      </p>
+    </div>
+
+    <nav class="ui-switcher" id="ui-switcher" aria-label="Interface"></nav>
+    <p id="demo-mode-label"></p>
+    <p id="width-mode"></p>
+
+    <div class="ct-panel" id="ui-mount" data-ct-panel></div>
+
+    <p class="ui-lab-foot">
+      Package: <a href="/try/ui/mockups/">try/ui/mockups/</a>
+      · Proposal: <a href="/try/ui/mockups/clevertree-chat-ui-redesign.md">clevertree-chat-ui-redesign.md</a>
+      · Combined notes: <code>docs/ui-redesign.md</code>
+      · Query: <code>?ui=board</code> (default), <code>shelf</code>, <code>reading</code>, <code>canvas</code>, <code>hybrid</code>
+    </p>
+  </div>
+
+  <script src="/try/ui/js/board-data.js"></script>
+  <script src="/try/ui/js/lab-core.js"></script>
+  <script src="/try/ui/js/board.js"></script>
+  <script src="/try/ui/js/shelf.js"></script>
+  <script src="/try/ui/js/reading.js"></script>
+  <script src="/try/ui/js/canvas.js"></script>
+  <script src="/try/ui/js/hybrid.js"></script>
+  <script src="/try/ui/js/app.js"></script>
+</body>
+</html>

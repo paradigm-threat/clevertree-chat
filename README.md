@@ -43,3 +43,5 @@ Those batch decisions, and the confidence posted with each one, are inventoried 
 ---
 
 The product page files are `index.html`, `try/index.html`, and `styles.css`. A photograph at `images/hero.jpg` replaces the drawn tree.
+
+**UI redesign lab:** Mockup package in [`try/ui/mockups/`](try/ui/mockups/). Combined brief: [`docs/ui-redesign.md`](docs/ui-redesign.md). Try the board at [`/try/ui/`](try/ui/) (`?ui=board` default, plus `shelf` / `reading` / `canvas` / `hybrid`). Demo mode pauses after each submit→update for first-time users; can be disabled.

@@ -62,6 +62,7 @@
       </a>
       <nav class="nav-links" aria-label="Primary">
         <a class="nav-try" href="/trees">Trees</a>
+        <a class="nav-try" href="/try/ui">UI lab</a>
         <a class="nav-try" href="/try">See demo</a>
       </nav>
     </header>
@@ -75,7 +76,11 @@
         </picture>
         <canvas class="grow-tree" width="520" height="400" role="img" aria-label="A tree fills out on the hillside. Click to grow another." tabindex="0"></canvas>
         <p class="tree-animate-wrap">
-          <button type="button" class="button tree-animate-btn" id="tree-animate" hidden>Resume</button>
+          <button type="button" class="tree-animate-btn" id="tree-animate" hidden aria-label="Resume animation" title="Resume animation">
+            <svg class="tree-animate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
         </p>
         </div>
       </section>
@@ -124,11 +129,16 @@
     const animateBtn = document.getElementById("tree-animate");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const alwaysOn = treeAlwaysAnimatePreferred();
+    function setPlayVisible(show) {
+      if (!animateBtn) return;
+      // Play control only after timed pause — never during grow/sway.
+      animateBtn.hidden = !show || treeAlwaysAnimatePreferred() || reduce;
+    }
     if (animateBtn) {
-      animateBtn.hidden = true;
+      setPlayVisible(false);
       animateBtn.addEventListener("click", function () {
         setTreeAlwaysAnimatePreferred(true);
-        animateBtn.hidden = true;
+        setPlayVisible(false);
         if (tree && typeof tree._growResumeSway === "function") {
           tree._growResumeSway({ always: true });
         }
@@ -140,11 +150,10 @@
         wind: "gentle",
         alwaysAnimate: alwaysOn,
         duration: 20000,
-        // Front page: 30s of motion, then stop; Resume continues forever.
+        // Front page: 30s of motion, then stop; play resumes forever.
         pauseAfterMs: alwaysOn ? 0 : 30000,
         onSwayPause: function (paused) {
-          if (!animateBtn || treeAlwaysAnimatePreferred()) return;
-          animateBtn.hidden = !paused;
+          setPlayVisible(!!paused);
         }
       });
     }

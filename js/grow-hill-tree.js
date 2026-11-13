@@ -672,6 +672,15 @@ function growHillTree(canvas, opts) {
 
     if (lfall[i]) {
       // Continuous fall cycles after grow; during grow use timeline u.
+      // When sway is paused, keep fallers on the ground so motion looks stopped.
+      if (state.motion === "paused" && u >= 1) {
+        const landX = Math.max(
+          VIEW_PAD,
+          Math.min(VW - VIEW_PAD, attach.x)
+        );
+        drawLeaf(landX, llandy[i], llandr[i], llen[i]);
+        return;
+      }
       let t;
       if (u < 1) {
         const begin = Math.max(0.84, lshow[i]);
@@ -686,7 +695,6 @@ function growHillTree(canvas, opts) {
         const wrapped = phase - Math.floor(phase);
         // 0..0.72 falling, 0.72..1 resting on ground then restart
         if (wrapped > 0.72) {
-          const rest = (wrapped - 0.72) / 0.28;
           const landX = Math.max(
             VIEW_PAD,
             Math.min(VW - VIEW_PAD, attach.x + windPushX(now, i * 0.41) * 0.85)
@@ -773,6 +781,7 @@ function growHillTree(canvas, opts) {
 
   function onClick(e) {
     e.preventDefault();
+    notifyPaused(false);
     stop();
     growHillTree(canvas, Object.assign({}, options, { delay: 0 }));
   }
@@ -780,6 +789,7 @@ function growHillTree(canvas, opts) {
   function onKey(e) {
     if (e.key !== "Enter" && e.key !== " ") return;
     e.preventDefault();
+    notifyPaused(false);
     stop();
     growHillTree(canvas, Object.assign({}, options, { delay: 0 }));
   }
@@ -790,9 +800,9 @@ function growHillTree(canvas, opts) {
   }
   canvas._growStop = stop;
 
-  function notifyPaused() {
+  function notifyPaused(paused) {
     if (typeof options.onSwayPause === "function") {
-      try { options.onSwayPause(true, state); } catch (e) {}
+      try { options.onSwayPause(!!paused, state); } catch (e) {}
     }
   }
 
@@ -803,13 +813,15 @@ function growHillTree(canvas, opts) {
   }
 
   function pauseMotion(t) {
+    // Only after the timed window — and only once motion is actually stopped.
     swayPaused = true;
     state.motion = "paused";
     state.alive = false;
     state.u = 1;
-    draw(1, t, windAmp > 0);
+    // Settled frame: no wind bend / fall cycles so the scene looks stopped.
+    draw(1, t, false);
     raf = 0;
-    notifyPaused();
+    notifyPaused(true);
   }
 
   function swayFrame(now) {
@@ -873,6 +885,7 @@ function growHillTree(canvas, opts) {
       pauseAfterDisabled = true;
     }
     swayPaused = false;
+    notifyPaused(false);
     startSway();
   };
 
@@ -880,8 +893,12 @@ function growHillTree(canvas, opts) {
     copyRestPose();
     if (layout()) draw(1, getWindTime(), false);
     state.motion = "reduced";
+    notifyPaused(false);
     return;
   }
+
+  // Hidden until pauseAfterMs elapses and motion stops.
+  notifyPaused(false);
 
   let t0 = 0;
   function frame(now) {
