@@ -396,28 +396,36 @@ function growHillTree(canvas, reduce) {
     faller += 1;
   }
 
-  const tips = tipIds.map((id) => ({ id: id, x: sx1[id], y: sy1[id] }));
-  tips.sort((a, b) => a.x - b.x);
+  // Sit icons on mid-depth forks (branch area), not tip foliage.
+  const branchSites = [];
+  for (let i = 0; i < n; i++) {
+    if (sdep[i] < 3 || sdep[i] > 5) continue;
+    const t = 0.58;
+    branchSites.push({
+      id: i,
+      x: sx0[i] + (sx1[i] - sx0[i]) * t,
+      y: sy0[i] + (sy1[i] - sy0[i]) * t
+    });
+  }
+  branchSites.sort((a, b) => a.x - b.x);
+  const iconBandY = TRUNK_Y - VH * 0.4;
   for (let b = 0; b < 6; b++) {
-    const lo = Math.floor(tips.length * b / 6);
-    const hi = Math.max(lo + 1, Math.floor(tips.length * (b + 1) / 6));
+    const lo = Math.floor(branchSites.length * b / 6);
+    const hi = Math.max(lo + 1, Math.floor(branchSites.length * (b + 1) / 6));
     let best = lo;
     let bestScore = Infinity;
     for (let t = lo; t < hi; t++) {
-      const center = (t - lo) / (hi - lo);
-      const score = tips[t].y + Math.abs(center - 0.5) * 10;
+      const site = branchSites[t];
+      const score = Math.abs(site.y - iconBandY) + Math.abs((t - lo) / (hi - lo) - 0.5) * 8;
       if (score < bestScore) {
         bestScore = score;
         best = t;
       }
     }
-    const tip = tips[best];
-    const ang = sang[tip.id];
-    const px = sx1[tip.id] + Math.sin(ang) * 2.4;
-    const py = sy1[tip.id] - Math.cos(ang) * 2.4;
-    ix[b] = Math.max(VIEW_PAD, Math.min(VW - VIEW_PAD, px));
-    iy[b] = Math.max(VIEW_PAD, Math.min(VH - VIEW_PAD, py));
-    ishow[b] = Math.max(0, sEnd[tip.id] - 0.03);
+    const site = branchSites[best] || { id: 0, x: TRUNK_X, y: iconBandY };
+    ix[b] = Math.max(VIEW_PAD, Math.min(VW - VIEW_PAD, site.x));
+    iy[b] = Math.max(VIEW_PAD, Math.min(VH - VIEW_PAD, site.y));
+    ishow[b] = Math.max(0, sEnd[site.id] - 0.03);
   }
 
   const state = {
@@ -692,7 +700,8 @@ function growHillTree(canvas, reduce) {
       if (p <= 0) continue;
       ctx.save();
       ctx.translate(ix[b], iy[b]);
-      ctx.scale(p, p);
+      const s = p * 1.75;
+      ctx.scale(s, s);
       icons[b]();
       ctx.restore();
     }

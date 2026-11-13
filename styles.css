@@ -80,7 +80,7 @@ header {
   width: 100vw;
   margin: 0.6rem 0 0 calc(50% - 50vw);
   line-height: 0;
-  overflow: visible;
+  overflow: hidden;
   background: linear-gradient(#4dc4ec 0%, #6ad1ef 12%, #6ad1ef 100%);
 }
 
@@ -112,7 +112,7 @@ header {
   width: 1024px;
   max-width: 100%;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .banner-photo {
@@ -125,8 +125,8 @@ header {
 .grow-tree {
   position: absolute;
   right: 8%;
-  bottom: -2%;
-  height: 112%;
+  bottom: 0;
+  height: 100%;
   width: auto;
   aspect-ratio: 520 / 400;
   z-index: 2;
@@ -277,8 +277,8 @@ footer {
   .grow-tree {
     right: auto;
     left: 50%;
-    bottom: 14%;
-    height: 52%;
+    bottom: 0;
+    height: 58%;
     transform: translateX(-50%);
   }
 }
