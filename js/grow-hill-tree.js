@@ -30,8 +30,12 @@ function growHillTree(canvas, opts) {
   const sw1 = new Float32Array(STEM_N);
   const sang = new Float32Array(STEM_N);
   const sdep = new Uint8Array(STEM_N);
+  const sParent = new Int16Array(STEM_N);
+  const sAlong = new Float32Array(STEM_N);
   const sStart = new Float32Array(STEM_N);
   const sEnd = new Float32Array(STEM_N);
+  const sWidthStart = new Float32Array(STEM_N);
+  const sWidthEnd = new Float32Array(STEM_N);
 
   const lx = new Float32Array(LEAF_N);
   const ly = new Float32Array(LEAF_N);
@@ -94,7 +98,6 @@ function growHillTree(canvas, opts) {
     return base * habitScale * own * spurScale;
   }
 
-  const depthIndex = new Uint16Array(DEPTH + 1);
   let n = 0;
   function addStem(s) {
     if (n >= STEM_N) return null;
@@ -103,21 +106,24 @@ function growHillTree(canvas, opts) {
     const tipRatio = s.depth === 0 ? 0.62 : (s.spur ? 0.55 : 0.72);
     let r1 = s.radius * tipRatio;
     if (r1 < 0.35) r1 = 0.35;
-    const di = depthIndex[s.depth]++;
-    const start = s.depth === 0 ? 0 : Math.min(0.82, 0.06 + s.depth * 0.085 + (di % 7) * 0.012);
-    const end = Math.min(1, start + 0.14 + (s.spur ? 0.02 : 0.04));
-    sx0[n] = s.x;
-    sy0[n] = s.y;
-    sx1[n] = x1;
-    sy1[n] = y1;
-    sw0[n] = s.radius;
-    sw1[n] = r1;
-    sang[n] = s.angle;
-    sdep[n] = s.depth;
-    sStart[n] = start;
-    sEnd[n] = end;
+    const idx = n;
+    sx0[idx] = s.x;
+    sy0[idx] = s.y;
+    sx1[idx] = x1;
+    sy1[idx] = y1;
+    sw0[idx] = s.radius;
+    sw1[idx] = r1;
+    sang[idx] = s.angle;
+    sdep[idx] = s.depth;
+    sParent[idx] = s.parent != null ? s.parent : -1;
+    sAlong[idx] = s.along != null ? s.along : 1;
+    // Timing filled after the stem graph exists.
+    sStart[idx] = 0;
+    sEnd[idx] = 0;
+    sWidthStart[idx] = 0;
+    sWidthEnd[idx] = 0;
     n += 1;
-    return { x: x1, y: y1, radius: r1, bx: s.x, by: s.y };
+    return { x: x1, y: y1, radius: r1, bx: s.x, by: s.y, index: idx };
   }
 
   const trunkLean = (leanSign != null ? leanSign * (2.2 + rnd() * 1.8) : (rnd() * 2 - 1) * 4) * Math.PI / 180;
@@ -130,7 +136,9 @@ function growHillTree(canvas, opts) {
     length: trunkLen,
     radius: 15,
     depth: 0,
-    spur: false
+    spur: false,
+    parent: -1,
+    along: 1
   });
   const queue = [{
     x: trunk.x,
@@ -141,7 +149,8 @@ function growHillTree(canvas, opts) {
     radius: trunk.radius,
     depth: 0,
     side: sideBias,
-    isLeader: true
+    isLeader: true,
+    stemIndex: trunk.index
   }];
 
   while (queue.length) {
@@ -161,6 +170,7 @@ function growHillTree(canvas, opts) {
     kids.push({
       ox: s.x,
       oy: s.y,
+      along: 1,
       angle: clampHeading(s.angle + leaderWobble),
       spur: false,
       isLeader: true,
@@ -175,6 +185,7 @@ function growHillTree(canvas, opts) {
     kids.push({
       ox: s.x,
       oy: s.y,
+      along: 1,
       angle: clampHeading(s.angle + domSign * domMag),
       spur: false,
       isLeader: false,
@@ -190,6 +201,7 @@ function growHillTree(canvas, opts) {
       kids.push({
         ox: s.x,
         oy: s.y,
+        along: 1,
         angle: clampHeading(s.angle - domSign * oppMag),
         spur: true,
         isLeader: false,
@@ -212,6 +224,7 @@ function growHillTree(canvas, opts) {
       kids.push({
         ox: mx,
         oy: my,
+        along: along,
         angle: clampHeading(s.angle + midSign * midMag),
         spur: true,
         isLeader: false,
@@ -228,6 +241,7 @@ function growHillTree(canvas, opts) {
       kids.push({
         ox: s.x,
         oy: s.y,
+        along: 1,
         angle: clampHeading(s.angle + extraSign * extraMag * 0.85),
         spur: true,
         isLeader: false,
@@ -248,7 +262,9 @@ function growHillTree(canvas, opts) {
         length: length,
         radius: Math.max(0.4, s.radius * kid.radiusMul),
         depth: s.depth + 1,
-        spur: kid.spur
+        spur: kid.spur,
+        parent: s.stemIndex,
+        along: kid.along
       });
       if (!made) continue;
       queue.push({
@@ -260,7 +276,8 @@ function growHillTree(canvas, opts) {
         radius: made.radius,
         depth: s.depth + 1,
         side: kid.side,
-        isLeader: kid.isLeader
+        isLeader: kid.isLeader,
+        stemIndex: made.index
       });
     }
   }
@@ -304,6 +321,42 @@ function growHillTree(canvas, opts) {
     }
   })();
 
+  // Length-then-children: kids wait until parent length passes their attach + delay.
+  // Width thickens after length so the parent paints over the fork.
+  (function retargetStemTiming() {
+    for (let i = 0; i < n; i++) {
+      const lenDur = (sdep[i] === 0 ? 0.14 : 0.1) + (0.02 * rnd());
+      let lenStart;
+      if (sParent[i] < 0) {
+        lenStart = 0;
+      } else {
+        const p = sParent[i];
+        const delay = 0.012 + rnd() * 0.04;
+        const along = Math.max(0.05, Math.min(1, sAlong[i]));
+        lenStart = sStart[p] + along * (sEnd[p] - sStart[p]) + delay;
+      }
+      const lenEnd = lenStart + lenDur;
+      sStart[i] = lenStart;
+      sEnd[i] = lenEnd;
+      const wDur = 0.045 + rnd() * 0.035;
+      sWidthStart[i] = lenEnd;
+      sWidthEnd[i] = lenEnd + wDur;
+    }
+    let maxT = 0;
+    for (let i = 0; i < n; i++) {
+      if (sWidthEnd[i] > maxT) maxT = sWidthEnd[i];
+    }
+    if (maxT > 1) {
+      const scale = 1 / maxT;
+      for (let i = 0; i < n; i++) {
+        sStart[i] *= scale;
+        sEnd[i] *= scale;
+        sWidthStart[i] *= scale;
+        sWidthEnd[i] *= scale;
+      }
+    }
+  })();
+
   // Leaves after optional fit so tip coords match the drawn stems.
   let leaves = 0;
   let falling = 0;
@@ -335,7 +388,8 @@ function growHillTree(canvas, opts) {
       ly[leaves] = py;
       lrot[leaves] = ang + (k - (per - 1) / 2) * 0.55;
       llen[leaves] = base + (k % 3) * 1.6;
-      lshow[leaves] = Math.max(0, Math.min(sEnd[i] - 0.02, 1 - 0.035));
+      // Bloom just after this stem's length finishes — never on an invisible twig.
+      lshow[leaves] = Math.max(0, Math.min(sEnd[i] + 0.01, 0.98));
       lcol[leaves] = (sdep[i] + k) % LEAF.length;
       ldep[leaves] = sdep[i];
       if (sdep[i] === DEPTH && k === 0 && tipOrdinal % 8 === 0) {
@@ -437,18 +491,28 @@ function growHillTree(canvas, opts) {
   }
 
   function paintStemAt(i, u) {
-    const grow = sEnd[i] - sStart[i] || 0.001;
-    const p = clamp01((u - sStart[i]) / grow);
-    if (p <= 0) return;
-    const e = easeOut(p);
+    const lenGrow = sEnd[i] - sStart[i] || 0.001;
+    const lenP = clamp01((u - sStart[i]) / lenGrow);
+    if (lenP <= 0) return;
+    const e = easeOut(lenP);
+    const wGrow = sWidthEnd[i] - sWidthStart[i] || 0.001;
+    let widthP;
+    if (u < sWidthStart[i]) {
+      // Thin while lengthing; full fatten starts after length done.
+      widthP = 0.42 + 0.28 * e;
+    } else {
+      widthP = 0.7 + 0.3 * easeOut(clamp01((u - sWidthStart[i]) / wGrow));
+    }
     ctx.fillStyle = BARK[Math.min(sdep[i], BARK.length - 1)];
+    const r0 = sw0[i] * widthP;
+    const r1 = (sw0[i] + (sw1[i] - sw0[i]) * e) * widthP;
     drawStem(
       sx0[i],
       sy0[i],
       sx0[i] + (sx1[i] - sx0[i]) * e,
       sy0[i] + (sy1[i] - sy0[i]) * e,
-      sw0[i],
-      sw0[i] + (sw1[i] - sw0[i]) * e
+      r0,
+      Math.max(0.2, r1)
     );
   }
 
