@@ -108,14 +108,30 @@ Rule: Same default. The question names an axis that fits nothing present, so tha
 Decision: Create `illegal` and file the question there.
 Confidence: `high`.
 
-### A non-argument can land in other
+### A non-argument lands in other
 
-Situation: The post is "lol", "Why?", or an insult. It names no axis.
-Rule: Relay default. Non-arguments are stored, not rejected. The batch may file them under `other` when they fit no distinct argument. The default does not mint a key to hold them.
-Decision: Leave them in `uncategorized`. Do not open `other` for "lol".
-Confidence: filing `high`. Summary of `uncategorized` is `low`.
+Situation: The post is "lol", "Why?", a join line, or an insult. It names no axis.
+Rule: Relay default. Non-arguments are stored, not rejected. The batch files them under `other`. It does not mint a clever key, and it does not leave them in `uncategorized` after the batch.
+Decision: File under `other`. Do not invent a joke key.
+Confidence: filing `high`. Summary of `other` is `low`.
 
-A post that names a real axis and is refused a new key does land in `other`. That is the refused-key scenario above, not a silent drop.
+Live submit may still show the post in `uncategorized` until drain. The batch moves it.
+
+A post that names a real axis and is refused a new key also lands in `other`. That is the refused-key scenario above, not a silent drop.
+
+### Immediate filing under the page path
+
+Situation: The first claim-shaped post arrives on page `5g`. Nobody has disagreed yet.
+Rule: Relay default. File as soon as the post appears. The page path is the topic. Keys are sub-axes.
+Decision: Mint a claim-shaped sub-axis (for example `health-harm`) and file there. Do not mint a key named `5g`. Do not wait for a counter-post. Do not dump the claim into `other` because the room agrees.
+Confidence: filing follows the reading (`high` or `low`).
+
+### Agreement does not suppress axes
+
+Situation: Every post on `geoengineering` argues sun-dimming. There is no opposing post yet.
+Rule: Relay default. Consensus still gets a sub-axis from the claim shape.
+Decision: File under `block-the-sun`. Record unwritten counters as suggestions only.
+Confidence: `high` when the claim shape is clear.
 
 ### Low confidence is posted
 
@@ -150,7 +166,7 @@ Confidence: unchanged. A second pass does not replace a posted `high` or `low` w
 ## When the batch is not sure
 
 Situation: A filing or a summary is not high confidence.
-Rule: The batch still files the posts. The low mark does not change the outcome. The question is written where a person can answer it, on `pages/<page>/questions.md` for that page, and in `users/questions.md` when the question is about who someone is.
+Rule: The batch still files the posts. The low mark does not change the outcome. The question is written where a person can answer it, on `pages/<page>/questions.md` for that page, and in `users/questions.md` when the question is about who someone is. Standing exceptions wait for that answer; the batch does not invent them privately.
 Decision: Flag the question for a person. A later batch may investigate with Bedrock or another outside service. Until that lookup exists, the flag goes to IRC in real time. A person watching can answer in the moment, or leave a note the next run of that repo must read. The answer updates the posted rules or the knowledge base. The batch does not keep a private exception.
 Confidence: the flag is the low mark itself. IRC delivery and Bedrock lookup are documented here and are not built yet.
 

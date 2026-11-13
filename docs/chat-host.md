@@ -51,6 +51,12 @@ Public Cleverchat URLs:
 - `https://api.clevertree.chat/chat`
 - `https://api.clevertree.chat/chat/thc-legalization`
 - `https://api.clevertree.chat/chat/flock-cameras`
+- Filed PT backlog review (seeded from comments / `fixtures/pt-review/`):
+  - `https://api.clevertree.chat/chat/5g`
+  - `https://api.clevertree.chat/chat/geoengineering`
+  - `https://api.clevertree.chat/chat/general`
+
+Set `CLEVERTREE_PT_COMMENTS` to a comments-repo checkout to seed full trees; otherwise the host uses the JSON fixtures.
 
 Vercel (`clevertree.chat`) keeps marketing and links here. It does not own the demo socket.
 

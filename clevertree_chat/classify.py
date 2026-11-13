@@ -306,6 +306,31 @@ def is_question(text: str) -> bool:
     return "?" in (text or "")
 
 
+def is_non_argument(text: str) -> bool:
+    """Joke, join noise, username-only, insult, or empty — not a claim that opens an axis."""
+    body = (text or "").strip()
+    low = body.lower()
+    if not body:
+        return True
+    if len(body) < 12:
+        return True
+    if "joined the channel" in low or "joined the team" in low:
+        return True
+    if "test message" in low and ("cypress" in low or "should be deleted" in low):
+        return True
+    if "\n" not in body and " " not in body and len(body) < 24:
+        return True
+    if low in {"lol", "lmao", "haha", "why?", "why", "ok", "okay", "k", "nice", "cool"}:
+        return True
+    if re.search(r"\b(idiot|stupid|shut up|fuck you|asshole)\b", low):
+        return True
+    # Short reaction with no claim verbs / topic nouns.
+    words = re.findall(r"[a-z0-9]+", low)
+    if len(words) <= 4 and not any(word in {"because", "cameras", "illegal", "legal", "should"} for word in words):
+        return True
+    return False
+
+
 def named_axes(topic: str, text: str) -> list[str]:
     """Every axis the words actually name. Not the opposing key they do not state."""
     topic_key = assert_short_key(slugify(topic))
@@ -350,15 +375,21 @@ def assign_keys(topic: str, text: str, existing: set[str], rules: Rules) -> list
     the axis it names. The Patriot Act is not a key from this pass.
     """
     named = [key for key in named_axes(topic, text) if key != "patriot-act"]
+    # Never mint a key that restates the page / topic slug.
+    topic_key = assert_short_key(slugify(topic))
+    named = [key for key in named if key != topic_key]
     fitting = [key for key in named if _fits_existing(topic, key, existing)]
     if fitting:
         return fitting
     if not named:
+        # Non-arguments and questions that name no axis stay in other after batch.
+        if is_non_argument(text) or is_question(text):
+            return [OTHER_KEY]
         return [HOLDING_KEY]
     if is_question(text) and not rules.questions_allowed:
         return [OTHER_KEY]
     if rules.allows_new_key():
-        return named
+        return [key for key in named if key != topic_key] or [OTHER_KEY]
     return [OTHER_KEY]
 
 

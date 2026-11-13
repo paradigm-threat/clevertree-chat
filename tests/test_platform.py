@@ -342,7 +342,7 @@ class FilingTests(DebateCase):
         self.assertEqual(self.debate.resolve("demo", "flock-cameras", "illegal"), "illegal")
         self.assertNotIn("illegal", history)
 
-    def test_non_argument_is_kept_and_can_land_in_other(self):
+    def test_non_argument_is_kept_and_lands_in_other_after_batch(self):
         user = new_uuid()
         for body in ("lol", "Why?", "you idiot", "   "):
             result = self.debate.submit(user, page="demo", topic="flock-cameras", body=body)
@@ -354,11 +354,11 @@ class FilingTests(DebateCase):
         self.assertIn("you idiot", holding)
         self.assertIn("", holding)
         self.debate.drain()
-        self.assertEqual(self.keys("demo", "flock-cameras"), ["uncategorized"])
+        self.assertEqual(self.keys("demo", "flock-cameras"), ["other"])
         self.assertFalse(
-            (self.debate.repo.path / "pages/demo/topics/flock-cameras/other").exists()
+            (self.debate.repo.path / "pages/demo/topics/flock-cameras/uncategorized").exists()
         )
-        landed = self.bodies("demo", "flock-cameras", "uncategorized")
+        landed = self.bodies("demo", "flock-cameras", "other")
         self.assertIn("lol", landed)
         self.assertIn("Why?", landed)
         self.assertIn("you idiot", landed)
@@ -1280,21 +1280,23 @@ class BatchDecisionTests(DebateCase):
         self.assertEqual(opened["confidence"], "high")
         self.assertEqual(opened["rule"], "default")
 
-    def test_non_argument_stays_uncategorized_with_a_low_summary(self):
+    def test_non_argument_lands_in_other_with_a_low_summary(self):
         self.assertFalse((self.debate.repo.path / "rules.md").exists())
         self.debate.submit(new_uuid(), page="demo", topic="flock-cameras", body="lol")
         self.debate.drain()
-        self.assertEqual(self.keys("demo", "flock-cameras"), ["uncategorized"])
-        self.assertFalse((self.debate.repo.path / "pages/demo/topics/flock-cameras/other").exists())
+        self.assertEqual(self.keys("demo", "flock-cameras"), ["other"])
+        self.assertFalse(
+            (self.debate.repo.path / "pages/demo/topics/flock-cameras/uncategorized").exists()
+        )
         filed = self.file_decision("lol")
-        self.assertEqual(filed["keys"], ["uncategorized"])
+        self.assertEqual(filed["keys"], ["other"])
         self.assertEqual(filed["confidence"], "high")
         self.assertEqual(filed["rule"], "default")
-        summary = self.one("summary", key="uncategorized")
+        summary = self.one("summary", key="other")
         self.assertEqual(summary["confidence"], "low")
         self.assertEqual(summary["rule"], "default")
         position = (
-            self.debate.repo.path / "pages/demo/topics/flock-cameras/uncategorized/position.md"
+            self.debate.repo.path / "pages/demo/topics/flock-cameras/other/position.md"
         ).read_text()
         self.assertIn("lol", position)
 

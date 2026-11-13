@@ -129,8 +129,8 @@ SCRIPT = [
         "chosen": "",
         "preview": None,
         "live_key": "uncategorized",
-        "drain_keys": ["uncategorized"],
-        "notice": "Batch left lol uncategorized. No clever key.",
+        "drain_keys": ["other"],
+        "notice": "Batch filed lol under other. No clever key.",
         "open_suggestions_from": [],
     },
 ]

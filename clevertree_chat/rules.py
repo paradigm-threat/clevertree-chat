@@ -50,6 +50,11 @@ def default_rules_text() -> str:
 - The AI re-represents every opinion without emotion. Nobody is scolded, and the claim is not softened into a different claim.
 - Keys are up to the AI. Topics and subtopics may be renamed when the AI judges that the name should change. Old names stay in the index so links follow.
 - Do not mint a key just to catch every sentence. Mint one when a post does not fit the keys that already exist.
+- File every post as soon as it appears. Do not wait for disagreement before opening a key.
+- Agreement under a page thesis still gets distinct sub-axis keys from distinct claim shapes. Do not collapse consensus into `other`.
+- The page path is the topic. Never mint a key whose slug equals the page id.
+- A non-argument (`lol`, join noise, username-only) is stored under `other`. Prefer `other` over leaving `uncategorized` for a post that is not an argument.
+- Unwritten counters stay suggestions, not directories, until someone writes them.
 - Questions are allowed. A question that names an axis joins that category. A question that fits an existing key does not open a new one.
 - A visitor who has not named themselves gets a generated name from the topic and what they wrote. Keep generated names professional, safe for work, funny when that still fits, and simple.
 - Spam is ascertained by the batch AI. After a flag, anyone who sees it may support or protest within 48 hours. If the flag still stands when that window ends, the post is removed from view. After a further 7 days, it is removed entirely. A repo may tighten those clocks or the spam definition in rules.md. Contests inform the batch; they do not rewrite standing rules by themselves.

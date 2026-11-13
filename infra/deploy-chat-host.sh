@@ -7,14 +7,14 @@ export KUBECONFIG
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
-mkdir -p "$STAGE/api" "$STAGE/clevertree_chat/demos" "$STAGE/scripts" "$STAGE/chat" "$STAGE/fronts/snippet/demo-steps"
+mkdir -p "$STAGE/api" "$STAGE/clevertree_chat/demos" "$STAGE/scripts" "$STAGE/chat" "$STAGE/fronts/snippet/demo-steps" "$STAGE/fixtures/pt-review"
 cp "$ROOT/api/demo.py" "$STAGE/api/"
 : >"$STAGE/api/__init__.py"
 cat >"$STAGE/clevertree_chat/__init__.py" <<'PY'
 """Slim chat-host package surface (Intake deploy)."""
 SERVICE_ID = "clevertree-chat-ai"
 PY
-cp "$ROOT/clevertree_chat/wsutil.py" "$ROOT/clevertree_chat/chat_hub.py" "$ROOT/clevertree_chat/demo_fixtures.py" "$ROOT/clevertree_chat/urls.py" "$STAGE/clevertree_chat/"
+cp "$ROOT/clevertree_chat/wsutil.py" "$ROOT/clevertree_chat/chat_hub.py" "$ROOT/clevertree_chat/demo_fixtures.py" "$ROOT/clevertree_chat/urls.py" "$ROOT/clevertree_chat/pt_seed.py" "$STAGE/clevertree_chat/"
 cp "$ROOT/clevertree_chat/demos/"*.py "$STAGE/clevertree_chat/demos/"
 cp "$ROOT/scripts/chat_host.py" "$STAGE/scripts/"
 cp "$ROOT/chat/index.html" "$STAGE/chat/"
@@ -24,6 +24,7 @@ if [[ -f "$ROOT/fronts/snippet/clevertree-chat.js" ]]; then
   cp "$ROOT/fronts/snippet/clevertree-chat.js" "$ROOT/fronts/snippet/clevertree-chat.css" "$STAGE/fronts/snippet/" || true
 fi
 cp "$ROOT/fronts/snippet/demo-steps/"*.json "$STAGE/fronts/snippet/demo-steps/"
+cp "$ROOT/fixtures/pt-review/"*.json "$STAGE/fixtures/pt-review/"
 cp "$ROOT/styles.css" "$ROOT/icon-128x128.png" "$ROOT/favicon.ico" "$STAGE/"
 tar -C "$STAGE" -czf /tmp/clevertree-chat-host.tgz .
 

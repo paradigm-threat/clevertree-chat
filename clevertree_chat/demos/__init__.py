@@ -22,7 +22,9 @@ def get_demo(topic: str):
 
 
 def known_topics() -> list[str]:
-    return sorted(DEMOS)
+    from clevertree_chat.pt_seed import REVIEW_TOPICS
+
+    return sorted(set(DEMOS) | set(REVIEW_TOPICS))
 
 
 def is_guided(topic: str) -> bool:

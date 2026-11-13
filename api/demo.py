@@ -20,6 +20,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from clevertree_chat.demos import DEFAULT_TOPIC, get_demo, is_guided, known_topics  # noqa: E402
+from clevertree_chat.pt_seed import REVIEW_TITLES, REVIEW_TOPICS, apply_payload, load_page_payload  # noqa: E402
 from clevertree_chat.urls import normalize_url  # noqa: E402
 
 FILING = "Make your opinion finally heard."
@@ -27,7 +28,12 @@ FILING = "Make your opinion finally heard."
 GUIDED_TITLES = {
     "flock-cameras": "Should cities use camera networks?",
     "thc-legalization": "Should adult-use cannabis be legal?",
+    **REVIEW_TITLES,
 }
+
+# Per-topic position maps for PT review boards (mutated when seeded).
+_PT_POSITIONS: dict[str, dict[str, str]] = {}
+_PT_SEEDED: set[str] = set()
 
 # One board per topic. Cold start resets.
 _BOARDS: dict[str, dict] = {}
@@ -56,12 +62,28 @@ def _empty_board(topic: str) -> dict:
     }
 
 
+def _ensure_pt_seed(topic: str, state: dict) -> None:
+    if topic not in REVIEW_TOPICS or topic in _PT_SEEDED:
+        return
+    payload = load_page_payload(topic)
+    if payload is None:
+        return
+    positions = _PT_POSITIONS.setdefault(topic, {})
+    apply_payload(state, payload, positions)
+    _PT_SEEDED.add(topic)
+    # Bind positions onto the freeform demo object used by build_view.
+    demo = get_demo(topic)
+    if getattr(demo, "POSITIONS", None) is not None:
+        demo.POSITIONS = positions
+
+
 def board(topic: str) -> dict:
     if topic not in _BOARDS:
         _BOARDS[topic] = _empty_board(topic)
         _NEXT_IDS.setdefault(topic, 1)
     state = _BOARDS[topic]
     state.setdefault("page", {"url": "", "normalized": "", "title": ""})
+    _ensure_pt_seed(topic, state)
     return state
 
 
@@ -72,7 +94,9 @@ def reset_board(topic: str) -> dict:
     if page.get("url") or page.get("normalized"):
         _BOARDS[topic]["page"] = page
     _NEXT_IDS[topic] = 1
-    return _BOARDS[topic]
+    _PT_SEEDED.discard(topic)
+    _PT_POSITIONS.pop(topic, None)
+    return board(topic)
 
 
 def identify(visitor: str = "") -> dict:
@@ -262,6 +286,7 @@ def build_view(topic: str, visitor: str = "", focus: str = "") -> dict:
     if has_uncat and "uncategorized" not in key_order:
         key_order.append("uncategorized")
 
+    positions = _PT_POSITIONS.get(topic) or demo.POSITIONS
     for key in key_order:
         comments = []
         for comment in state["comments"]:
@@ -270,7 +295,7 @@ def build_view(topic: str, visitor: str = "", focus: str = "") -> dict:
             places = comment.get("keys") or []
             if key in places:
                 comments.append(_comment_public(comment, key, visitor))
-        position = demo.POSITIONS.get(key, "")
+        position = positions.get(key, "")
         sections[key] = {
             "key": key,
             "uncategorized": key == "uncategorized",

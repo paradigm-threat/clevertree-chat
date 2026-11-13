@@ -180,7 +180,17 @@ def activity_from_view(view: dict, visitor: str = "") -> list[dict]:
                 continue
             seen.add(cid)
             bag.append(comment)
-    bag.sort(key=lambda c: int(c.get("id") or 0))
+    def _id_sort(comment: dict):
+        raw = str(comment.get("id") or "0")
+        if raw.isdigit():
+            return (0, int(raw), "")
+        # Prefer trailing digits from seeded ids like "5g-other-7".
+        tail = raw.rsplit("-", 1)[-1]
+        if tail.isdigit():
+            return (0, int(tail), raw)
+        return (1, 0, raw)
+
+    bag.sort(key=_id_sort)
     for comment in bag:
         keys = list(comment.get("keys") or [])
         rows.append(

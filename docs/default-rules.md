@@ -10,6 +10,11 @@ A repo with no `rules.md` on the comments branch uses these rules. They are buil
 - The AI re-represents every opinion without emotion. It does not scold. A dangerous or antisocial claim is restated accurately, in the claim's own shape, without an added verdict.
 - Keys are up to the AI. Topics and subtopics may be renamed when the AI judges that the name should change. Old names stay in the index so links follow.
 - Do not mint a key just to catch every sentence. Mint one when a post does not fit the keys that already exist. A posted line such as `Never open a new topic` stops that.
+- File every post as soon as it appears. Do not wait for disagreement before opening a key.
+- Agreement under a page thesis still gets distinct sub-axis keys from distinct claim shapes. Do not collapse consensus into `other`.
+- The page path is the topic. Never mint a key whose slug equals the page id (no `5g` key under page `5g`).
+- A non-argument (`lol`, join noise, username-only) is stored under `other`. Prefer `other` over leaving `uncategorized` for a post that is not an argument. Live submit may still hold a post in `uncategorized` until the batch; the batch moves non-arguments to `other`.
+- Unwritten counters stay suggestions, not directories, until someone writes them.
 - Questions are allowed. A question that names an axis joins that category. A question that fits an existing key does not open a new one. A posted line such as `Do not ask questions` stops a question from opening a key.
 - A visitor who has not named themselves gets a generated name from the topic and what they wrote. Generated names stay professional, safe for work, funny when that still fits, and simple. They come from an allowlist. A name the visitor set is left alone. A generated name may be revised when their writing changes. The visible name is not stored in the private auth repo.
 - Spam is ascertained by the batch AI. After a flag, anyone who sees it may support or protest within **48 hours** (X). If the flag still stands when X ends, the post is removed from view. After a further **7 days** (Y), it is removed entirely. Repos may tighten X, Y, or the spam definition in `rules.md`. Contests inform the batch; they do not rewrite standing rules. Changing spam policy goes through the usual rules process. Full detail: [`spam.md`](spam.md).

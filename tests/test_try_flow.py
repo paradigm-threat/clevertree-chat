@@ -102,16 +102,16 @@ class TryFlowTests(unittest.TestCase):
         self.assertEqual(len(moved), 1)
         self.assertEqual(moved[0]["key"], "invasion-of-privacy")
 
-    def test_non_arguments_stay_uncategorized_as_one_file_each(self):
+    def test_non_arguments_land_in_other_as_one_file_each(self):
         for body in ("lol", "What time is it?", "You are an idiot."):
             self.service.submit(str(uuid.uuid4()), "flock-cameras", body)
         self.assertEqual(self.keys(), ["uncategorized"])
         self.service.drain("flock-cameras")
-        self.assertEqual(self.keys(), ["uncategorized"])
-        held = self.service.debate.repo.path / "pages/try/topics/flock-cameras/uncategorized/comments"
+        self.assertEqual(self.keys(), ["other"])
+        held = self.service.debate.repo.path / "pages/try/topics/flock-cameras/other/comments"
         self.assertEqual(len(list(held.glob("*.md"))), 3)
         self.assertFalse(
-            (self.service.debate.repo.path / "pages/try/topics/flock-cameras/other").exists()
+            (self.service.debate.repo.path / "pages/try/topics/flock-cameras/uncategorized").exists()
         )
 
     def test_a_spill_opens_illegal_when_privacy_does_not_fit(self):

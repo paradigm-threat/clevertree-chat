@@ -44,6 +44,12 @@
         ·
         <a href="/chat/flock-cameras">flock-cameras demo</a>
         ·
+        <a href="/chat/5g">5g review</a>
+        ·
+        <a href="/chat/geoengineering">geoengineering review</a>
+        ·
+        <a href="/chat/general">general review</a>
+        ·
         <a href="https://clevertree.chat/try">Marketing site</a>
       </p>
       <div id="demo-chooser" class="map" hidden>
@@ -52,6 +58,14 @@
           <a href="/chat/flock-cameras">flock-cameras demo</a>
           <span class="vs">or</span>
           <a href="/chat/thc-legalization">thc-legalization demo</a>
+        </div>
+        <p class="topic" style="margin-top:1.25rem">Filed PT backlog (review)</p>
+        <div class="pair">
+          <a href="/chat/5g">5g</a>
+          <span class="vs">·</span>
+          <a href="/chat/geoengineering">geoengineering</a>
+          <span class="vs">·</span>
+          <a href="/chat/general">general</a>
         </div>
       </div>
       <div id="demo-mount" hidden></div>
@@ -83,11 +97,28 @@
           title: "Should cities use camera networks?",
           blurb:
             "Demo script: you post as the visitor; Jordan is injected by the server and labeled simulated. Demo mode pauses after each update so you can Continue — the server is not waiting.",
+          review: false,
         },
         "thc-legalization": {
           title: "Should adult-use cannabis be legal?",
           blurb:
             "Demo script: you post as the visitor; peer beats are injected over WebSocket and labeled simulated. Demo mode pauses after each update so you can Continue — the server is not waiting.",
+          review: false,
+        },
+        "5g": {
+          title: "5G — filed backlog (review)",
+          blurb: "Refiled Paradigm Threat backlog for review. Not a guided script.",
+          review: true,
+        },
+        geoengineering: {
+          title: "Geoengineering — filed backlog (review)",
+          blurb: "Refiled Paradigm Threat backlog for review. Not a guided script.",
+          review: true,
+        },
+        general: {
+          title: "General — filed backlog (review)",
+          blurb: "Refiled Paradigm Threat backlog for review (capped per key). Not a guided script.",
+          review: true,
         },
       };
       if (!topic) {
@@ -98,22 +129,26 @@
       const meta = copy[topic] || {
         title: topic,
         blurb: "Guided product demo on the chat host — not a live hosted debate.",
+        review: false,
       };
-      kicker.textContent = "Interactive demo only";
+      kicker.textContent = meta.review ? "Filed backlog review" : "Interactive demo only";
       title.textContent = meta.title;
-      lead.textContent = "Not a live topic. Scripted walkthrough with simulated peers.";
+      lead.textContent = meta.review
+        ? "Read-only review of filed PT comments on the Debate board."
+        : "Not a live topic. Scripted walkthrough with simulated peers.";
       blurb.textContent = meta.blurb;
       if (banner) {
-        banner.textContent =
-          "Interactive demo only · scripted walkthrough · not a live hosted topic";
+        banner.textContent = meta.review
+          ? "Filed PT backlog · review board · not a guided walkthrough"
+          : "Interactive demo only · scripted walkthrough · not a live hosted topic";
       }
       chooser.hidden = true;
       mount.hidden = false;
       mount.setAttribute("data-clevertree-board", "");
       mount.setAttribute("data-api", "chat");
       mount.setAttribute("data-topic", topic);
-      mount.setAttribute("data-guided", "true");
-      document.title = meta.title + " — Clevertree Chat demo";
+      mount.setAttribute("data-guided", meta.review ? "false" : "true");
+      document.title = meta.title + " — Clevertree Chat";
       links.innerHTML =
         '<a href="/chat">All demos</a> · <a href="https://clevertree.chat/try">Marketing site</a> · <a href="https://clevertree.chat/try/ui">UI lab (mock)</a>';
     })();

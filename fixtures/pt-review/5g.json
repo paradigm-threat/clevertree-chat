@@ -1,0 +1,99 @@
+{
+  "topic": "5g",
+  "title": "5G \u2014 filed backlog (review)",
+  "positions": {
+    "infra-rollout": "The posts argue about towers, antennas, and the infrastructure rollout itself.",
+    "other": "These posts are not an argument."
+  },
+  "comments": [
+    {
+      "id": "1",
+      "author_name": "tyler_blaze",
+      "author_uuid": "",
+      "body": "There was an identical event to the event in The Hague 2-3 months ago this time in Mexico, with a hundred or so birds falling from the sky \ud83d\udc40 \n\nA friend of mine lives in Mexico and travels between cities by bus for work and he tells me the 5G infrastructure has made unbelievable strides in its completion - you can see the antenas along the highways, along hundreds of kms. I\u2019ll have to check for the bird vid and post it \ud83d\udc4d\ud83c\udffc",
+      "starting": "infra-rollout",
+      "keys": [
+        "infra-rollout"
+      ],
+      "placed": true,
+      "injected": false
+    },
+    {
+      "id": "2",
+      "author_name": "tyler_blaze",
+      "author_uuid": "",
+      "body": "https://m.youtube.com/watch?v=ko8PH8iCNPw",
+      "starting": "infra-rollout",
+      "keys": [
+        "infra-rollout"
+      ],
+      "placed": true,
+      "injected": false
+    },
+    {
+      "id": "3",
+      "author_name": "protricity",
+      "author_uuid": "",
+      "body": "Channel",
+      "starting": "other",
+      "keys": [
+        "other"
+      ],
+      "placed": true,
+      "injected": false
+    },
+    {
+      "id": "4",
+      "author_name": "tyler_blaze",
+      "author_uuid": "",
+      "body": "Tyler_Blaze",
+      "starting": "other",
+      "keys": [
+        "other"
+      ],
+      "placed": true,
+      "injected": false
+    },
+    {
+      "id": "5",
+      "author_name": "ttttttt",
+      "author_uuid": "",
+      "body": "TTTTTTT",
+      "starting": "other",
+      "keys": [
+        "other"
+      ],
+      "placed": true,
+      "injected": false
+    },
+    {
+      "id": "6",
+      "author_name": "ttttttt",
+      "author_uuid": "",
+      "body": "https://youtu.be/-T2R2htAaqg",
+      "starting": "other",
+      "keys": [
+        "other"
+      ],
+      "placed": true,
+      "injected": false
+    },
+    {
+      "id": "7",
+      "author_name": "anonoymoo",
+      "author_uuid": "",
+      "body": "anonoymoo joined the channel.",
+      "starting": "other",
+      "keys": [
+        "other"
+      ],
+      "placed": true,
+      "injected": false
+    }
+  ],
+  "keys": [
+    "infra-rollout",
+    "other"
+  ],
+  "pairs": []
+}
