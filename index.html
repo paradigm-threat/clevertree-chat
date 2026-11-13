@@ -70,7 +70,7 @@
           <source media="(orientation: portrait)" srcset="/images/hero-portrait.jpg">
           <img class="banner-photo" src="/images/hero.jpg" alt="Clevertree.chat across green hills at sunrise. Knowledge grows like a tree.">
         </picture>
-        <canvas class="grow-tree" width="220" height="300" role="img" aria-label="A tree fills out on the hillside. Click to grow another." tabindex="0"></canvas>
+        <canvas class="grow-tree" width="520" height="400" role="img" aria-label="A tree fills out on the hillside. Click to grow another." tabindex="0"></canvas>
         </div>
       </section>
       <section class="intro">
@@ -155,8 +155,9 @@ function growHillTree(canvas, reduce) {
   if (!ctx) return;
   if (typeof canvas._growStop === "function") canvas._growStop();
 
-  const VW = 220;
-  const VH = 300;
+  // Wide virtual view so spreading habits are not clipped by the bitmap.
+  const VW = 520;
+  const VH = 400;
   const DEPTH = 8;
   const STEM_N = 520;
   const LEAF_N = 2600;
@@ -165,6 +166,9 @@ function growHillTree(canvas, reduce) {
   const RANGE_DEG = [32, 11, 34, 13, 36, 15, 32, 16];
   const LENGTHS = [62, 50, 40, 30, 22, 16, 11, 8];
   const DURATION = 30000;
+  const TRUNK_X = VW * 0.5;
+  const TRUNK_Y = VH - 8;
+  const VIEW_PAD = 28;
 
   const sx0 = new Float32Array(STEM_N);
   const sy0 = new Float32Array(STEM_N);
@@ -253,7 +257,14 @@ function growHillTree(canvas, reduce) {
 
   const trunkLean = (rnd() * 2 - 1) * 4 * Math.PI / 180;
   const trunkLen = stemLength(82, trunkLean, false);
-  const trunk = addStem({ x: 110, y: 296, angle: trunkLean, length: trunkLen, radius: 15, depth: 0 });
+  const trunk = addStem({
+    x: TRUNK_X,
+    y: TRUNK_Y,
+    angle: trunkLean,
+    length: trunkLen,
+    radius: 15,
+    depth: 0
+  });
   const queue = [{
     x: trunk.x,
     y: trunk.y,
@@ -305,6 +316,46 @@ function growHillTree(canvas, reduce) {
     }
   }
 
+  // If a rare habit still overruns the bitmap, scale about the trunk base — never clip.
+  (function fitTreeInView() {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < n; i++) {
+      minX = Math.min(minX, sx0[i] - sw0[i], sx1[i] - sw1[i]);
+      maxX = Math.max(maxX, sx0[i] + sw0[i], sx1[i] + sw1[i]);
+      minY = Math.min(minY, sy0[i], sy1[i]);
+      maxY = Math.max(maxY, sy0[i], sy1[i]);
+    }
+    // Reserve room for foliage beyond tip coords.
+    const leafReach = 24;
+    minX -= leafReach;
+    maxX += leafReach;
+    minY -= leafReach;
+    const roomW = VW - VIEW_PAD * 2;
+    const roomH = VH - VIEW_PAD * 2;
+    const bw = Math.max(1, maxX - minX);
+    const bh = Math.max(1, maxY - minY);
+    const scale = Math.min(1, roomW / bw, roomH / bh);
+    if (scale >= 0.995) return;
+    function mapX(x) {
+      return TRUNK_X + (x - TRUNK_X) * scale;
+    }
+    function mapY(y) {
+      return TRUNK_Y + (y - TRUNK_Y) * scale;
+    }
+    for (let i = 0; i < n; i++) {
+      sx0[i] = mapX(sx0[i]);
+      sy0[i] = mapY(sy0[i]);
+      sx1[i] = mapX(sx1[i]);
+      sy1[i] = mapY(sy1[i]);
+      sw0[i] *= scale;
+      sw1[i] *= scale;
+    }
+  })();
+
+  // Leaves after optional fit so tip coords match the drawn stems.
   let leaves = 0;
   let falling = 0;
   let tipOrdinal = 0;
@@ -327,6 +378,8 @@ function growHillTree(canvas, reduce) {
       if (sdep[i] === DEPTH && k === 0 && tipOrdinal % 6 === 0) {
         lfall[leaves] = 1;
         falling += 1;
+      } else {
+        lfall[leaves] = 0;
       }
       leaves += 1;
     }
@@ -336,9 +389,9 @@ function growHillTree(canvas, reduce) {
   let faller = 0;
   for (let i = 0; i < leaves; i++) {
     if (!lfall[i]) continue;
-    const x = 110 + ((faller + 0.5) / falling - 0.5) * 156 + Math.sin(faller * 2.17) * 6;
-    llandx[i] = Math.max(16, Math.min(VW - 16, x));
-    llandy[i] = 293 + (faller % 3) * 1.6;
+    const x = TRUNK_X + ((faller + 0.5) / Math.max(1, falling) - 0.5) * (VW * 0.55) + Math.sin(faller * 2.17) * 6;
+    llandx[i] = Math.max(VIEW_PAD, Math.min(VW - VIEW_PAD, x));
+    llandy[i] = TRUNK_Y - 2 + (faller % 3) * 1.6;
     llandr[i] = lrot[i] + (faller % 2 === 0 ? 1.15 : -1.35);
     faller += 1;
   }
@@ -362,8 +415,8 @@ function growHillTree(canvas, reduce) {
     const ang = sang[tip.id];
     const px = sx1[tip.id] + Math.sin(ang) * 2.4;
     const py = sy1[tip.id] - Math.cos(ang) * 2.4;
-    ix[b] = Math.max(10, Math.min(VW - 10, px));
-    iy[b] = Math.max(10, Math.min(VH - 10, py));
+    ix[b] = Math.max(VIEW_PAD, Math.min(VW - VIEW_PAD, px));
+    iy[b] = Math.max(VIEW_PAD, Math.min(VH - VIEW_PAD, py));
     ishow[b] = Math.max(0, sEnd[tip.id] - 0.03);
   }
 
