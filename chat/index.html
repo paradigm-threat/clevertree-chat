@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clevertree Chat</title>
+  <meta name="description" content="Containable standing debate. Your posts and theirs stay distinct. Live updates over WebSocket.">
+  <meta name="theme-color" content="#D4F3FB">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fronts/snippet/clevertree-chat.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header>
+      <a class="wordmark" href="https://clevertree.chat/">
+        <img src="/icon-128x128.png" alt="" width="32" height="32">
+        Clevertree Chat
+      </a>
+      <a class="nav-try" href="/chat">Chat host</a>
+    </header>
+    <main id="main" class="try-page">
+      <p class="kicker" id="host-kicker">Live on Intake</p>
+      <h1 id="host-title">Standing debate</h1>
+      <p class="lead-quiet" id="host-lead">One containable panel. You post here. Others arrive from the server.</p>
+      <p id="host-blurb">Pick a guided topic. Your posts are green. Their posts are blue. Batch notices stay separate. WebSocket keeps the activity list current.</p>
+      <p id="host-links" class="hint">
+        <a href="/chat/thc-legalization">thc-legalization</a>
+        ·
+        <a href="/chat/flock-cameras">flock-cameras</a>
+        ·
+        <a href="https://clevertree.chat/try">Marketing demos</a>
+      </p>
+      <div id="demo-chooser" class="map" hidden>
+        <p class="topic">Guided topics</p>
+        <div class="pair">
+          <a href="/chat/flock-cameras">flock-cameras</a>
+          <span class="vs">or</span>
+          <a href="/chat/thc-legalization">thc-legalization</a>
+        </div>
+      </div>
+      <div id="demo-mount" hidden></div>
+      <aside class="demo-note">
+        <p>
+          We can think of many topics worth demoing that we are not putting here because they are too hot for a guided walkthrough — Israel–Palestine among them.
+          We are still eager to run those debates in Clevertree. Standing arguments, not reply threads, are how we expect to lower the inflammation current feeds keep feeding, and to make progress instead of another endless holy war.
+        </p>
+      </aside>
+    </main>
+    <footer>
+      <p>Served from the chat host (Intake). Vercel is marketing only.</p>
+    </footer>
+  </div>
+  <script>
+    (function () {
+      const parts = location.pathname.split("/").filter(Boolean);
+      const topic = parts[1];
+      const kicker = document.getElementById("host-kicker");
+      const title = document.getElementById("host-title");
+      const lead = document.getElementById("host-lead");
+      const blurb = document.getElementById("host-blurb");
+      const links = document.getElementById("host-links");
+      const chooser = document.getElementById("demo-chooser");
+      const mount = document.getElementById("demo-mount");
+      const copy = {
+        "flock-cameras": {
+          title: "flock-cameras",
+          blurb: "You post the visitor beats. Jordan arrives from the server over WebSocket after each batch.",
+          autoplay: false,
+        },
+        "thc-legalization": {
+          title: "thc-legalization",
+          blurb: "You post adult-use and medical freedom beats. Jordan’s harm, tax, and federal questions are injected by the host — not typed in your composer.",
+          autoplay: true,
+        },
+      };
+      if (!topic) {
+        chooser.hidden = false;
+        mount.hidden = true;
+        return;
+      }
+      const meta = copy[topic] || { title: topic, blurb: "Guided topic on the chat host.", autoplay: false };
+      kicker.textContent = "Guided topic";
+      title.textContent = meta.title;
+      lead.textContent = "Don’t get lost in the weeds.";
+      blurb.textContent = meta.blurb;
+      chooser.hidden = true;
+      mount.hidden = false;
+      mount.setAttribute("data-clevertree-chat", "");
+      mount.setAttribute("data-api", "chat");
+      mount.setAttribute("data-topic", topic);
+      mount.setAttribute("data-guided", "true");
+      const params = new URLSearchParams(location.search);
+      if (meta.autoplay && params.get("autoplay") !== "0") {
+        mount.setAttribute("data-autoplay", "true");
+      }
+      document.title = meta.title + " — Clevertree Chat";
+      links.innerHTML =
+        '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/try">Marketing site</a>';
+    })();
+  </script>
+  <script src="/fronts/snippet/clevertree-chat.js"></script>
+</body>
+</html>

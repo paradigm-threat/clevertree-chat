@@ -1,0 +1,81 @@
+# Clevertree Chat host on Intake (hostNetwork :8790)
+# Apply after ConfigMap clevertree-chat-code (tree.tar.gz) exists.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clevertree-chat
+  namespace: myproblem
+  labels:
+    app: clevertree-chat
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: clevertree-chat
+  template:
+    metadata:
+      labels:
+        app: clevertree-chat
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        kubernetes.io/hostname: prod-instance-17941481574532202
+      containers:
+        - name: chat
+          image: python:3.12-slim
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          command: ["bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              tar -xzf /code/tree.tar.gz -C /app
+              exec python3 scripts/chat_host.py 8790
+          ports:
+            - containerPort: 8790
+              hostPort: 8790
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /chat
+              port: 8790
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /chat
+              port: 8790
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          volumeMounts:
+            - name: code
+              mountPath: /code
+              readOnly: true
+      volumes:
+        - name: code
+          configMap:
+            name: clevertree-chat-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clevertree-chat
+  namespace: myproblem
+spec:
+  selector:
+    app: clevertree-chat
+  ports:
+    - port: 8790
+      targetPort: 8790
+      name: http
+  type: ClusterIP

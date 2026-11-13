@@ -1,0 +1,13 @@
+{
+  "name": "clevertree-chat",
+  "private": true,
+  "scripts": {
+    "chat:host": "python3 scripts/chat_host.py 8790",
+    "demo:server": "python3 scripts/demo_server.py 8945",
+    "test:e2e": "playwright test tests/e2e/chat-websocket.spec.ts",
+    "test:e2e:thc": "playwright test tests/e2e/chat-websocket.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

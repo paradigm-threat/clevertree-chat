@@ -1,0 +1,30 @@
+{
+  "topic": "flock-cameras",
+  "posts": [
+    {
+      "body": "These cameras are mass surveillance",
+      "key": "invasion-of-privacy"
+    },
+    {
+      "body": "We need these cameras now for national security",
+      "key": "national-security"
+    },
+    {
+      "body": "They watch the borders, the elections, and crime",
+      "key": "national-security"
+    },
+    {
+      "body": "They are illegal",
+      "key": "illegal"
+    },
+    {
+      "body": "They are legal",
+      "key": "legal"
+    }
+  ],
+  "pairs": [
+    ["invasion-of-privacy", "national-security"],
+    ["illegal", "legal"]
+  ],
+  "absent_keys": ["borders", "elections", "crime", "mass-surveillance", "privacy", "security"]
+}

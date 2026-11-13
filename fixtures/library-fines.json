@@ -1,0 +1,30 @@
+{
+  "topic": "library-fines",
+  "posts": [
+    {
+      "body": "Library fines punish people who cannot pay.",
+      "key": "access-barrier"
+    },
+    {
+      "body": "Fines are how the library gets books back.",
+      "key": "returns-books"
+    },
+    {
+      "body": "Children forget their books, so fines remind them.",
+      "key": "returns-books"
+    },
+    {
+      "body": "Charging these fines is illegal.",
+      "key": "illegal"
+    },
+    {
+      "body": "The city can charge a fine. It is legal.",
+      "key": "legal"
+    }
+  ],
+  "pairs": [
+    ["access-barrier", "returns-books"],
+    ["illegal", "legal"]
+  ],
+  "absent_keys": ["children-forget", "punishes-poverty", "forgetfulness"]
+}

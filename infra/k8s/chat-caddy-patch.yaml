@@ -1,0 +1,37 @@
+# Full Caddyfile for intake.myproblem.app — tickets on :8787, chat on :8790
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: intake-caddy
+  namespace: myproblem
+data:
+  Caddyfile: |
+    {
+      email hostmaster@myproblem.app
+    }
+    intake.myproblem.app {
+      encode gzip
+
+      handle /chat* {
+        reverse_proxy 127.0.0.1:8790
+      }
+      handle /api/chat* {
+        reverse_proxy 127.0.0.1:8790
+      }
+      handle /fronts/snippet* {
+        reverse_proxy 127.0.0.1:8790
+      }
+      handle /styles.css {
+        reverse_proxy 127.0.0.1:8790
+      }
+      handle /icon-128x128.png {
+        reverse_proxy 127.0.0.1:8790
+      }
+      handle /favicon.ico {
+        reverse_proxy 127.0.0.1:8790
+      }
+
+      handle {
+        reverse_proxy 127.0.0.1:8787
+      }
+    }

@@ -1,0 +1,196 @@
+{
+  "topic": "thc-legalization",
+  "steps": [
+    {
+      "id": "maya-adult-use",
+      "name": "Maya",
+      "body": "Adults should be free to use THC. Ending prohibition is a personal freedom question, not a corporate favor.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "personal-freedom"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "public-health-harm",
+      "expectNotice": "Batch placed this post under personal-freedom.",
+      "expectKeysAfter": [
+        "personal-freedom"
+      ],
+      "expectPairsAfter": [],
+      "expectSuggestionsAfter": [
+        "public-health-harm"
+      ]
+    },
+    {
+      "id": "jordan-harm",
+      "name": "Jordan",
+      "body": "High-THC concentrates and edibles are already linked to ER visits and youth exposure. Legalization without hard public-health limits makes that harm worse.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "public-health-harm"
+      ],
+      "expectPair": [
+        "personal-freedom",
+        "public-health-harm"
+      ],
+      "expectSuggestion": "",
+      "expectNotice": "Batch placed this post under public-health-harm and paired the counters.",
+      "expectKeysAfter": [
+        "personal-freedom",
+        "public-health-harm"
+      ],
+      "expectPairsAfter": [
+        [
+          "personal-freedom",
+          "public-health-harm"
+        ]
+      ],
+      "expectSuggestionsAfter": []
+    },
+    {
+      "id": "maya-medical",
+      "name": "Maya",
+      "body": "My mom's oncologist already recommends cannabis for nausea. Adult-use shops without a clear medical path still leave patients negotiating with pharmacists.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "personal-freedom"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "",
+      "expectNotice": "The medical-access post joined personal-freedom. The posts forced that key, not a topic menu.",
+      "expectKeysAfter": [
+        "personal-freedom",
+        "public-health-harm"
+      ],
+      "expectPairsAfter": [
+        [
+          "personal-freedom",
+          "public-health-harm"
+        ]
+      ],
+      "expectSuggestionsAfter": []
+    },
+    {
+      "id": "jordan-tax",
+      "name": "Jordan",
+      "body": "Tax it, test it, sell it in licensed stores. That is how you set potency rules and fund treatment instead of pretending a ban still works.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "tax-and-regulate"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "",
+      "expectNotice": "Batch opened tax-and-regulate because this post argued regulation, not freedom.",
+      "expectKeysAfter": [
+        "personal-freedom",
+        "public-health-harm",
+        "tax-and-regulate"
+      ],
+      "expectPairsAfter": [
+        [
+          "personal-freedom",
+          "public-health-harm"
+        ]
+      ],
+      "expectSuggestionsAfter": []
+    },
+    {
+      "id": "maya-illicit",
+      "name": "Maya",
+      "body": "Legal shops did not kill the illicit market. Untaxed dealers still undercut the store price, and high-THC product keeps crossing state lines.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "illicit-market"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "federal-ban",
+      "expectNotice": "Batch opened illicit-market. federal-ban stays a suggestion, not a directory.",
+      "expectKeysAfter": [
+        "personal-freedom",
+        "public-health-harm",
+        "tax-and-regulate",
+        "illicit-market"
+      ],
+      "expectPairsAfter": [
+        [
+          "personal-freedom",
+          "public-health-harm"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "federal-ban"
+      ]
+    },
+    {
+      "id": "jordan-federal",
+      "name": "Jordan",
+      "body": "So should the federal ban just stay forever while states legalize around it?",
+      "chooseSlot": "",
+      "expectKeys": [
+        "illicit-market"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "federal-ban",
+      "expectNotice": "The federal-ban question joined illicit-market. federal-ban was not opened.",
+      "expectKeysAfter": [
+        "personal-freedom",
+        "public-health-harm",
+        "tax-and-regulate",
+        "illicit-market"
+      ],
+      "expectPairsAfter": [
+        [
+          "personal-freedom",
+          "public-health-harm"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "federal-ban"
+      ]
+    },
+    {
+      "id": "maya-lol",
+      "name": "Maya",
+      "body": "lol",
+      "chooseSlot": "",
+      "expectKeys": [],
+      "expectPair": [],
+      "expectSuggestion": "federal-ban",
+      "expectNotice": "Batch left lol uncategorized. No clever key.",
+      "expectKeysAfter": [
+        "personal-freedom",
+        "public-health-harm",
+        "tax-and-regulate",
+        "illicit-market"
+      ],
+      "expectPairsAfter": [
+        [
+          "personal-freedom",
+          "public-health-harm"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "federal-ban"
+      ]
+    }
+  ],
+  "final": {
+    "keys": [
+      "personal-freedom",
+      "public-health-harm",
+      "tax-and-regulate",
+      "illicit-market"
+    ],
+    "pairs": [
+      [
+        "personal-freedom",
+        "public-health-harm"
+      ]
+    ],
+    "suggestions": [
+      "federal-ban"
+    ],
+    "absentDirectories": [
+      "federal-ban"
+    ]
+  }
+}

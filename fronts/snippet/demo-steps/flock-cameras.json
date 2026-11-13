@@ -1,0 +1,205 @@
+{
+  "topic": "flock-cameras",
+  "steps": [
+    {
+      "id": "maya-privacy",
+      "name": "Maya",
+      "body": "These cameras are mass surveillance and an invasion of privacy.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "invasion-of-privacy"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "national-security",
+      "expectNotice": "Batch placed this post under invasion-of-privacy.",
+      "expectKeysAfter": [
+        "invasion-of-privacy"
+      ],
+      "expectPairsAfter": [],
+      "expectSuggestionsAfter": [
+        "national-security"
+      ]
+    },
+    {
+      "id": "jordan-security",
+      "name": "Jordan",
+      "body": "We need these cameras now for national security and to catch trafficking.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "national-security"
+      ],
+      "expectPair": [
+        "invasion-of-privacy",
+        "national-security"
+      ],
+      "expectSuggestion": "",
+      "expectNotice": "Batch placed this post under national-security and paired the counters.",
+      "expectKeysAfter": [
+        "invasion-of-privacy",
+        "national-security"
+      ],
+      "expectPairsAfter": [
+        [
+          "invasion-of-privacy",
+          "national-security"
+        ]
+      ],
+      "expectSuggestionsAfter": []
+    },
+    {
+      "id": "maya-illegal",
+      "name": "Maya",
+      "body": "But it's illegal! Local data gets searched nationwide.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "illegal"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "legal",
+      "expectNotice": "Batch opened illegal. legal stays a suggestion with a Patriot Act citation.",
+      "expectKeysAfter": [
+        "invasion-of-privacy",
+        "national-security",
+        "illegal"
+      ],
+      "expectPairsAfter": [
+        [
+          "invasion-of-privacy",
+          "national-security"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "legal"
+      ]
+    },
+    {
+      "id": "jordan-question",
+      "name": "Jordan",
+      "body": "Are these cameras illegal?",
+      "chooseSlot": "",
+      "expectKeys": [
+        "illegal"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "legal",
+      "expectNotice": "The question joined illegal. It was not put in other.",
+      "expectKeysAfter": [
+        "invasion-of-privacy",
+        "national-security",
+        "illegal"
+      ],
+      "expectPairsAfter": [
+        [
+          "invasion-of-privacy",
+          "national-security"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "legal"
+      ]
+    },
+    {
+      "id": "maya-multi",
+      "name": "Maya",
+      "body": "These cameras are illegal mass surveillance.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "illegal",
+        "invasion-of-privacy"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "legal",
+      "expectNotice": "One post, listed from illegal and invasion-of-privacy.",
+      "expectKeysAfter": [
+        "invasion-of-privacy",
+        "national-security",
+        "illegal"
+      ],
+      "expectPairsAfter": [
+        [
+          "invasion-of-privacy",
+          "national-security"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "legal"
+      ]
+    },
+    {
+      "id": "jordan-sharing",
+      "name": "Jordan",
+      "body": "Illinois and California already say sharing plate hits with ICE and CBP breaks state law. The national lookup is the product. Out-of-state travel searches show why local data should stay local.",
+      "chooseSlot": "",
+      "expectKeys": [
+        "data-sharing"
+      ],
+      "expectPair": [],
+      "expectSuggestion": "legal",
+      "expectNotice": "Batch opened data-sharing. local-only stays a suggestion.",
+      "expectKeysAfter": [
+        "invasion-of-privacy",
+        "national-security",
+        "illegal",
+        "data-sharing"
+      ],
+      "expectPairsAfter": [
+        [
+          "invasion-of-privacy",
+          "national-security"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "local-only",
+        "legal"
+      ]
+    },
+    {
+      "id": "maya-lol",
+      "name": "Maya",
+      "body": "lol",
+      "chooseSlot": "",
+      "expectKeys": [],
+      "expectPair": [],
+      "expectSuggestion": "legal",
+      "expectNotice": "Batch left lol uncategorized. No clever key.",
+      "expectKeysAfter": [
+        "invasion-of-privacy",
+        "national-security",
+        "illegal",
+        "data-sharing"
+      ],
+      "expectPairsAfter": [
+        [
+          "invasion-of-privacy",
+          "national-security"
+        ]
+      ],
+      "expectSuggestionsAfter": [
+        "local-only",
+        "legal"
+      ]
+    }
+  ],
+  "final": {
+    "keys": [
+      "invasion-of-privacy",
+      "national-security",
+      "illegal",
+      "data-sharing"
+    ],
+    "pairs": [
+      [
+        "invasion-of-privacy",
+        "national-security"
+      ]
+    ],
+    "suggestions": [
+      "local-only",
+      "legal"
+    ],
+    "absentDirectories": [
+      "local-only",
+      "legal"
+    ]
+  }
+}

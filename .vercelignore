@@ -1,0 +1,13 @@
+.env*
+.git
+__pycache__
+*.pyc
+var
+tests
+docs
+fixtures
+android
+node_modules
+test-results
+playwright-report
+.playwright

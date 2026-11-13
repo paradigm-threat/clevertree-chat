@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://clevertree.chat/sitemap.xml

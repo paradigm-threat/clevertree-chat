@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Clevertree Chat tree and roots monochrome mark">
+<g fill="none" stroke="#1F4D3A" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="256" cy="256" r="243" stroke-width="17"/>
+  <path d="M256 312V150 M256 270C238 232 187 221 153 161 M256 270C274 232 325 221 359 161 M250 294C224 256 169 264 117 231 M262 294C288 256 343 264 395 231" stroke-width="26"/>
+  <path d="M256 316V352M256 350C226 340 210 348 187 377M256 350C286 340 302 348 325 377M256 365C232 376 226 407 226 423M256 365C280 376 286 407 286 423M256 366V433" stroke-width="12"/>
+</g>
+<g fill="#1F4D3A">
+ <circle cx="256" cy="97" r="48"/><circle cx="151" cy="120" r="35"/><circle cx="361" cy="120" r="35"/><circle cx="117" cy="223" r="41"/><circle cx="395" cy="223" r="41"/>
+ <path d="M18 320Q127 282 212 311Q256 339 300 311Q385 282 494 320L476 357Q355 335 256 355Q157 335 36 357Z"/>
+ <circle cx="187" cy="398" r="18"/><circle cx="325" cy="398" r="18"/><circle cx="226" cy="440" r="18"/><circle cx="286" cy="440" r="18"/><circle cx="256" cy="451" r="18"/>
+</g>
+<!-- Negative-space relay motif embedded in the trunk -->
+<g stroke="#F4F1EA" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M244 263L267 247M244 263L268 281"/><circle cx="241" cy="265" r="5"/><circle cx="271" cy="244" r="5"/><circle cx="271" cy="283" r="5"/></g>
+</svg>

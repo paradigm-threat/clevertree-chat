@@ -1,0 +1,25 @@
+{
+  "cases": [
+    "two wordings of one argument share a key",
+    "a different axis gets its own key",
+    "illegal stays off invasion-of-privacy",
+    "legal stays off national-security",
+    "mass-surveillance may be renamed to invasion-of-privacy with history",
+    "borders, elections, and crime stay inside national-security",
+    "a new reason does not mint a key",
+    "a rewrite with no new post and no new pair does not commit",
+    "an edited post queues the batch and does not set the key",
+    "one comment yields questions and a cited suggestion without the opposing directory",
+    "the tree keeps current keys, key-history.json, and readable pairs.json",
+    "comments and votes store the short id",
+    "a commit that is not from the AI service is rejected",
+    "one current vote on a topic, a subtopic, and a comment",
+    "a vote does not rename a key or rewrite a summary",
+    "default rules represent a dangerous claim without swearing or scolding",
+    "a rules.md that freezes keys is followed",
+    "a summary prefix is followed by the live response and the batch",
+    "a chosen existing category is only the starting slot and the batch may move it",
+    "skipping the choice leaves the post uncategorized until the batch",
+    "a non-argument is stored and can stay in none"
+  ]
+}
