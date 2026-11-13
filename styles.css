@@ -413,19 +413,22 @@ footer {
   .pair-row { grid-template-columns: 1fr; }
 }
 
-/* /trees — horizon forest against a full-bleed hills background */
+/* /trees — copy scrolls; hills + horizon forest stay pinned to the bottom */
 .trees-body {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(180deg, #4dc4ec 0%, #6ad1ef 22%, #c8ebc0 58%, var(--cream) 100%);
+  background: linear-gradient(180deg, #4dc4ec 0%, #68d5f6 35%, #d4f3fb 70%, var(--cream) 100%);
 }
 
 .trees-bg {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 0;
+  height: min(52vh, 34rem);
   pointer-events: none;
-  background-color: #6ad1ef;
+  background-color: #7ecf6a;
   background-image: url("/images/forest-horizon.jpg");
   background-image: url("/images/forest-horizon.webp");
   background-position: center bottom;
@@ -435,11 +438,12 @@ footer {
 
 .trees-wrap {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  padding-bottom: calc(min(52vh, 34rem) + 1.5rem);
 }
 
 .trees-page {
-  padding: 1.2rem 0 2.5rem;
+  padding: 1.2rem 0 2rem;
 }
 
 .trees-lead {
@@ -457,11 +461,20 @@ footer {
 }
 
 .forest-horizon {
-  position: relative;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  height: clamp(22rem, 68vh, 42rem);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+  height: min(48vh, 30rem);
   overflow: visible;
+  pointer-events: none;
+}
+
+.forest-horizon .forest-tree {
+  pointer-events: auto;
 }
 
 .forest-tree {

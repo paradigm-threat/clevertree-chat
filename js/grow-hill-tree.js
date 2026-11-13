@@ -103,9 +103,9 @@ function growHillTree(canvas, opts) {
     if (n >= STEM_N) return null;
     const x1 = s.x + Math.sin(s.angle) * s.length;
     const y1 = s.y - Math.cos(s.angle) * s.length;
-    const tipRatio = s.depth === 0 ? 0.62 : (s.spur ? 0.55 : 0.72);
+    const tipRatio = s.depth === 0 ? 0.68 : (s.spur ? 0.62 : 0.78);
     let r1 = s.radius * tipRatio;
-    if (r1 < 0.35) r1 = 0.35;
+    if (r1 < 0.55) r1 = 0.55;
     const idx = n;
     sx0[idx] = s.x;
     sy0[idx] = s.y;
@@ -362,7 +362,8 @@ function growHillTree(canvas, opts) {
   let falling = 0;
   let tipOrdinal = 0;
   const tipIds = [];
-  const leafMinDist = 9;
+  // Dense small foliage dabs — fuller canopy without giant see-through petals.
+  const leafMinDist = 3.2;
   function leafTooClose(x, y) {
     for (let j = 0; j < leaves; j++) {
       const dx = lx[j] - x;
@@ -373,26 +374,26 @@ function growHillTree(canvas, opts) {
   }
   for (let i = 0; i < n; i++) {
     if (sdep[i] === DEPTH) tipIds.push(i);
-    // Outer wood only — cuts inner pile-up on the trunk.
     if (sdep[i] < 2) continue;
     const ang = sang[i];
-    const per = sdep[i] >= 5 ? 3 : 2;
-    const base = Math.max(10, 17 - sdep[i] * 1.0);
+    const per = sdep[i] >= 5 ? 7 : (sdep[i] >= 3 ? 5 : 4);
+    const base = Math.max(4.2, 7.5 - sdep[i] * 0.35);
     for (let k = 0; k < per; k++) {
       if (leaves >= LEAF_N) break;
-      const back = k * 2.2;
-      const px = sx1[i] - Math.sin(ang) * back;
-      const py = sy1[i] + Math.cos(ang) * back;
+      const back = (k % 4) * 1.15;
+      const side = ((k % 5) - 2) * 1.4;
+      const px = sx1[i] - Math.sin(ang) * back + Math.cos(ang) * side;
+      const py = sy1[i] + Math.cos(ang) * back + Math.sin(ang) * side * 0.35;
       if (leafTooClose(px, py)) continue;
       lx[leaves] = px;
       ly[leaves] = py;
-      lrot[leaves] = ang + (k - (per - 1) / 2) * 0.55;
-      llen[leaves] = base + (k % 3) * 1.6;
+      lrot[leaves] = ang + (k - (per - 1) / 2) * 0.35 + (k % 3 - 1) * 0.4;
+      llen[leaves] = base + (k % 4) * 0.55;
       // Bloom just after this stem's length finishes — never on an invisible twig.
       lshow[leaves] = Math.max(0, Math.min(sEnd[i] + 0.01, 0.98));
       lcol[leaves] = (sdep[i] + k) % LEAF.length;
       ldep[leaves] = sdep[i];
-      if (sdep[i] === DEPTH && k === 0 && tipOrdinal % 8 === 0) {
+      if (sdep[i] === DEPTH && k === 0 && tipOrdinal % 10 === 0) {
         lfall[leaves] = 1;
         falling += 1;
       } else {
@@ -479,13 +480,16 @@ function growHillTree(canvas, opts) {
   }
 
   function drawLeaf(x, y, angle, len) {
+    // Small overlapping dabs read as a leafy puff, not a giant petal.
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
+    const s = Math.max(2.2, len);
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(len * 0.42, -len * 0.18, len * 0.36, -len * 0.82, 0, -len);
-    ctx.bezierCurveTo(-len * 0.36, -len * 0.82, -len * 0.42, -len * 0.18, 0, 0);
+    ctx.ellipse(0, -s * 0.15, s * 0.55, s * 0.7, 0, 0, Math.PI * 2);
+    ctx.ellipse(-s * 0.35, -s * 0.45, s * 0.38, s * 0.48, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.32, -s * 0.4, s * 0.36, s * 0.46, 0.45, 0, Math.PI * 2);
+    ctx.ellipse(0, -s * 0.75, s * 0.3, s * 0.34, 0.1, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
