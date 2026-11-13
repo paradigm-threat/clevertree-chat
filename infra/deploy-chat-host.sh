@@ -18,7 +18,11 @@ cp "$ROOT/clevertree_chat/wsutil.py" "$ROOT/clevertree_chat/chat_hub.py" "$ROOT/
 cp "$ROOT/clevertree_chat/demos/"*.py "$STAGE/clevertree_chat/demos/"
 cp "$ROOT/scripts/chat_host.py" "$STAGE/scripts/"
 cp "$ROOT/chat/index.html" "$STAGE/chat/"
-cp "$ROOT/fronts/snippet/clevertree-chat.js" "$ROOT/fronts/snippet/clevertree-chat.css" "$ROOT/fronts/snippet/embed.html" "$STAGE/fronts/snippet/"
+cp "$ROOT/fronts/snippet/clevertree-board.js" "$ROOT/fronts/snippet/clevertree-board.css" "$ROOT/fronts/snippet/embed.html" "$STAGE/fronts/snippet/"
+# Legacy widget kept in repo for reference; demos no longer mount it.
+if [[ -f "$ROOT/fronts/snippet/clevertree-chat.js" ]]; then
+  cp "$ROOT/fronts/snippet/clevertree-chat.js" "$ROOT/fronts/snippet/clevertree-chat.css" "$STAGE/fronts/snippet/" || true
+fi
 cp "$ROOT/fronts/snippet/demo-steps/"*.json "$STAGE/fronts/snippet/demo-steps/"
 cp "$ROOT/styles.css" "$ROOT/icon-128x128.png" "$ROOT/favicon.ico" "$STAGE/"
 tar -C "$STAGE" -czf /tmp/clevertree-chat-host.tgz .

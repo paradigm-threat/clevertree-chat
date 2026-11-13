@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clevertree Chat embed snippet</title>
-  <link rel="stylesheet" href="/fronts/snippet/clevertree-chat.css">
+  <title>Clevertree Chat — embed Debate board</title>
+  <link rel="stylesheet" href="/fronts/snippet/clevertree-board.css">
   <style>
     body {
       margin: 0;
@@ -13,7 +13,7 @@
       color: #0f2a1c;
     }
     main {
-      max-width: 42rem;
+      max-width: 48rem;
       margin: 0 auto;
       padding: 2rem 1.2rem 3rem;
     }
@@ -29,19 +29,33 @@
 </head>
 <body>
   <main>
-    <h1>Embed Clevertree Chat</h1>
-    <p>Paste a mount on any host page. Point <code>data-api-base</code> at the Intake chat host for live WebSocket updates.</p>
-    <pre>&lt;link rel="stylesheet" href="https://intake.myproblem.app/fronts/snippet/clevertree-chat.css"&gt;
+    <h1>Embed Clevertree Debate board</h1>
+    <p>
+      Guided demos use the Debate board UI only (not the legacy activity-list widget).
+      Point <code>data-api-base</code> at the Intake chat host for live WebSocket updates.
+    </p>
+    <pre>&lt;link rel="stylesheet" href="https://intake.myproblem.app/fronts/snippet/clevertree-board.css"&gt;
 &lt;div
-  data-clevertree-chat
+  data-clevertree-board
   data-api="chat"
   data-api-base="https://intake.myproblem.app"
   data-topic="thc-legalization"
   data-guided="true"
 &gt;&lt;/div&gt;
-&lt;script src="https://intake.myproblem.app/fronts/snippet/clevertree-chat.js"&gt;&lt;/script&gt;</pre>
-    <p>Local: open <a href="http://127.0.0.1:8790/chat/thc-legalization">http://127.0.0.1:8790/chat/thc-legalization</a> after <code>python3 scripts/chat_host.py</code>.</p>
+&lt;script src="https://intake.myproblem.app/fronts/snippet/clevertree-board.js"&gt;&lt;/script&gt;</pre>
+    <p>
+      Local: open
+      <a href="http://127.0.0.1:8790/chat/thc-legalization">http://127.0.0.1:8790/chat/thc-legalization</a>
+      after <code>python3 scripts/chat_host.py</code>.
+    </p>
+    <div
+      data-clevertree-board
+      data-api="chat"
+      data-topic="flock-cameras"
+      data-guided="true"
+      style="margin-top:1.5rem"
+    ></div>
   </main>
-  <script src="/fronts/snippet/clevertree-chat.js"></script>
+  <script src="/fronts/snippet/clevertree-board.js"></script>
 </body>
 </html>

@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Clevertree Chat</title>
-  <meta name="description" content="Containable standing debate. Your posts and theirs stay distinct. Live updates over WebSocket.">
+  <meta name="description" content="Standing debate board. Perspectives ranked by activity. Live WebSocket updates.">
   <meta name="theme-color" content="#D4F3FB">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Clevertree Chat">
   <meta property="og:title" content="Clevertree Chat — Standing debate">
-  <meta property="og:description" content="Containable standing debate. Your posts and theirs stay distinct. Live updates over WebSocket.">
+  <meta property="og:description" content="Standing debate board. Perspectives ranked by activity. Live WebSocket updates.">
   <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="/fronts/snippet/clevertree-chat.css">
+  <link rel="stylesheet" href="/fronts/snippet/clevertree-board.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -35,14 +35,14 @@
     <main id="main" class="try-page">
       <p class="kicker" id="host-kicker">Live on Intake</p>
       <h1 id="host-title">Standing debate</h1>
-      <p class="lead-quiet" id="host-lead">One containable panel. You post here. Others arrive from the server.</p>
-      <p id="host-blurb">Pick a guided topic. Your posts are green. Their posts are blue. Batch notices stay separate. WebSocket keeps the activity list current.</p>
+      <p class="lead-quiet" id="host-lead">Don’t get lost in the weeds.</p>
+      <p id="host-blurb">Guided topics use the Debate board UI. Explore perspectives, then add a point. Demo mode pauses after each update (UI-only).</p>
       <p id="host-links" class="hint">
         <a href="/chat/thc-legalization">thc-legalization</a>
         ·
         <a href="/chat/flock-cameras">flock-cameras</a>
         ·
-        <a href="https://clevertree.chat/try">Marketing demos</a>
+        <a href="https://clevertree.chat/try">Marketing site</a>
       </p>
       <div id="demo-chooser" class="map" hidden>
         <p class="topic">Guided topics</p>
@@ -77,14 +77,12 @@
       const mount = document.getElementById("demo-mount");
       const copy = {
         "flock-cameras": {
-          title: "flock-cameras",
-          blurb: "You post the visitor beats. Jordan arrives from the server over WebSocket after each batch.",
-          autoplay: false,
+          title: "Should cities use camera networks?",
+          blurb: "Explore ranked perspectives, then post. Jordan arrives from the server after each batch — labeled as a simulated participant.",
         },
         "thc-legalization": {
-          title: "thc-legalization",
-          blurb: "You post adult-use and medical freedom beats. Jordan’s harm, tax, and federal questions are injected by the host — not typed in your composer.",
-          autoplay: true,
+          title: "Should adult-use cannabis be legal?",
+          blurb: "Explore ranked perspectives, then post. Peer beats are injected by the host over WebSocket — not typed in your composer.",
         },
       };
       if (!topic) {
@@ -92,26 +90,25 @@
         mount.hidden = true;
         return;
       }
-      const meta = copy[topic] || { title: topic, blurb: "Guided topic on the chat host.", autoplay: false };
+      const meta = copy[topic] || {
+        title: topic,
+        blurb: "Guided topic on the chat host — Debate board UI.",
+      };
       kicker.textContent = "Guided topic";
       title.textContent = meta.title;
       lead.textContent = "Don’t get lost in the weeds.";
       blurb.textContent = meta.blurb;
       chooser.hidden = true;
       mount.hidden = false;
-      mount.setAttribute("data-clevertree-chat", "");
+      mount.setAttribute("data-clevertree-board", "");
       mount.setAttribute("data-api", "chat");
       mount.setAttribute("data-topic", topic);
       mount.setAttribute("data-guided", "true");
-      const params = new URLSearchParams(location.search);
-      if (meta.autoplay && params.get("autoplay") !== "0") {
-        mount.setAttribute("data-autoplay", "true");
-      }
       document.title = meta.title + " — Clevertree Chat";
       links.innerHTML =
-        '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/try">Marketing site</a>';
+        '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/try">Marketing site</a> · <a href="https://clevertree.chat/try/ui">UI lab (mock)</a>';
     })();
   </script>
-  <script src="/fronts/snippet/clevertree-chat.js"></script>
+  <script src="/fronts/snippet/clevertree-board.js"></script>
 </body>
 </html>

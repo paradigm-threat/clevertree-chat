@@ -259,6 +259,12 @@ h2 {
   gap: 1rem;
 }
 
+/* .map { display:grid } would otherwise override the hidden attribute. */
+#demo-chooser[hidden],
+#demo-mount[hidden] {
+  display: none !important;
+}
+
 .topic {
   font-family: var(--serif);
   font-size: 1.4rem;
