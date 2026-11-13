@@ -64,6 +64,12 @@ header {
 
 .wordmark svg { width: 2rem; height: 2rem; display: block; }
 
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
 .nav-try {
   font-family: var(--serif);
   text-decoration: none;
@@ -71,7 +77,8 @@ header {
   padding-bottom: 0.1rem;
 }
 
-.nav-try:hover { border-bottom-color: var(--green); }
+.nav-try:hover,
+.nav-try[aria-current="page"] { border-bottom-color: var(--green); }
 
 .banner {
   position: relative;
@@ -404,4 +411,101 @@ footer {
 
 @media (max-width: 800px) {
   .pair-row { grid-template-columns: 1fr; }
+}
+
+/* /trees — forest against repeating (sharp) hillside wings */
+.trees-body {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #4dc4ec 0%, #6ad1ef 18%, #e7f6ea 55%, var(--cream) 100%);
+}
+
+.trees-wings {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("/images/hero-wings.jpg");
+  background-position: center bottom;
+  background-size: 720px auto;
+  background-repeat: repeat;
+  opacity: 0.92;
+}
+
+.trees-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.trees-page {
+  padding: 1.4rem 0 3.5rem;
+}
+
+.trees-lead {
+  max-width: 42rem;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(244, 248, 239, 0.55);
+}
+
+.trees-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem 1.2rem;
+  margin: 1.4rem 0 1.8rem;
+}
+
+.forest {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 1.1rem 0.7rem;
+  align-items: end;
+}
+
+.forest-tree {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.forest-canvas {
+  width: 100%;
+  max-width: 14rem;
+  height: auto;
+  aspect-ratio: 520 / 400;
+  display: block;
+  cursor: pointer;
+  filter: drop-shadow(0 10px 14px rgba(14, 63, 36, 0.18));
+}
+
+.forest-tree figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2rem 0.45rem;
+  max-width: 14rem;
+  margin: 0;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.35rem;
+  background: rgba(244, 248, 239, 0.78);
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.forest-tree figcaption strong {
+  width: 100%;
+  color: var(--green);
+  font-family: var(--serif);
+  font-weight: 560;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 900px) {
+  .forest {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
