@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clevertree Chat</title>
-  <meta name="description" content="Standing debate board. Perspectives ranked by activity. Live WebSocket updates.">
+  <title>Clevertree Chat — Guided demos</title>
+  <meta name="description" content="Interactive guided demos of Clevertree Chat. Not live hosted topics — scripted walkthroughs with simulated peers.">
   <meta name="theme-color" content="#D4F3FB">
+  <meta name="robots" content="noindex">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Clevertree Chat">
-  <meta property="og:title" content="Clevertree Chat — Standing debate">
-  <meta property="og:description" content="Standing debate board. Perspectives ranked by activity. Live WebSocket updates.">
+  <meta property="og:title" content="Clevertree Chat — Guided demos only">
+  <meta property="og:description" content="Interactive guided demos. Not live hosted topics — scripted walkthroughs with simulated peers.">
   <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -30,26 +31,27 @@
         <img src="/icon-128x128.png" alt="" width="32" height="32">
         Clevertree Chat
       </a>
-      <a class="nav-try" href="/chat">Chat host</a>
+      <a class="nav-try" href="/chat" aria-current="page">Guided demos</a>
     </header>
     <main id="main" class="try-page">
-      <p class="kicker" id="host-kicker">Live on Intake</p>
+      <p class="demo-only-banner" id="demo-banner" role="status">Interactive demo only · not a live hosted topic</p>
+      <p class="kicker" id="host-kicker">Guided demos</p>
       <h1 id="host-title">Standing debate</h1>
-      <p class="lead-quiet" id="host-lead">Don’t get lost in the weeds.</p>
-      <p id="host-blurb">Guided topics use the Debate board UI. Explore perspectives, then add a point. Demo mode pauses after each update (UI-only).</p>
+      <p class="lead-quiet" id="host-lead">Scripted walkthroughs. Simulated peers. Demo pauses are UI-only.</p>
+      <p id="host-blurb">Pick a guided topic below. Nothing here is a real debate we are hosting yet — it is a product demo of the Debate board.</p>
       <p id="host-links" class="hint">
-        <a href="/chat/thc-legalization">thc-legalization</a>
+        <a href="/chat/thc-legalization">thc-legalization demo</a>
         ·
-        <a href="/chat/flock-cameras">flock-cameras</a>
+        <a href="/chat/flock-cameras">flock-cameras demo</a>
         ·
         <a href="https://clevertree.chat/try">Marketing site</a>
       </p>
       <div id="demo-chooser" class="map" hidden>
-        <p class="topic">Guided topics</p>
+        <p class="topic">Guided demo topics</p>
         <div class="pair">
-          <a href="/chat/flock-cameras">flock-cameras</a>
+          <a href="/chat/flock-cameras">flock-cameras demo</a>
           <span class="vs">or</span>
-          <a href="/chat/thc-legalization">thc-legalization</a>
+          <a href="/chat/thc-legalization">thc-legalization demo</a>
         </div>
       </div>
       <div id="demo-mount" hidden></div>
@@ -61,7 +63,7 @@
       </aside>
     </main>
     <footer>
-      <p>Served from the chat host (Intake). Vercel is marketing only.</p>
+      <p>Intake chat host · guided demos only. Marketing lives on clevertree.chat.</p>
     </footer>
   </div>
   <script>
@@ -75,14 +77,17 @@
       const links = document.getElementById("host-links");
       const chooser = document.getElementById("demo-chooser");
       const mount = document.getElementById("demo-mount");
+      const banner = document.getElementById("demo-banner");
       const copy = {
         "flock-cameras": {
           title: "Should cities use camera networks?",
-          blurb: "Explore ranked perspectives, then post. Jordan arrives from the server after each batch — labeled as a simulated participant.",
+          blurb:
+            "Demo script: you post as the visitor; Jordan is injected by the server and labeled simulated. Demo mode pauses after each update so you can Continue — the server is not waiting.",
         },
         "thc-legalization": {
           title: "Should adult-use cannabis be legal?",
-          blurb: "Explore ranked perspectives, then post. Peer beats are injected by the host over WebSocket — not typed in your composer.",
+          blurb:
+            "Demo script: you post as the visitor; peer beats are injected over WebSocket and labeled simulated. Demo mode pauses after each update so you can Continue — the server is not waiting.",
         },
       };
       if (!topic) {
@@ -92,21 +97,25 @@
       }
       const meta = copy[topic] || {
         title: topic,
-        blurb: "Guided topic on the chat host — Debate board UI.",
+        blurb: "Guided product demo on the chat host — not a live hosted debate.",
       };
-      kicker.textContent = "Guided topic";
+      kicker.textContent = "Interactive demo only";
       title.textContent = meta.title;
-      lead.textContent = "Don’t get lost in the weeds.";
+      lead.textContent = "Not a live topic. Scripted walkthrough with simulated peers.";
       blurb.textContent = meta.blurb;
+      if (banner) {
+        banner.textContent =
+          "Interactive demo only · scripted walkthrough · not a live hosted topic";
+      }
       chooser.hidden = true;
       mount.hidden = false;
       mount.setAttribute("data-clevertree-board", "");
       mount.setAttribute("data-api", "chat");
       mount.setAttribute("data-topic", topic);
       mount.setAttribute("data-guided", "true");
-      document.title = meta.title + " — Clevertree Chat";
+      document.title = meta.title + " — Clevertree Chat demo";
       links.innerHTML =
-        '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/try">Marketing site</a> · <a href="https://clevertree.chat/try/ui">UI lab (mock)</a>';
+        '<a href="/chat">All demos</a> · <a href="https://clevertree.chat/try">Marketing site</a> · <a href="https://clevertree.chat/try/ui">UI lab (mock)</a>';
     })();
   </script>
   <script src="/fronts/snippet/clevertree-board.js"></script>

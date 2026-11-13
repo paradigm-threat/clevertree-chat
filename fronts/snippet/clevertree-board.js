@@ -328,10 +328,18 @@
       composerOpen: false,
       savedScroll: 0,
       liveState: "closed",
-      liveText: "Connecting…",
+      liveText: guided ? "Demo · connecting…" : "Connecting…",
       status: "",
       busy: false,
     };
+
+    function connectedLabel() {
+      return guided ? "Demo · connected" : "Live";
+    }
+
+    function reconnectLabel() {
+      return guided ? "Demo · reconnecting…" : "Reconnecting…";
+    }
 
     function applyView(view, opts) {
       const o = opts || {};
@@ -644,7 +652,9 @@
       const unfiled = unfiledPosts();
       const empty =
         !store.board.keys.length && !unfiled.length
-          ? '<p class="ct-invite">No perspectives yet — be the first to add a point.</p>'
+          ? guided
+            ? '<p class="ct-invite">Demo start — post a point below. The script will organize it and a simulated peer may reply.</p>'
+            : '<p class="ct-invite">No perspectives yet — be the first to add a point.</p>'
           : '<p class="ct-invite">' + escapeHtml(store.board.topic.invite) + "</p>";
       return (
         '<div class="ct-board-scroll" data-board-scroll>' +
@@ -663,7 +673,7 @@
     function aboutHtml() {
       return (
         '<div class="ct-about" data-board-scroll><h2>About this demo</h2>' +
-        "<p>Guided walkthrough on the Intake chat host. Simulated peers are labeled. Demo pauses are <strong>UI-only</strong>.</p>" +
+        "<p>This is an <strong>interactive product demo</strong>, not a live hosted topic. Simulated peers are labeled. Demo pauses are <strong>UI-only</strong> — the server keeps going.</p>" +
         demoBoxHtml() +
         "</div>"
       );
@@ -903,12 +913,12 @@
       }
       socket.addEventListener("open", function () {
         store.liveState = "open";
-        store.liveText = "Live";
+        store.liveText = connectedLabel();
         rerender();
       });
       socket.addEventListener("close", function () {
         store.liveState = "closed";
-        store.liveText = "Reconnecting…";
+        store.liveText = reconnectLabel();
         rerender();
         window.clearTimeout(reconnectTimer);
         reconnectTimer = window.setTimeout(connectWs, 1600);
