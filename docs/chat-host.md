@@ -1,6 +1,6 @@
-# Clevertree Chat host (Intake)
+# Clevertree Chat host
 
-The guided multi-person debate runs on the **Intake chat host**, not on Vercel.
+The guided multi-person debate runs on the **chat host**, not on Vercel marketing.
 
 | | |
 |--|--|
@@ -15,15 +15,24 @@ Extension identity:
 - `action=identify` — mint or validate a visitor UUID (server-issued).
 - `action=resolve` — normalize a tab URL and return `{ topic, guided, visitor, view, … }`. Freeform pages get `u-<sha256…>` topic ids; guided demos keep fixed slugs.
 
+## Public hostnames (same process)
+
+| Hostname | Role |
+|--|--|
+| **https://api.clevertree.chat** | Cleverchat public API + demos + extension (entire hostname → `:8790`) |
+| `https://intake.myproblem.app` | Shared Intake node; chat paths also proxy to `:8790`; tickets stay on `:8787` |
+
+Cleverchat product links and the browser extension use **api.clevertree.chat** only.
+
 ## Behavior
 
 - The visitor posts only through the containable composer.
 - Peer speakers (Jordan in the guided scripts) are **injected by the server** after a visitor beat drains, then fanned out over WebSocket.
 - Activity rows mark `data-mine="true"` for the visitor and a different accent for others.
 
-## Deploy on `myproblem-intake`
+## Deploy
 
-From this repo (uses `KUBECONFIG=~/.kube/myproblem-intake.yaml` by default):
+From this repo (ops still use the shared Intake kubeconfig by default):
 
 ```bash
 bash infra/deploy-chat-host.sh
@@ -33,15 +42,15 @@ That script:
 
 1. Packs a slim tree into ConfigMap `clevertree-chat-code`
 2. Applies [`infra/k8s/chat-host.yaml`](../infra/k8s/chat-host.yaml) (Python host on `:8790`, hostNetwork)
-3. Patches Caddy so `/chat*`, `/api/chat*`, and snippet assets go to `:8790`; everything else stays on the ticket worker `:8787`
+3. Patches Caddy with dual sites: `api.clevertree.chat` → `:8790`; `intake.myproblem.app` chat paths → `:8790`, tickets → `:8787`
 
-Manifests also live in `myproblem-tickets/infra/k8s/intake-caddy.yaml` so ticket rollouts keep the chat routes.
+Caddy dual-domain is mirrored in `myproblem-tickets/infra/k8s/intake-caddy.yaml` so ticket rollouts keep both hosts.
 
-Public URLs:
+Public Cleverchat URLs:
 
-- `https://intake.myproblem.app/chat`
-- `https://intake.myproblem.app/chat/thc-legalization`
-- `https://intake.myproblem.app/chat/flock-cameras`
+- `https://api.clevertree.chat/chat`
+- `https://api.clevertree.chat/chat/thc-legalization`
+- `https://api.clevertree.chat/chat/flock-cameras`
 
 Vercel (`clevertree.chat`) keeps marketing and links here. It does not own the demo socket.
 

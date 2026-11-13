@@ -11,6 +11,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://clevertree.chat/extension</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://clevertree.chat/try</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

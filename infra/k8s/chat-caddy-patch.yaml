@@ -1,4 +1,6 @@
-# Full Caddyfile for intake.myproblem.app — tickets on :8787, chat on :8790
+# Dual-domain Caddy: Cleverchat API + MyProblem Intake on shared hardware
+# - api.clevertree.chat → chat host :8790 (entire hostname)
+# - intake.myproblem.app → tickets :8787 + chat path proxies to :8790
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,6 +11,12 @@ data:
     {
       email hostmaster@myproblem.app
     }
+
+    api.clevertree.chat {
+      encode gzip
+      reverse_proxy 127.0.0.1:8790
+    }
+
     intake.myproblem.app {
       encode gzip
 

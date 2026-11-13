@@ -36,4 +36,4 @@ kubectl apply -f "$ROOT/infra/k8s/chat-caddy-patch.yaml"
 kubectl -n myproblem rollout restart deployment/clevertree-chat deployment/intake-caddy
 kubectl -n myproblem rollout status deployment/clevertree-chat --timeout=180s
 kubectl -n myproblem rollout status deployment/intake-caddy --timeout=180s
-echo "Smoke: https://intake.myproblem.app/chat"
+echo "Smoke: https://api.clevertree.chat/chat (also https://intake.myproblem.app/chat)"

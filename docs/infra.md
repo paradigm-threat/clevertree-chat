@@ -2,11 +2,11 @@
 
 The front of the product is the live path. While someone writes, it may show a suggested existing category. That suggestion does not file the post. The author does not wait on the batch, and the live path does not boot a GPU.
 
-**Chat host (Intake):** the containable UI, `/api/chat`, and WebSocket fan-out run on Intake (`scripts/chat_host.py`, see [`chat-host.md`](chat-host.md)). Peer posts are server-injected. Vercel does not own the multi-person demo socket — `clevertree.chat/try` links to `https://intake.myproblem.app/chat/…`.
+**Chat host:** the containable UI, `/api/chat`, and WebSocket fan-out run on the chat host (`scripts/chat_host.py`, see [`chat-host.md`](chat-host.md)). Peer posts are server-injected. Cleverchat’s public hostname is **`https://api.clevertree.chat`** (same hardware as Intake). Vercel does not own the demo socket — `clevertree.chat/try` links to `https://api.clevertree.chat/chat/…`.
 
 The back is the deep pass. A job file on the `comments` branch is the queue. The worker checks out `comments` only, drains every dirty page, and lets new comments that arrive during the drain join that same drain. When the queue is empty, the result says the hardware should shut down.
 
-That split is myproblem.app's infrastructure: always-on intake for the live path, ephemeral Spot for the deep pass, git as the record. This product stays its own repo. myproblem.app is the first app that mounts it. The debate is never written into the host page repo. `page.json` can pin a canonical URL or a content commit and flag the thesis stale. Nothing is written back to the host.
+Cleverchat is an independent product repo. Other apps (including MyProblem) may mount it; they depend on Cleverchat, not the reverse. The debate is never written into the host page repo. `page.json` can pin a canonical URL or a content commit and flag the thesis stale. Nothing is written back to the host.
 
 ## Spot, dry run only
 

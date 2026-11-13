@@ -26,8 +26,6 @@
   },
   "permissions": ["sidePanel", "storage", "tabs", "activeTab"],
   "host_permissions": [
-    "https://intake.myproblem.app/*",
-    "http://127.0.0.1:8790/*",
-    "http://localhost:8790/*"
+    "https://api.clevertree.chat/*"
   ]
 }

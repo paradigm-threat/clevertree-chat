@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Browser extension — Clevertree Chat</title>
+  <meta name="description" content="Download the Clevertree Chat Chromium side-panel extension. Debate the page you’re on — empty until you write.">
+  <meta name="theme-color" content="#D4F3FB">
+  <link rel="canonical" href="https://clevertree.chat/extension">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Clevertree Chat">
+  <meta property="og:title" content="Browser extension — Clevertree Chat">
+  <meta property="og:description" content="Download the Clevertree Chat Chromium side-panel extension. Debate the page you’re on — empty until you write.">
+  <meta property="og:url" content="https://clevertree.chat/extension">
+  <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://clevertree.chat/images/og-default.jpg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header>
+      <a class="wordmark" href="/">
+        <img src="/icon-128x128.png" alt="" width="32" height="32">
+        Clevertree Chat
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="nav-try" href="/trees">Trees</a>
+        <a class="nav-try" href="/extension" aria-current="page">Extension</a>
+        <a class="nav-try" href="/try">See demo</a>
+      </nav>
+    </header>
+    <main id="main" class="try-page">
+      <p class="kicker">Chromium · MV3</p>
+      <h1>Debate the page you’re on</h1>
+      <p class="lead-quiet">Side-panel extension. Empty until you write.</p>
+      <p>
+        The extension opens a simplified Debate board for the active tab. Visitor and topic IDs are issued by <code>api.clevertree.chat</code>; posts go through the same <code>/api/chat</code> path as the web demos.
+      </p>
+      <p style="margin-top:1.4rem">
+        <a class="button" href="/downloads/clevertree-chat-extension.zip" download="clevertree-chat-extension.zip">Download extension (.zip)</a>
+      </p>
+      <p class="hint" style="margin-top:0.9rem">
+        Version 0.1.0 · Chrome, Edge, Brave, and other Chromium browsers · not on the Chrome Web Store yet
+      </p>
+
+      <section class="band" style="padding-top:2rem">
+        <h2>Install</h2>
+        <ol class="ext-steps">
+          <li>Download and unzip <code>clevertree-chat-extension.zip</code>.</li>
+          <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>).</li>
+          <li>Turn on <strong>Developer mode</strong>.</li>
+          <li>Click <strong>Load unpacked</strong> and select the <code>clevertree-chat-extension</code> folder.</li>
+          <li>Pin Clevertree Chat, then open the side panel from the toolbar icon.</li>
+        </ol>
+      </section>
+
+      <section class="band">
+        <h2>What you get</h2>
+        <ul class="ext-bullets">
+          <li>Normalized page URL → server topic id</li>
+          <li>Board stays empty until you post</li>
+          <li>Guided demos (Flock / THC) with the same Continue flow as the web host</li>
+          <li>Talks to <a href="https://api.clevertree.chat/chat">api.clevertree.chat</a></li>
+        </ul>
+        <p class="hint" style="margin-top:1rem">
+          Web demos:
+          <a href="https://api.clevertree.chat/chat/flock-cameras">flock-cameras</a>
+          ·
+          <a href="https://api.clevertree.chat/chat/thc-legalization">thc-legalization</a>
+          ·
+          <a href="/try">See demo</a>
+        </p>
+      </section>
+    </main>
+    <footer>
+      <p>Clevertree Chat, called Cleverchat for short. The name can change. The debates stay.</p>
+    </footer>
+  </div>
+</body>
+</html>

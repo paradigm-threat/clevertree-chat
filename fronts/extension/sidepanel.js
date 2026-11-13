@@ -2,7 +2,7 @@
  * Clevertree Chat side panel — simplified Debate board wired to Intake.
  */
 (function () {
-  const DEFAULT_API = "https://intake.myproblem.app";
+  const DEFAULT_API = "https://api.clevertree.chat";
   const VISITOR_KEY = "clevertree.visitor";
   const DEMO_KEY = "clevertree.demoMode";
   const API_KEY = "clevertree.apiBase";
@@ -336,7 +336,7 @@
     if (o.forcedTopic && GUIDED[o.forcedTopic]) {
       const data = await apiPost({
         action: "resolve",
-        url: "https://intake.myproblem.app/chat/" + o.forcedTopic,
+        url: "https://api.clevertree.chat/chat/" + o.forcedTopic,
         visitor: visitor || undefined,
       });
       return data;
