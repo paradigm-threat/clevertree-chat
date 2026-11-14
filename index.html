@@ -143,35 +143,10 @@
     const frame = document.querySelector(".banner-frame");
     const photo = document.querySelector(".banner-photo");
     const animateBtn = document.getElementById("tree-animate");
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const alwaysOn = treeAlwaysAnimatePreferred();
-    function setPlayVisible(show) {
-      if (!animateBtn) return;
-      // Play control only after timed pause — never during grow/sway.
-      animateBtn.hidden = !show || treeAlwaysAnimatePreferred() || reduce;
-    }
-    if (animateBtn) {
-      setPlayVisible(false);
-      animateBtn.addEventListener("click", function () {
-        setTreeAlwaysAnimatePreferred(true);
-        setPlayVisible(false);
-        if (tree && typeof tree._growResumeSway === "function") {
-          tree._growResumeSway({ always: true });
-        }
-      });
-    }
+    if (animateBtn) animateBtn.hidden = true;
     if (tree && tree.getContext) {
-      growHillTree(tree, {
-        reduce: reduce,
-        wind: "gentle",
-        alwaysAnimate: alwaysOn,
-        duration: 20000,
-        // Front page: 30s of motion, then stop; play resumes forever.
-        pauseAfterMs: alwaysOn ? 0 : 30000,
-        onSwayPause: function (paused) {
-          setPlayVisible(!!paused);
-        }
-      });
+      // Static buffer paint only — no grow/sway animation.
+      growHillTree(tree, { animate: false, wind: "calm", performance: true });
     }
     function capBanner() {
       if (!frame || !photo) return;
