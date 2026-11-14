@@ -55,6 +55,11 @@
       figure.style.left = entry.x * 100 + "%";
       figure.style.height = entry.scale * 100 + "%";
       figure.style.zIndex = String(Math.round(10 + entry.depth * 90));
+      // Perspective: farther (smaller / lower depth) trees sit higher on the hillside.
+      // depth 0 → ~34% up from horizon floor; depth 1 → ~2% (near foreground).
+      const hill = Math.max(0, Math.min(1, 1 - entry.depth));
+      const bottomPct = 2 + hill * 32;
+      figure.style.bottom = bottomPct + "%";
 
       const canvas = document.createElement("canvas");
       canvas.width = 520;

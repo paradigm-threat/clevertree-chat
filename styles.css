@@ -499,7 +499,7 @@ footer {
   .pair-row { grid-template-columns: 1fr; }
 }
 
-/* /trees — copy scrolls; hills + horizon forest stay pinned to the bottom */
+/* /trees — copy scrolls; hills + forest sit mid-lower (not flush to screen bottom) */
 .trees-body {
   position: relative;
   min-height: 100vh;
@@ -512,12 +512,13 @@ footer {
   right: 0;
   bottom: 0;
   z-index: 0;
-  height: min(52vh, 34rem);
+  /* Taller band so the hill crest sits higher; trees plant mid-slope */
+  height: min(62vh, 40rem);
   pointer-events: none;
   background-color: #7ecf6a;
   background-image: url("/images/forest-horizon.jpg");
   background-image: url("/images/forest-horizon.webp");
-  background-position: center bottom;
+  background-position: center 42%;
   background-size: cover;
   background-repeat: no-repeat;
 }
@@ -525,7 +526,7 @@ footer {
 .trees-wrap {
   position: relative;
   z-index: 2;
-  padding-bottom: calc(min(52vh, 34rem) + 1.5rem);
+  padding-bottom: calc(min(58vh, 36rem) + 1.5rem);
 }
 
 .trees-page {
@@ -550,11 +551,12 @@ footer {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  /* Lift the whole stand off the bottom of the viewport */
+  bottom: max(4vh, 1.5rem);
   z-index: 1;
   width: 100%;
   margin: 0;
-  height: min(48vh, 30rem);
+  height: min(46vh, 28rem);
   overflow: visible;
   pointer-events: none;
 }
@@ -565,6 +567,7 @@ footer {
 
 .forest-tree {
   position: absolute;
+  /* bottom set in JS from depth — far trees sit higher on the hill */
   bottom: 0;
   margin: 0;
   transform: translateX(-50%);
