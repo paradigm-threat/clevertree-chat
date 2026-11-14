@@ -14,7 +14,28 @@ var TREE_LEAF_PALETTES = {
   fall: ["#b84818", "#c85820", "#d86828", "#e07830", "#c04028", "#982828"]
 };
 
+/** Deeper night ramps for /forest under prefers-color-scheme: dark. */
+var TREE_LEAF_PALETTES_NIGHT = {
+  pine: ["#061a12", "#0a2818", "#0e3620", "#124428", "#165230", "#1a6038"],
+  oak: ["#0c2e14", "#123a18", "#18461c", "#1e5220", "#245e24", "#2a6a28"],
+  maple: ["#143c18", "#1a4a1c", "#205820", "#286628", "#307430", "#3a8238"],
+  summer: ["#0e3414", "#124018", "#184c1c", "#1e581e", "#266424", "#2e7028"],
+  birch: ["#3a5820", "#446628", "#4e7430", "#588238", "#629040", "#6c9e48"],
+  aspen: ["#446820", "#4e7628", "#588430", "#629238", "#6ca040", "#76ae48"],
+  autumn: ["#5a3010", "#6a3a14", "#7a4418", "#8a4e1c", "#7a3818", "#6a2814"],
+  fall: ["#6a2810", "#7a3014", "#8a3818", "#9a401c", "#7a2818", "#5a2014"]
+};
+
 var TREE_LEAF_PALETTE_NAMES = Object.keys(TREE_LEAF_PALETTES);
+
+function prefersDarkScheme() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch (e) {
+    return false;
+  }
+}
 
 function resolveLeafPalette(options) {
   const o = options || {};
@@ -22,10 +43,18 @@ function resolveLeafPalette(options) {
     return o.leafColors.slice();
   }
   const name = typeof o.leafPalette === "string" ? o.leafPalette : "";
-  if (name && TREE_LEAF_PALETTES[name]) {
-    return TREE_LEAF_PALETTES[name].slice();
+  const forceDay = o.dayLeaves === true;
+  const useNight = !forceDay && prefersDarkScheme();
+  const table = useNight ? TREE_LEAF_PALETTES_NIGHT : TREE_LEAF_PALETTES;
+  if (name && table[name]) {
+    return table[name].slice();
   }
-  return TREE_LEAF_PALETTES.summer.slice();
+  if (name && TREE_LEAF_PALETTES[name]) {
+    return (useNight && TREE_LEAF_PALETTES_NIGHT[name]
+      ? TREE_LEAF_PALETTES_NIGHT[name]
+      : TREE_LEAF_PALETTES[name]).slice();
+  }
+  return (useNight ? TREE_LEAF_PALETTES_NIGHT : TREE_LEAF_PALETTES).summer.slice();
 }
 
 function treeWindAllowed() {
@@ -968,6 +997,8 @@ if (typeof window !== "undefined") {
   window.setTreeAlwaysAnimatePreferred = setTreeAlwaysAnimatePreferred;
   window.CLEVERTREE_ALWAYS_ANIMATE_KEY = CLEVERTREE_ALWAYS_ANIMATE_KEY;
   window.TREE_LEAF_PALETTES = TREE_LEAF_PALETTES;
+  window.TREE_LEAF_PALETTES_NIGHT = TREE_LEAF_PALETTES_NIGHT;
   window.TREE_LEAF_PALETTE_NAMES = TREE_LEAF_PALETTE_NAMES;
   window.resolveLeafPalette = resolveLeafPalette;
+  window.prefersDarkScheme = prefersDarkScheme;
 }

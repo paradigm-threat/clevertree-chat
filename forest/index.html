@@ -39,7 +39,7 @@
         <img src="/icon-128x128.png" alt="" width="32" height="32">
         Clevertree Chat
       </a>
-            <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
+      <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
         <span class="nav-toggle-bars" aria-hidden="true"></span>
       </button>
       <nav class="nav-links" id="site-nav" aria-label="Primary">
@@ -122,12 +122,12 @@
     }
 
     document.getElementById("regrow").addEventListener("click", plant);
-    const mobileMq = window.matchMedia(FOREST_MOBILE_MQ || "(max-width: 800px)");
-    if (typeof mobileMq.addEventListener === "function") {
-      mobileMq.addEventListener("change", plant);
-    } else if (typeof mobileMq.addListener === "function") {
-      mobileMq.addListener(plant);
+    function watchMq(mq, fn) {
+      if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
+      else if (typeof mq.addListener === "function") mq.addListener(fn);
     }
+    watchMq(window.matchMedia(FOREST_MOBILE_MQ || "(max-width: 800px)"), plant);
+    watchMq(window.matchMedia("(prefers-color-scheme: dark)"), plant);
     plant();
   </script>
   <script src="/js/site-nav.js"></script>

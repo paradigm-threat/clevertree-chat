@@ -3,7 +3,8 @@
 .clevertree-board {
   --ct-ink: #12261c;
   --ct-ink-soft: #3d5347;
-  --ct-muted: #6a7d72;
+  /* Darker muted for AA on paper (~4.5:1+) */
+  --ct-muted: #4a5f54;
   --ct-paper: #f3f6f1;
   --ct-panel: #ffffff;
   --ct-line: rgba(18, 38, 28, 0.12);
@@ -28,6 +29,39 @@
   container-type: inline-size;
   container-name: ctpanel;
   max-width: 56rem;
+}
+
+.clevertree-board a:focus-visible,
+.clevertree-board button:focus-visible,
+.clevertree-board textarea:focus-visible,
+.clevertree-board [tabindex]:focus-visible {
+  outline: 2px solid var(--ct-green-deep);
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .clevertree-board {
+    --ct-ink: #e8f2ea;
+    --ct-ink-soft: #b8d0c0;
+    --ct-muted: #9db5a8;
+    --ct-paper: #121c18;
+    --ct-panel: #1a2820;
+    --ct-line: rgba(232, 242, 234, 0.16);
+    --ct-green: #5ecf8a;
+    --ct-green-deep: #3db870;
+    --ct-mint: #1e3328;
+    --ct-mint-deep: #243c30;
+    --ct-cream: #182820;
+    --ct-warn: #f0d078;
+    --ct-warn-bg: #3a2a12;
+    --ct-sim: #8ab4d4;
+    --ct-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .clevertree-board .ct-status-line,
+  .clevertree-board .ct-app-header {
+    background: var(--ct-panel);
+  }
 }
 
 .clevertree-board *,

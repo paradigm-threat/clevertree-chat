@@ -35,7 +35,10 @@
         <img src="/icon-128x128.png" alt="" width="32" height="32">
         Clevertree Chat
       </a>
-      <nav class="nav-links" aria-label="Primary">
+      <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle-bars" aria-hidden="true"></span>
+      </button>
+      <nav class="nav-links" id="site-nav" aria-label="Primary">
         <a class="nav-try" href="/forest">Forest</a>
         <a class="nav-try" href="/extension" aria-current="page">Extension</a>
         <a class="nav-try" href="/dev">Dev</a>
@@ -89,5 +92,6 @@
       <p>Clevertree Chat, called Cleverchat for short. The name can change. The debates stay.</p>
     </footer>
   </div>
+  <script src="/js/site-nav.js"></script>
 </body>
 </html>

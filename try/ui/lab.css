@@ -3,7 +3,7 @@
 :root {
   --ct-ink: #12261c;
   --ct-ink-soft: #3d5347;
-  --ct-muted: #6a7d72;
+  --ct-muted: #4a5f54;
   --ct-paper: #f3f6f1;
   --ct-panel: #ffffff;
   --ct-line: rgba(18, 38, 28, 0.12);
@@ -1009,4 +1009,20 @@ body.ui-lab {
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
   .ct-chevron { transition: none; }
+}
+
+
+@media (prefers-color-scheme: dark) {
+  .clevertree-board, :root {
+    --ct-ink: #e8f2ea;
+    --ct-ink-soft: #b8d0c0;
+    --ct-muted: #9db5a8;
+    --ct-paper: #121c18;
+    --ct-panel: #1a2820;
+    --ct-line: rgba(232, 242, 234, 0.16);
+    --ct-green: #5ecf8a;
+    --ct-green-deep: #3db870;
+    --ct-mint: #1e3328;
+    --ct-cream: #182820;
+  }
 }

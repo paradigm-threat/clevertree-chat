@@ -54,9 +54,13 @@ a { color: inherit; }
 
 header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem 1rem;
   padding: 1.25rem 0 0.5rem;
+  position: relative;
+  z-index: 20;
 }
 
 .wordmark {
@@ -67,9 +71,71 @@ header {
   font-family: var(--serif);
   font-weight: 560;
   letter-spacing: -0.02em;
+  min-width: 0;
 }
 
+.wordmark img { flex-shrink: 0; }
+
 .wordmark svg { width: 2rem; height: 2rem; display: block; }
+
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.nav-toggle:focus-visible {
+  outline: 2px solid var(--bark);
+  outline-offset: 2px;
+}
+
+.nav-toggle-bars,
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+  display: block;
+  width: 1.15rem;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.nav-toggle-bars {
+  position: relative;
+}
+
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+
+.nav-toggle-bars::before { top: -6px; }
+.nav-toggle-bars::after { top: 6px; }
+
+body.nav-open .nav-toggle-bars {
+  background: transparent;
+}
+
+body.nav-open .nav-toggle-bars::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+body.nav-open .nav-toggle-bars::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
 
 .nav-links {
   display: flex;
@@ -86,6 +152,42 @@ header {
 
 .nav-try:hover,
 .nav-try[aria-current="page"] { border-bottom-color: var(--green); }
+
+@media (max-width: 800px) {
+  .nav-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    order: 3;
+    margin-top: 0.35rem;
+    padding: 0.35rem 0;
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    background: var(--nav-panel);
+    box-shadow: 0 12px 28px rgba(14, 63, 36, 0.12);
+  }
+
+  body.nav-open .nav-links {
+    display: flex;
+  }
+
+  .nav-try {
+    border-bottom: 1px solid var(--line);
+    padding: 0.85rem 1rem;
+    min-height: 2.75rem;
+  }
+
+  .nav-try:last-child {
+    border-bottom: none;
+  }
+}
 
 .banner {
   position: relative;
@@ -737,5 +839,72 @@ footer {
     width: auto;
     top: max(5vh, 2.75rem);
     height: min(55vh, 34rem);
+  }
+}
+
+/* Night theme — OS/browser dark; home hero stays daytime */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cream: #121c18;
+    --cream-deep: #182820;
+    --sky: #0b1a2e;
+    --ink: #e8f2ea;
+    --green: #5ecf8a;
+    --leaf: #8fd94a;
+    --bark: #d4b08c;
+    --gold: #f0d078;
+    --muted: #a8c4b0;
+    --line: rgba(232, 242, 234, 0.18);
+    --nav-panel: #1a2820;
+  }
+
+  body {
+    background: linear-gradient(180deg, var(--sky) 0%, var(--cream) 22rem);
+  }
+
+  .nav-toggle {
+    background: var(--nav-panel);
+  }
+
+  .nav-links {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  }
+
+  .button {
+    color: #0e3f24;
+  }
+
+  .section.focused {
+    background: rgba(94, 207, 138, 0.1);
+  }
+
+  /* Home hero island stays bright daytime */
+  .banner {
+    background: linear-gradient(#4dc4ec 0%, #6ad1ef 12%, #6ad1ef 100%);
+  }
+
+  .trees-body {
+    background: linear-gradient(180deg, #0b1a2e 0%, #1a2a48 18%, #2a1840 38%, #143828 55%, var(--cream) 78%);
+  }
+
+  .trees-bg {
+    background-color: #0a1e14;
+    background-image: url("/images/forest-horizon-night.jpg");
+    background-image: url("/images/forest-horizon-night.webp");
+  }
+
+  .forest-canvas {
+    filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
+  }
+
+  @media (max-width: 800px) {
+    .trees-body {
+      background: linear-gradient(180deg, #0b1a2e 0%, #1a2a48 16%, #2a1840 40%, #143828 58%, var(--cream) 80%);
+    }
+
+    .trees-bg {
+      background-image: url("/images/forest-horizon-night-mobile.jpg");
+      background-image: url("/images/forest-horizon-night-mobile.webp");
+    }
   }
 }
