@@ -49,7 +49,7 @@
     <main id="main" class="trees-page">
       <p class="kicker">Forest</p>
       <h1>One horizon.</h1>
-      <p class="lead trees-lead">Trees stand together on one horizon — smaller ones farther back, taller crowns in front. Tall habits reach with long limbs; wide habits stay short and bushy. Each tree is a one-shot canvas paint (no wind animation).</p>
+      <p class="lead trees-lead">Trees grow together on one horizon — smaller ones farther back, taller crowns in front. Tall habits reach with long limbs; wide habits stay short and bushy. Each tree draws in over time (no wind sway).</p>
       <p class="trees-actions">
         <button type="button" class="button" id="regrow">Regrow forest</button>
         <span class="hint" id="forest-count"></span>
@@ -63,12 +63,13 @@
   <script src="/js/grow-hill-tree.js"></script>
   <script src="/js/forest-horizon.js"></script>
   <script>
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const forest = document.getElementById("forest");
     const countEl = document.getElementById("forest-count");
     countEl.textContent = FOREST_HORIZON.length + " trees";
 
     function plant() {
-      plantForestHorizon(forest, { grow: growHillTree });
+      plantForestHorizon(forest, { reduce: reduce, grow: growHillTree });
     }
 
     document.getElementById("regrow").addEventListener("click", plant);

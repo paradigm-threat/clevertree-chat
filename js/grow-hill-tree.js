@@ -149,10 +149,11 @@ function growHillTree(canvas, opts) {
     ? options.sideBias
     : (leanSign != null ? leanSign : (rnd() < 0.5 ? -1 : 1));
   const clickable = options.clickable !== false;
-  // Static buffer paint is the default. Opt in with animate:true (legacy grow/sway).
-  const animate = options.animate === true && !reduce && !options.performance;
-  const windLevel = animate ? effectiveWind(options.wind, options) : "calm";
-  const windAmp = animate ? windAmpFor(windLevel) : 0;
+  // Grow-in drawing animation is the default. Wind sway is off (performance).
+  // One-shot buffer paint: reduce motion, performance:true, or animate:false.
+  const staticOnly = !!reduce || options.performance === true || options.animate === false;
+  const windLevel = "calm";
+  const windAmp = 0;
   const alwaysAnimate = false;
   const pauseAfterMs = Infinity;
   const swayMaxFps = 0;
@@ -754,16 +755,12 @@ function growHillTree(canvas, opts) {
   const watcher = new ResizeObserver(() => {
     if (stopped) return;
     if (!layout()) return;
-    // Static trees: one buffer paint. Animated: redraw current frame.
-    if (!animate || state.motion === "static" || state.motion === "reduced" || state.motion === "held") {
-      draw(1, 0, false);
+    // No wind sway — redraw current grow progress or the finished tree.
+    if (state.motion === "grow") {
+      draw(state.u, 0, false);
       return;
     }
-    draw(
-      state.u,
-      getWindTime(),
-      state.motion === "sway" || state.motion === "paused"
-    );
+    draw(1, 0, false);
   });
   watcher.observe(canvas);
 
@@ -901,14 +898,15 @@ function growHillTree(canvas, opts) {
     startSway();
   };
 
-  // Default path: static buffer paint only (no grow RAF, no wind sway).
-  if (!animate || reduce) {
+  // Low-performance / reduced-motion: one-shot buffer paint.
+  if (staticOnly) {
     paintStatic();
     return;
   }
 
-  // Legacy animated path (opt-in via animate:true).
+  // Grow-in drawing animation, then hold (no wind sway).
   notifyPaused(false);
+  state.motion = "grow";
 
   let t0 = 0;
   function frame(now) {
@@ -926,17 +924,15 @@ function growHillTree(canvas, opts) {
       raf = requestAnimationFrame(frame);
       return;
     }
-    if (hitPauseDeadline(now)) {
-      pauseMotion(now);
-      return;
-    }
     const u = Math.min(1, (now - t0) / DURATION);
     state.u = u;
-    draw(u, now, windAmp > 0 && u > 0.7);
+    state.motion = "grow";
+    draw(u, now, false);
     if (u < 1) {
       raf = requestAnimationFrame(frame);
     } else {
       raf = 0;
+      // Hold finished frame — startSway is a no-op when windAmp is 0.
       startSway();
     }
   }

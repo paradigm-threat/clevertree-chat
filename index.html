@@ -143,10 +143,15 @@
     const frame = document.querySelector(".banner-frame");
     const photo = document.querySelector(".banner-photo");
     const animateBtn = document.getElementById("tree-animate");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (animateBtn) animateBtn.hidden = true;
     if (tree && tree.getContext) {
-      // Static buffer paint only — no grow/sway animation.
-      growHillTree(tree, { animate: false, wind: "calm", performance: true });
+      // Grow-in drawing animation; wind sway stays off.
+      growHillTree(tree, {
+        reduce: reduce,
+        wind: "calm",
+        duration: 20000
+      });
     }
     function capBanner() {
       if (!frame || !photo) return;
