@@ -499,7 +499,7 @@ footer {
   .pair-row { grid-template-columns: 1fr; }
 }
 
-/* /trees — hills + forest occupy the top half; copy overlays them */
+/* /trees — hills + forest in the top half; copy sits below the band */
 .trees-body {
   position: relative;
   min-height: 100vh;
@@ -531,23 +531,66 @@ footer {
 }
 
 .trees-page {
-  padding: 1.2rem 0 2rem;
-  /* Keep early copy in the forest band; lower page stays clear */
-  min-height: min(52vh, 34rem);
+  padding: 0 0 2rem;
+}
+
+.trees-copy {
+  /*
+    Clear the fixed forest band (.trees-bg is viewport-top–anchored).
+    Subtract header space so copy begins just under the band, not a full
+    header-height further down.
+  */
+  padding-top: max(12rem, calc(min(52vh, 34rem) - 4.75rem));
+  max-width: 40rem;
 }
 
 .trees-lead {
   max-width: 40rem;
   color: var(--ink);
-  text-shadow: 0 1px 0 rgba(244, 248, 239, 0.55);
 }
 
 .trees-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.9rem 1.2rem;
-  margin: 1.2rem 0 1.4rem;
+  gap: 0.55rem 0.75rem;
+  margin: 1rem 0 1.4rem;
+}
+
+.regrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.regrow-btn:hover {
+  color: var(--green);
+  border-color: rgba(2, 94, 45, 0.4);
+  background: rgba(2, 94, 45, 0.06);
+}
+
+.regrow-btn:focus-visible {
+  outline: 2px solid var(--bark);
+  outline-offset: 2px;
+}
+
+.regrow-btn svg {
+  display: block;
+}
+
+.trees-count {
+  font-size: 0.92rem;
+  color: var(--muted);
 }
 
 .forest-horizon {

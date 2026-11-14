@@ -47,14 +47,21 @@
       </nav>
     </header>
     <main id="main" class="trees-page">
-      <p class="kicker">Forest</p>
-      <h1>One horizon.</h1>
-      <p class="lead trees-lead">Trees grow together on one horizon — smaller ones farther back and higher on the hill, taller crowns in front. Tall habits reach with long limbs; wide habits stay short and bushy. Each tree draws in over time (no wind sway).</p>
-      <p class="trees-actions">
-        <button type="button" class="button" id="regrow">Regrow forest</button>
-        <span class="hint" id="forest-count"></span>
-      </p>
       <div class="forest-horizon" id="forest" role="list" aria-label="Horizon forest"></div>
+      <div class="trees-copy">
+        <p class="kicker">Forest</p>
+        <h1>One horizon.</h1>
+        <p class="lead trees-lead">Trees grow together on one horizon — smaller ones farther back and higher on the hill, taller crowns in front. Tall habits reach with long limbs; wide habits stay short and bushy. Each tree draws in over time (no wind sway).</p>
+        <p class="trees-actions">
+          <button type="button" class="regrow-btn" id="regrow" aria-label="Regrow forest" title="Regrow forest">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 3-6.7"/>
+              <path d="M3 4v5h5"/>
+            </svg>
+          </button>
+          <span class="hint trees-count" id="forest-count"></span>
+        </p>
+      </div>
     </main>
     <footer>
       <p>Clevertree Chat, called Cleverchat for short. The name can change. The debates stay.</p>
