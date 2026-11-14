@@ -557,7 +557,7 @@
           : "Guided walkthrough";
         els.demoMessage.textContent =
           store.demoMessage ||
-          "You’re in a guided debate. It pauses after each update — simulated peers and AI organization included.";
+          "You’re in a guided debate. It pauses after each update — simulated peers and SI organization included.";
         els.btnDemoToggle.textContent = "Disable demo mode";
         els.btnContinue.disabled = !store.demoPaused;
         els.btnContinueText.hidden = !store.demoPaused;

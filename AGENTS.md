@@ -3,7 +3,7 @@
 **Public brief:** [clevertree.chat/dev](https://clevertree.chat/dev)  
 **Repo:** [GitHub](https://github.com/paradigm-threat/clevertree-chat) · [GitLab](https://gitlab.com/clevertree/clevertree-chat) · **Product:** [clevertree.chat](https://clevertree.chat) · **API / demos:** [api.clevertree.chat](https://api.clevertree.chat)
 
-Standing debate, not a reply thread. People post original points; the **batch AI** files them under **perspectives (keys)**, pairs counters, and writes short positions from posted `rules.md` (or Relay defaults). Cleverchat is an **independent product** — MyProblem and others may mount it; it does not depend on them.
+Standing debate, not a reply thread. People post original points; the **batch SI** (Super Intelligence, i.e. AI) files them under **perspectives (keys)**, pairs counters, and writes short positions from posted `rules.md` (or Relay defaults). Cleverchat is an **independent product** — MyProblem and others may mount it; it does not depend on them.
 
 ## One-sentence rule
 
@@ -33,7 +33,7 @@ Deploy chat host: `bash infra/deploy-chat-host.sh` (kubeconfig `~/.kube/myproble
 ## Near-future goals (priority)
 
 1. **Chat UI in the wild** — durable submit → comments git; fix `/api/debate` (currently 504); always-on drain worker; not demo-only boards.
-2. **Real batch AI pass** — wake Spot GPU when needed; run a true curator once end-to-end (file + summarize + ask humans on low confidence).
+2. **Real batch SI pass** — wake Spot GPU when needed; run a true curator once end-to-end (file + summarize + ask humans on low confidence).
 3. **Internet investigations** — batch cites and fetches live counters (today: URL recorded, **page not fetched**). Prove egress from Intake/Spot vs Vercel.
 4. **Anti-bot / anti-spam access** — measure what blocks plain HTTP, headless browsers, and APIs before wiring fetch into the curator. No fetch path exists yet.
 5. **Human loop** — low-confidence → `questions.md` already; deliver asks (IRC or equivalent) and fold answers into `rules.md` / KB.

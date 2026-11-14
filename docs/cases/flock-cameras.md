@@ -38,4 +38,4 @@ pages/<page>/topics/flock-cameras/legal/...
 
 `rules.md` and `policy.md` sit at the root of `comments` when a human has posted them. A missing file is not copied in. The host page's branch is not in this tree.
 
-A suggested opposing key is a citation in `suggested-counter.md`. It is not a directory until a person writes the first words there. The AI does not open that side.
+A suggested opposing key is a citation in `suggested-counter.md`. It is not a directory until a person writes the first words there. The SI does not open that side.

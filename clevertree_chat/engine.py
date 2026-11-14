@@ -445,7 +445,7 @@ class Debate:
         self._commit({"users/index.json": _dump(index)}, "set visitor name")
 
     def post_rules(self, markdown: str) -> None:
-        """Humans change rules through the API. The AI still commits. This is not a comment."""
+        """Humans change rules through the API. The SI still commits. This is not a comment."""
         text = markdown if markdown.endswith("\n") else markdown + "\n"
         self._commit({"rules.md": text}, "post rules")
 

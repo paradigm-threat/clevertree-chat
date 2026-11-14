@@ -12,7 +12,7 @@
     "one comment yields questions and a cited suggestion without the opposing directory",
     "the tree keeps current keys, key-history.json, and readable pairs.json",
     "comments and votes store the short id",
-    "a commit that is not from the AI service is rejected",
+    "a commit that is not from the SI service is rejected",
     "one current vote on a topic, a subtopic, and a comment",
     "a vote does not rename a key or rewrite a summary",
     "default rules represent a dangerous claim without swearing or scolding",

@@ -499,7 +499,7 @@
     }
     const paused = store.demoPaused;
     const msg = store.demoMessage ||
-      "You’re participating in a guided debate. It pauses after each update so you can see what changed — with a simulated participant and AI organization.";
+      "You’re participating in a guided debate. It pauses after each update so you can see what changed — with a simulated participant and SI organization.";
     return (
       '<aside class="ct-demo-box' +
       (paused ? " is-paused" : "") +

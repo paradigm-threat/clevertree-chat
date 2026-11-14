@@ -23,7 +23,7 @@ Related: [`infra.md`](infra.md) · [`person-space.md`](person-space.md) · [`cas
 
 ## Batch associates pages
 
-On drain, the same AI batch that files keys also asks: is this URL truly unique?
+On drain, the same SI batch that files keys also asks: is this URL truly unique?
 
 | Judgment | Action |
 |----------|--------|

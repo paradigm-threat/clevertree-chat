@@ -41,7 +41,7 @@ A posted `Do not ask questions` is the same kind of refusal for a question that 
 ### A rename keeps history
 
 Situation: A post was placed under `mass-surveillance`.
-Rule: Relay default. Keys are up to the AI. A same-argument rename is allowed. Legality never folds into another axis.
+Rule: Relay default. Keys are up to the SI. A same-argument rename is allowed. Legality never folds into another axis.
 Decision: Rename to `invasion-of-privacy`. `key-history.json` and the page index keep `mass-surveillance` pointing at the new key.
 Confidence: `high` on the `rename` decision.
 
@@ -62,7 +62,7 @@ Confidence: `high`, including when the filing that opened `illegal` was itself `
 ### Reword the summary
 
 Situation: The post is the surveillance claim plus an extra sentence ("I disagree with the key.").
-Rule: Relay default. The AI re-represents the opinion as a short position, without emotion. No `rules.md`, so no required prefix.
+Rule: Relay default. The SI re-represents the opinion as a short position, without emotion. No `rules.md`, so no required prefix.
 Decision: `position.md` is the catalog one-liner for `invasion-of-privacy`, not a paste of the extra sentence.
 Confidence: `high`.
 
@@ -143,7 +143,7 @@ Confidence: filing `low`. The value is the string `low`, not an omitted field an
 ### Missing rules use the built-in default
 
 Situation: The repo has no `rules.md`. The post swears and calls the cameras mass surveillance.
-Rule: `parse_rules(None)`, the built-in Relay default. People may swear. The AI does not. A post that fits nothing mints a key.
+Rule: `parse_rules(None)`, the built-in Relay default. People may swear. The SI does not. A post that fits nothing mints a key.
 Decision: Create `invasion-of-privacy`. The position restates the claim and does not keep the swear.
 Confidence: `high`. `rule` is `default`.
 

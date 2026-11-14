@@ -1,6 +1,6 @@
 # Solo debate
 
-A second person is optional. The first comment is enough for a debate with the AI.
+A second person is optional. The first comment is enough for a debate with the SI.
 
 The visitor states a position in their own words. The live path does not file that under a key of its own. With no chosen existing category, the post stays uncategorized until the batch. The batch may place it in one existing argument, in several, or in none. A new argument appears only when the post fits none of the keys already there. On each slot it does join:
 

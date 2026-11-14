@@ -1,6 +1,6 @@
 # Person-space debates
 
-Some Clevertree Chat homes are **people**, not only topics. Batch may cluster public usernames and handles across networks so public posts about or by the same person can sit in one standing debate. That space is treated like **their house**: they implicitly control the rules that govern privacy and how the AI files there.
+Some Clevertree Chat homes are **people**, not only topics. Batch may cluster public usernames and handles across networks so public posts about or by the same person can sit in one standing debate. That space is treated like **their house**: they implicitly control the rules that govern privacy and how the SI files there.
 
 Related: [`url-pages-and-associations.md`](url-pages-and-associations.md) · [`default-rules.md`](default-rules.md) · [`policy.md`](policy.md) · [`auth.md`](auth.md).
 
@@ -14,7 +14,7 @@ Related: [`url-pages-and-associations.md`](url-pages-and-associations.md) · [`d
 
 ## Why person-kind exists
 
-Public life is scattered: the same person often has similar (or slightly different) usernames on many networks. Tracking **public** posts in one debate requires knowing those handles and their association to each other. The AI batch builds those associations when confidence is high enough, and asks a human when a merge would be risky — the same posture as topical mint/rename ([MyProblem `topical-repos.md`](../../myproblem/docs/topical-repos.md)).
+Public life is scattered: the same person often has similar (or slightly different) usernames on many networks. Tracking **public** posts in one debate requires knowing those handles and their association to each other. The SI batch builds those associations when confidence is high enough, and asks a human when a merge would be risky — the same posture as topical mint/rename ([MyProblem `topical-repos.md`](../../myproblem/docs/topical-repos.md)).
 
 This is **not** a private tip dossier. Tip evidence and PII rules stay on the ticket SoT. Person-space is for **public** identity hubs and debates that hang off them.
 
@@ -25,7 +25,7 @@ This is **not** a private tip dossier. Tip evidence and PII rules stay on the ti
 For a debate whose home kind is **person**:
 
 - That person **implicitly** may change `rules.md` and `policy.md` for that space (privacy, what may be filed, whether keys move, summary shape, and similar).
-- Those files remain the only human-posted rule sources, committed by the AI service as today ([`default-rules.md`](default-rules.md)). They are not comments.
+- Those files remain the only human-posted rule sources, committed by the SI service as today ([`default-rules.md`](default-rules.md)). They are not comments.
 - Until a **claim / verify** plan ships, this is **intent only**. The live path and batch still use Relay defaults or whatever `rules.md` / `policy.md` is already posted. They do not guess a third policy ([`cases/batch-decisions.md`](cases/batch-decisions.md)).
 
 Claim (passkey, proven public handles, or similar) is explicitly **deferred**.

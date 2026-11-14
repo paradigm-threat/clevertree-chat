@@ -107,7 +107,7 @@ class CommentsRepo:
             return False
         _commit(self.path, message)
         if self.log_author() != SERVICE_ID:
-            raise RuntimeError("comment-branch commit author was not the AI service")
+            raise RuntimeError("comment-branch commit author was not the SI service")
         return True
 
     def publish(self, remotes: list[str]) -> None:

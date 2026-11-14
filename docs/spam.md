@@ -1,6 +1,6 @@
 # Spam policy (Relay default)
 
-Spam is ascertained by the **batch AI**, not by a public vote that auto-deletes. Once a post is flagged, there is a fixed window to contest it, then a hide-from-view step, then a later hard removal. Anyone who can see the flag may support or protest — not only the author. Repos may tighten the definition and the clocks in `rules.md`. Softening or rewriting what counts as spam still goes through the normal rules process (admin / community agreement / person-space house rules). A pile of protests does **not** rewrite the AI’s standing rules by itself; the batch may still **weigh** those posts when it decides this case and later ones.
+Spam is ascertained by the **batch SI**, not by a public vote that auto-deletes. Once a post is flagged, there is a fixed window to contest it, then a hide-from-view step, then a later hard removal. Anyone who can see the flag may support or protest — not only the author. Repos may tighten the definition and the clocks in `rules.md`. Softening or rewriting what counts as spam still goes through the normal rules process (admin / community agreement / person-space house rules). A pile of protests does **not** rewrite the SI’s standing rules by itself; the batch may still **weigh** those posts when it decides this case and later ones.
 
 Related: [`default-rules.md`](default-rules.md) · [`policy.md`](policy.md) · [`cases/batch-decisions.md`](cases/batch-decisions.md) · [`person-space.md`](person-space.md).
 
@@ -42,7 +42,7 @@ Hide from view (not in ordinary board / activity)
 Remove entirely (gone from the comments tree / tombstone per engine)
 ```
 
-**Final call** on clear / hide / remove is always the **batch AI**, reading posted rules (or Relay defaults) plus the contest thread and everything else it already considers.
+**Final call** on clear / hide / remove is always the **batch SI**, reading posted rules (or Relay defaults) plus the contest thread and everything else it already considers.
 
 ---
 
@@ -59,10 +59,10 @@ Remove entirely (gone from the comments tree / tombstone per engine)
 | Path | Effect |
 |------|--------|
 | Contest replies on a flag | Inform this flag’s outcome; batch may also remember them as evidence later |
-| Mass-flagging or mass-protesting alone | Does **not** change what the AI treats as spam going forward |
+| Mass-flagging or mass-protesting alone | Does **not** change what the SI treats as spam going forward |
 | Change standing spam definition or clocks | Post / edit `rules.md` through the repo’s usual authority (admin, community agreement, or person-space owner when claim exists) |
 
-The AI **may consider** prior contest threads and outcomes when making new spam decisions. It must not treat them as an automatic rewrite of `rules.md`.
+The SI **may consider** prior contest threads and outcomes when making new spam decisions. It must not treat them as an automatic rewrite of `rules.md`.
 
 ---
 

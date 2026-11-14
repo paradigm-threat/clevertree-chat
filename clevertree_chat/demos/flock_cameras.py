@@ -1,4 +1,4 @@
-"""Scripted flock-cameras demo: Maya and Jordan, optimal AI filing.
+"""Scripted flock-cameras demo: Maya and Jordan, optimal SI filing.
 
 No git. No Spot. Keys stay short and distinct. Posts dictate the keys.
 """

@@ -22,7 +22,7 @@
       escapeHtml(t.title) +
       "</h1>" +
       '<div class="ct-app-meta">' +
-      '<a class="ct-rules-link" href="/try/ui/design-brief.md" target="_blank" rel="noopener">House rules · AI-assisted</a>' +
+      '<a class="ct-rules-link" href="/try/ui/design-brief.md" target="_blank" rel="noopener">House rules · SI-assisted (Super Intelligence, i.e. AI)</a>' +
       '<span class="ct-count-pill">' +
       n +
       " perspectives · " +
@@ -270,7 +270,7 @@
       "<li>Debate first: ranked perspectives are the main view.</li>" +
       "<li>Simple participation: body only, optional mic, optional tags.</li>" +
       "<li>Guided demos: pause after each update from your submit through server replies.</li>" +
-      "<li>Trust: house rules · AI-assisted organization; abuse is click-to-view, not instant delete.</li>" +
+      "<li>Trust: house rules · SI-assisted organization; abuse is click-to-view, not instant delete.</li>" +
       "</ul>" +
       demoBoxHtml(store) +
       "</div>"

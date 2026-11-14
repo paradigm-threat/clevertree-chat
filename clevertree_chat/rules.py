@@ -42,13 +42,15 @@ def default_rules_text() -> str:
     """The prose both passes follow when a repo has not posted rules.md."""
     return """# Relay default rules
 
+We say SI (Super Intelligence, i.e. AI) for the software that files, summarizes, and curates.
+
 - The debate must be fair.
 - Everyone must be heard.
 - Every argument must be investigated and represented honestly.
-- Check for bias. Mainstream, established opinion is a bias the AI can fall into. Counter opinions are represented accurately, including a message that is dangerous or antisocial.
-- People may swear in their own posts. The AI does not swear unless a posted rule says the AI may swear.
-- The AI re-represents every opinion without emotion. Nobody is scolded, and the claim is not softened into a different claim.
-- Keys are up to the AI. Topics and subtopics may be renamed when the AI judges that the name should change. Old names stay in the index so links follow.
+- Check for bias. Mainstream, established opinion is a bias the SI can fall into. Counter opinions are represented accurately, including a message that is dangerous or antisocial.
+- People may swear in their own posts. The SI does not swear unless a posted rule says the SI may swear.
+- The SI re-represents every opinion without emotion. Nobody is scolded, and the claim is not softened into a different claim.
+- Keys are up to the SI. Topics and subtopics may be renamed when the SI judges that the name should change. Old names stay in the index so links follow.
 - Do not mint a key just to catch every sentence. Mint one when a post does not fit the keys that already exist.
 - File every post as soon as it appears. Do not wait for disagreement before opening a key.
 - Agreement under a page thesis still gets distinct sub-axis keys from distinct claim shapes. Do not collapse consensus into `other`.
@@ -57,7 +59,7 @@ def default_rules_text() -> str:
 - Unwritten counters stay suggestions, not directories, until someone writes them.
 - Questions are allowed. A question that names an axis joins that category. A question that fits an existing key does not open a new one.
 - A visitor who has not named themselves gets a generated name from the topic and what they wrote. Keep generated names professional, safe for work, funny when that still fits, and simple.
-- Spam is ascertained by the batch AI. After a flag, anyone who sees it may support or protest within 48 hours. If the flag still stands when that window ends, the post is removed from view. After a further 7 days, it is removed entirely. A repo may tighten those clocks or the spam definition in rules.md. Contests inform the batch; they do not rewrite standing rules by themselves.
+- Spam is ascertained by the batch SI. After a flag, anyone who sees it may support or protest within 48 hours. If the flag still stands when that window ends, the post is removed from view. After a further 7 days, it is removed entirely. A repo may tighten those clocks or the spam definition in rules.md. Contests inform the batch; they do not rewrite standing rules by themselves.
 """
 
 
@@ -77,9 +79,19 @@ def parse_rules(text: str | None) -> Rules:
         rules.keys = "rarely"
     for line in text.splitlines():
         stripped = line.strip().lower().lstrip("-").strip()
-        if stripped in {"the ai may swear.", "the ai may swear"}:
+        if stripped in {
+            "the ai may swear.",
+            "the ai may swear",
+            "the si may swear.",
+            "the si may swear",
+        }:
             rules.ai_may_swear = True
-        if "ai swearing is allowed" in stripped or "allow the ai to swear" in stripped:
+        if (
+            "ai swearing is allowed" in stripped
+            or "allow the ai to swear" in stripped
+            or "si swearing is allowed" in stripped
+            or "allow the si to swear" in stripped
+        ):
             rules.ai_may_swear = True
     match = re.search(
         r"summaries must start with\s+[\"'\u201c]([^\"'\u201d]+)[\"'\u201d]",

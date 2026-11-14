@@ -12,7 +12,7 @@ These are visual design proposals rather than functional UI or final pixel-perfe
 
 ## Product proposition
 
-Clevertree is a standing debate, not a reply thread. A visitor contributes a natural-language point; Clevertree organizes original posts into existing or new **perspectives** (keys), makes counterarguments legible through flexible multi-links, and maintains a readable map for everyone watching. AI curates in batches according to human-authored rules; it does not declare a winner.
+Clevertree is a standing debate, not a reply thread. A visitor contributes a natural-language point; Clevertree organizes original posts into existing or new **perspectives** (keys), makes counterarguments legible through flexible multi-links, and maintains a readable map for everyone watching. SI (Super Intelligence, i.e. AI) curates in batches according to human-authored rules; it does not declare a winner.
 
 **Core promise:** *Many people can speak. Their contributions accumulate into a small number of understandable arguments. Those arguments can challenge one another without becoming a tangled reply thread.*
 
@@ -24,12 +24,12 @@ Clevertree is a standing debate, not a reply thread. A visitor contributes a nat
 - **Counter-links** between perspectives are flexible and many-to-many. No permanent two-sided binary. Within a perspective, reading order is: the perspective itself, common counterarguments, counters to those counters, and deeper responses as needed.
 - The **primary UI is a ranked map of perspectives**, prioritized by activity and content weight. All perspectives and all original points must be accessible through continuous scrolling.
 - **Recent activity is secondary**, useful for understanding what just changed but not the primary metaphor.
-- Posting is **body-only**. Optional microphone-to-transcription and optional selection of multiple keys; no forced title, stance, or categorization. AI can later revise soft associations.
+- Posting is **body-only**. Optional microphone-to-transcription and optional selection of multiple keys; no forced title, stance, or categorization. SI can later revise soft associations.
 - Unassigned contributions appear lightly under **Unfiled** on the board and in activity as awaiting organization, then show where they were filed.
 - Guided walkthroughs and live topics share the same topic-first hierarchy; demos encourage participation early. Only **demo UI** pauses or queues presentation; the server continues running. Live topics never have a Continue control.
 - Mobile and desktop need distinct optimized arrangements. Focused counter-links can use side-by-side comparison on desktop and stacked comparison on mobile.
-- Default admin chrome is compact: human-authored house rules and AI-assisted moderation/organization, with contextual item statuses only where relevant.
-- Potentially abusive/spam content is flagged by the AI batch, hidden behind an explicit user-controlled reveal, contestable, and eligible for delayed removal when uncontested under default or repository-specific rules. Avoid false positives for heated political discussion; contextual targeted bullying/intimidation/harassment is the boundary. History of uncontested removals can inform subsequent assessment subject to retention and privacy constraints.
+- Default admin chrome is compact: human-authored house rules and SI-assisted moderation/organization, with contextual item statuses only where relevant.
+- Potentially abusive/spam content is flagged by the SI batch, hidden behind an explicit user-controlled reveal, contestable, and eligible for delayed removal when uncontested under default or repository-specific rules. Avoid false positives for heated political discussion; contextual targeted bullying/intimidation/harassment is the boundary. History of uncontested removals can inform subsequent assessment subject to retention and privacy constraints.
 - The current demonstrations are guided walkthroughs rather than live public hosted topics. Do not misrepresent injected peers as real participants.
 
 ## Three concepts
@@ -82,7 +82,7 @@ A small spatial graph of perspective clusters, linked through counters. Selectin
 │    Responses to those counters                 │ • Demo participant     │
 │    Original points [all accessible]            │   contributed a point  │
 │                                                │                        │
-│ 02 Surveillance creates privacy concerns       │ ◌ AI batch is working  │
+│ 02 Surveillance creates privacy concerns       │ ◌ SI batch is working  │
 │    Summary, counter-links, original points     │                        │
 │                                                │ ✓ Board updated        │
 │ 03 Oversight and retention rules matter        │                        │
@@ -168,7 +168,7 @@ A small spatial graph of perspective clusters, linked through counters. Selectin
 - Microphone, where device support exists, transcribes into the same body field. Require permission and allow edit before submitting.
 - As the person types, the host may suggest an existing perspective; a suggestion is **not a filing decision**.
 - Optional multiple key selections are soft proposals, not a binding taxonomy assignment. Show them as provisional until batch confirmation; explain if a later batch revises/removes them.
-- After posting, display the contribution immediately from the live path and permit another point without waiting on AI.
+- After posting, display the contribution immediately from the live path and permit another point without waiting on SI.
 
 ## View and event-state model
 
@@ -182,14 +182,14 @@ A small spatial graph of perspective clusters, linked through counters. Selectin
 | `post.live` mine | Show new post, provisional keys or Unfiled | 'Your point is live' |
 | `post.live` others | Show where known, otherwise Unfiled | Compact new-activity indicator |
 | `drain` or async batch pending | Board stays interactive | 'Organizing in background' |
-| `batch.notice` | Do not infer structure before snapshot | AI process / organization notice |
+| `batch.notice` | Do not infer structure before snapshot | SI process / organization notice |
 | `board.snapshot` | Reconcile keys, links, summaries, confirmed associations | Highlight actual changed regions |
 | WebSocket disconnect | Keep last board, avoid false freshness | 'Reconnecting; updates may be delayed' |
 | Flag status provided | Hide affected body in all representations | 'Potential issue · Click to view · Contest' |
 
 **Critical invariants:**
 
-- A post can be published before being organized. AI does not block posting.
+- A post can be published before being organized. SI does not block posting.
 - Keep suggested and confirmed key associations visually distinguishable.
 - Every confirmed key association appears as a visible chip on the post, even when multi-key.
 - Preserve reading stability. Prefer a 'Board updated · View changes' affordance rather than automatically jumping cards around as prominence changes.
@@ -223,7 +223,7 @@ A small spatial graph of perspective clusters, linked through counters. Selectin
 
 ## Abuse, spam and human-authored house rules
 
-**Suggested compact chrome:** **Rules set by people · AI-assisted organization**. Avoid promising a continuously staffed 'Human moderated' desk if there is none.
+**Suggested compact chrome:** **Rules set by people · SI-assisted organization**. Avoid promising a continuously staffed 'Human moderated' desk if there is none.
 
 ### Default item lifecycle
 
@@ -244,9 +244,9 @@ Moderation statuses remain inline and contextual. Do not show a global moderatio
 - Permanent For/Against columns or enforced binary pairings.
 - An unreadable full graph of all linked perspectives.
 - Raw HTTP/WebSocket, drain/job terminology or backend mechanics.
-- AI confidence numbers on each argument card.
+- SI confidence numbers on each argument card.
 - Reordering, auto-scrolling and continuous animation while someone is reading.
-- A winner, truth meter, leaderboard or AI verdict.
+- A winner, truth meter, leaderboard or SI verdict.
 - Full moderation audit histories for ordinary posts.
 - Mandatory title, stance, subject taxonomy or key selection at posting time.
 - A recents feed expanded so much that the arguments lose prominence.

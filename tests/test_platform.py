@@ -671,7 +671,7 @@ class FilingTests(DebateCase):
         self.assertFalse((self.debate.repo.path / "rules.md").exists())
 
     def test_rules_that_allow_swearing_keep_the_word(self):
-        self.debate.post_rules("The AI may swear.\n")
+        self.debate.post_rules("The SI may swear.\n")
         self.debate.submit(
             new_uuid(),
             page="demo",
@@ -1413,7 +1413,7 @@ class BatchDecisionTests(DebateCase):
         self.assertEqual(rules.ai_may_swear, baseline.ai_may_swear)
         self.assertTrue(rules.allows_new_key())
         self.assertIn("Do not mint a key just to catch every sentence", default_rules_text())
-        self.assertIn("The AI does not swear", default_rules_text())
+        self.assertIn("The SI does not swear", default_rules_text())
         body = "This shit is mass surveillance."
         self.debate.submit(new_uuid(), page="demo", topic="flock-cameras", body=body)
         self.debate.drain()

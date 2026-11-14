@@ -12,7 +12,7 @@ This file merges the product redesign proposal with the debate-visualization lib
 
 ## Product proposition
 
-Clevertree is a standing debate, not a reply thread. A visitor contributes a natural-language point; Clevertree organizes original posts into existing or new **perspectives** (keys), makes counterarguments legible through flexible multi-links, and maintains a readable map for everyone watching. AI curates in batches according to human-authored rules; it does not declare a winner.
+Clevertree is a standing debate, not a reply thread. A visitor contributes a natural-language point; Clevertree organizes original posts into existing or new **perspectives** (keys), makes counterarguments legible through flexible multi-links, and maintains a readable map for everyone watching. SI (Super Intelligence, i.e. AI) curates in batches according to human-authored rules; it does not declare a winner.
 
 **Core promise:** *Many people can speak. Their contributions accumulate into a small number of understandable arguments. Those arguments can challenge one another without becoming a tangled reply thread.*
 
@@ -26,12 +26,12 @@ Clevertree is a standing debate, not a reply thread. A visitor contributes a nat
 - **Counter-links** between perspectives are flexible and many-to-many. No permanent two-sided binary. Within a perspective, reading order is: the perspective itself, common counterarguments, counters to those counters, and deeper responses as needed.
 - The **primary UI is a ranked map of perspectives**, prioritized by activity and content weight. All perspectives and all original points must be accessible through continuous scrolling.
 - **Recent activity is secondary**, useful for understanding what just changed but not the primary metaphor.
-- Posting is **body-only**. Optional microphone-to-transcription and optional selection of multiple keys; no forced title, stance, or categorization. AI can later revise soft associations.
+- Posting is **body-only**. Optional microphone-to-transcription and optional selection of multiple keys; no forced title, stance, or categorization. SI can later revise soft associations.
 - Unassigned contributions appear lightly under **Unfiled** on the board and in activity as awaiting organization, then show where they were filed.
 - Guided walkthroughs and live topics share the same topic-first hierarchy; demos encourage participation early. Only **demo UI** pauses or queues presentation; the server continues running. Live topics never have a Continue control. Continue is **UI-only** (server is not gated).
 - Mobile and desktop need **distinct optimized arrangements** (container-width responsive). Focused counter-links: side-by-side on desktop, stacked on mobile. Panel may grow / expand-to-focus.
-- Default admin chrome is compact: human-authored house rules and AI-assisted organization, with contextual item statuses only where relevant. Prefer wording like **Rules set by people · AI-assisted organization** over implying a staffed moderation desk.
-- Potentially abusive/spam content is flagged by the AI batch, **hidden behind “Click to view”** (not instant delete), contestable, and eligible for delayed removal when uncontested. Avoid false positives for heated political discussion; bullying / intimidation / targeted harassment is the boundary. Pattern history of uncontested removals may inform later judgment; soft “potential abuse” flags are allowed when uncertain.
+- Default admin chrome is compact: human-authored house rules and SI-assisted organization, with contextual item statuses only where relevant. Prefer wording like **Rules set by people · SI-assisted organization** over implying a staffed moderation desk.
+- Potentially abusive/spam content is flagged by the SI batch, **hidden behind “Click to view”** (not instant delete), contestable, and eligible for delayed removal when uncontested. Avoid false positives for heated political discussion; bullying / intimidation / targeted harassment is the boundary. Pattern history of uncontested removals may inform later judgment; soft “potential abuse” flags are allowed when uncertain.
 - Demo peers are simulated — never present them as real public participants.
 
 ---
@@ -118,7 +118,7 @@ No nested scrolling inside cards. No summary-only dead ends.
 - Body + Post only by default.
 - Optional mic → same field; edit before submit.
 - Optional multi-key soft proposals (provisional until batch).
-- Live immediately after submit; AI does not block posting.
+- Live immediately after submit; SI does not block posting.
 
 ---
 
@@ -145,13 +145,13 @@ Chrome: compact rules link; inline statuses only on affected items.
 
 ## What not to show by default
 
-Full chat bubble trees; permanent For/Against columns; unreadable full graphs; raw host/job jargon; AI confidence scores on cards; auto-reorder while reading; winners/truth meters; mandatory title/stance; recents dominating the board; demo peers as real people; coach after every minor event.
+Full chat bubble trees; permanent For/Against columns; unreadable full graphs; raw host/job jargon; SI confidence scores on cards; auto-reorder while reading; winners/truth meters; mandatory title/stance; recents dominating the board; demo peers as real people; coach after every minor event.
 
 ---
 
 ## Debate visualization libraries — fit summary
 
-Most tools are user-built pro/con trees (Kialo-style) or static/editor graphs. Clevertree’s model (live free posts → AI batch → ranked standing keys + flexible counters + secondary recents) does not match an off-the-shelf primary surface.
+Most tools are user-built pro/con trees (Kialo-style) or static/editor graphs. Clevertree’s model (live free posts → SI batch → ranked standing keys + flexible counters + secondary recents) does not match an off-the-shelf primary surface.
 
 | Need | Existing tools | Clevertree |
 |------|----------------|------------|

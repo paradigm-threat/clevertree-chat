@@ -492,7 +492,7 @@
       const paused = store.demoPaused;
       const msg =
         store.demoMessage ||
-        "You’re in a guided debate. It pauses after each update so you can see what changed — simulated peers and AI organization included.";
+        "You’re in a guided debate. It pauses after each update so you can see what changed — simulated peers and SI organization included.";
       return (
         '<aside class="ct-demo-box' +
         (paused ? " is-paused" : "") +
@@ -781,7 +781,7 @@
           '</div><h1 class="ct-topic-title">' +
           escapeHtml(store.board.topic.title) +
           '</h1><div class="ct-app-meta">' +
-          '<a class="ct-rules-link" href="https://clevertree.chat/try/ui/design-brief.md" target="_blank" rel="noopener">House rules · AI-assisted</a>' +
+          '<a class="ct-rules-link" href="https://clevertree.chat/try/ui/design-brief.md" target="_blank" rel="noopener">House rules · SI-assisted (Super Intelligence, i.e. AI)</a>' +
           '<span class="ct-count-pill">' +
           n +
           " perspectives · " +

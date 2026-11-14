@@ -551,12 +551,51 @@ footer {
   color: var(--ink);
 }
 
+.trees-bridge {
+  max-width: 40rem;
+  margin: 0.85rem 0 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
 .trees-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem 0.75rem;
   margin: 1rem 0 1.4rem;
+}
+
+.trees-narrative {
+  max-width: 40rem;
+}
+
+.trees-narrative .band {
+  padding: 2.75rem 0;
+}
+
+.trees-narrative .band:first-child {
+  border-top: 1px solid var(--line);
+}
+
+.trees-narrative h2 {
+  max-width: 22ch;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  margin-bottom: 1rem;
+}
+
+.trees-narrative .band p {
+  color: var(--ink);
+}
+
+.trees-narrative .band p + p {
+  margin-top: 1rem;
+}
+
+.trees-narrative cite {
+  font-style: italic;
 }
 
 .regrow-btn {

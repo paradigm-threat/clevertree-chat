@@ -16,7 +16,7 @@ On submit a person may choose a category that already exists. The post is filed 
 
 ## Rename plus history
 
-Any key with posts may be renamed when the posted rules leave keys to the AI. `mass-surveillance` becomes `invasion-of-privacy` in one commit: the page index, `key-history.json`, the comment files, and the votes all move together. The old name stays in the index so the old URL opens the current key. A `rules.md` that says keys never change freezes that rename. `mass-surveillance` stays.
+Any key with posts may be renamed when the posted rules leave keys to the SI. `mass-surveillance` becomes `invasion-of-privacy` in one commit: the page index, `key-history.json`, the comment files, and the votes all move together. The old name stays in the index so the old URL opens the current key. A `rules.md` that says keys never change freezes that rename. `mass-surveillance` stays.
 
 ## The batch does not churn
 
