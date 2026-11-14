@@ -727,12 +727,6 @@ footer {
 
 .trees-narrative {
   max-width: 40rem;
-  /* Opaque panel so fixed trees cannot show through scrolled prose */
-  background: var(--cream);
-  box-shadow: 0 0 0 3rem var(--cream);
-  border-radius: 0.25rem;
-  position: relative;
-  z-index: 1;
 }
 
 .trees-narrative .band {
