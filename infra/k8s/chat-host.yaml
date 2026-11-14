@@ -21,8 +21,7 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-      nodeSelector:
-        kubernetes.io/hostname: prod-instance-17941481574532202
+      # Single-node Intake Spot stand — do not pin hostname (Spot replaces instance ids).
       containers:
         - name: chat
           image: python:3.12-slim
