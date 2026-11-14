@@ -29,7 +29,7 @@
     { x: 0.22, depth: 0.88, scale: 0.9, duration: 9800, habit: 0.75, branchiness: 0.68, asymmetry: 0.4, leanSign: -1, sideBias: 1, seed: 2222, leafPalette: "fall" }
   ];
 
-  const MOBILE_MQ = "(max-width: 800px)";
+  const MOBILE_MQ = "(max-width: 460px)";
   const MOBILE_MAX_TREES = 8;
 
   function isMobileForestViewport() {

@@ -143,7 +143,7 @@
       if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
       else if (typeof mq.addListener === "function") mq.addListener(fn);
     }
-    watchMq(window.matchMedia(FOREST_MOBILE_MQ || "(max-width: 800px)"), plant);
+    watchMq(window.matchMedia(FOREST_MOBILE_MQ || "(max-width: 460px)"), plant);
     watchMq(window.matchMedia("(prefers-color-scheme: dark)"), plant);
     window.addEventListener("clevertree-themechange", plant);
     plant();
