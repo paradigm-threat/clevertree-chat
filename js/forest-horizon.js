@@ -315,10 +315,13 @@
     if (staticOnly) {
       paintStand(1);
     } else {
-      // One RAF for the whole stand; stagger by entry duration.
+      // One RAF for the whole stand. Depth scales grow time ~10×:
+      // depth 0 (far) → 0.1× nearDuration; depth 1 (near) → full preset.
       const t0 = performance.now();
       const durations = sorted.map(function (e) {
-        return e.farCanopy ? 8000 : (e.duration || 12000);
+        const nearDur = e.duration || 12000;
+        const depth = Math.max(0, Math.min(1, e.depth != null ? e.depth : 1));
+        return nearDur * (0.1 + 0.9 * depth);
       });
       function frame(now) {
         const us = [];
