@@ -6,16 +6,23 @@
   --green: #025e2d;
   --leaf: #7fbf18;
   --bark: #5c3d22;
-  --gold: #e2b423;
+  /* Darker gold for AA on sky/cream (was #e2b423) */
+  --gold: #8a6a12;
   --muted: #3d624c;
   --line: rgba(2, 94, 45, 0.22);
   --serif: "Fraunces", "Iowan Old Style", Palatino, "Palatino Linotype", serif;
   --text: "Literata", "Iowan Old Style", Palatino, Georgia, serif;
+  --nav-panel: var(--cream);
+  --header-bg: transparent;
 }
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; overflow-x: clip; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: clip;
+  color-scheme: light dark;
+}
 
 body {
   margin: 0;
@@ -536,6 +543,7 @@ footer {
 .trees-body {
   position: relative;
   min-height: 100vh;
+  overflow-x: clip;
   /* Sky → warm sunset wash → soft hill green into cream under the band */
   background: linear-gradient(180deg, #3f8fd0 0%, #7eb6e6 16%, #f0b57a 40%, #c8e6a8 55%, var(--cream) 76%);
 }
@@ -548,6 +556,7 @@ footer {
   z-index: 0;
   /* Tall enough that near-tree trunks (~75–82% of band) stay above the fade */
   height: min(58vh, 38rem);
+  overflow: visible;
   pointer-events: none;
   background-color: #1f5c32;
   background-image: url("/images/forest-horizon.jpg");
@@ -701,4 +710,32 @@ footer {
   aspect-ratio: 520 / 400;
   cursor: pointer;
   filter: drop-shadow(0 12px 16px rgba(14, 63, 36, 0.2));
+}
+
+/* Narrow viewports: portrait hills art, taller band, tree bleed past edges */
+@media (max-width: 800px) {
+  .trees-body {
+    background: linear-gradient(180deg, #3f8fd0 0%, #7eb6e6 14%, #f0b57a 38%, #c8e6a8 58%, var(--cream) 78%);
+  }
+
+  .trees-bg {
+    height: min(70vh, 40rem);
+    background-image: url("/images/forest-horizon-mobile.jpg");
+    background-image: url("/images/forest-horizon-mobile.webp");
+    background-position: center top;
+    background-size: 100% 100%;
+  }
+
+  .trees-copy {
+    padding-top: max(14rem, calc(min(70vh, 40rem) - 4.75rem));
+  }
+
+  .forest-horizon {
+    /* Wider than the viewport so left/right trees can hang off without clipping */
+    left: -10%;
+    right: -10%;
+    width: auto;
+    top: max(5vh, 2.75rem);
+    height: min(55vh, 34rem);
+  }
 }

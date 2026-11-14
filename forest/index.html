@@ -39,7 +39,10 @@
         <img src="/icon-128x128.png" alt="" width="32" height="32">
         Clevertree Chat
       </a>
-      <nav class="nav-links" aria-label="Primary">
+            <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle-bars" aria-hidden="true"></span>
+      </button>
+      <nav class="nav-links" id="site-nav" aria-label="Primary">
         <a class="nav-try" href="/forest" aria-current="page">Forest</a>
         <a class="nav-try" href="/extension">Extension</a>
         <a class="nav-try" href="/dev">Dev</a>
@@ -112,14 +115,21 @@
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const forest = document.getElementById("forest");
     const countEl = document.getElementById("forest-count");
-    countEl.textContent = FOREST_HORIZON.length + " trees";
 
     function plant() {
-      plantForestHorizon(forest, { reduce: reduce, grow: growHillTree });
+      const n = plantForestHorizon(forest, { reduce: reduce, grow: growHillTree });
+      countEl.textContent = n + " trees";
     }
 
     document.getElementById("regrow").addEventListener("click", plant);
+    const mobileMq = window.matchMedia(FOREST_MOBILE_MQ || "(max-width: 800px)");
+    if (typeof mobileMq.addEventListener === "function") {
+      mobileMq.addEventListener("change", plant);
+    } else if (typeof mobileMq.addListener === "function") {
+      mobileMq.addListener(plant);
+    }
     plant();
   </script>
+  <script src="/js/site-nav.js"></script>
 </body>
 </html>

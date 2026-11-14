@@ -26,7 +26,10 @@
         <img src="/icon-128x128.png" alt="" width="32" height="32">
         Clevertree Chat
       </a>
-      <nav class="nav-links" aria-label="Primary">
+            <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle-bars" aria-hidden="true"></span>
+      </button>
+      <nav class="nav-links" id="site-nav" aria-label="Primary">
         <a class="nav-try" href="/forest">Forest</a>
         <a class="nav-try" href="/extension">Extension</a>
         <a class="nav-try" href="/dev">Dev</a>
@@ -52,10 +55,19 @@
   <script src="/js/forest-horizon.js"></script>
   <script>
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    plantForestHorizon(document.getElementById("forest"), {
-      reduce: reduce,
-      grow: growHillTree
-    });
+    const forest = document.getElementById("forest");
+
+    function plant() {
+      plantForestHorizon(forest, { reduce: reduce, grow: growHillTree });
+    }
+
+    const mobileMq = window.matchMedia(FOREST_MOBILE_MQ || "(max-width: 800px)");
+    if (typeof mobileMq.addEventListener === "function") {
+      mobileMq.addEventListener("change", plant);
+    } else if (typeof mobileMq.addListener === "function") {
+      mobileMq.addListener(plant);
+    }
+    plant();
 
     document.getElementById("go-back").addEventListener("click", function () {
       if (window.history.length > 1) {
@@ -65,5 +77,6 @@
       window.location.href = "/";
     });
   </script>
+  <script src="/js/site-nav.js"></script>
 </body>
 </html>

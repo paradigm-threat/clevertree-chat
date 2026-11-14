@@ -29,12 +29,58 @@
     { x: 0.22, depth: 0.88, scale: 0.9, duration: 9800, habit: 0.75, branchiness: 0.68, asymmetry: 0.4, leanSign: -1, sideBias: 1, seed: 2222, leafPalette: "fall" }
   ];
 
+  const MOBILE_MQ = "(max-width: 800px)";
+  const MOBILE_MAX_TREES = 8;
+
+  function isMobileForestViewport() {
+    return typeof global.matchMedia === "function" &&
+      global.matchMedia(MOBILE_MQ).matches;
+  }
+
+  function sampleBand(band, n) {
+    if (n <= 0 || !band.length) return [];
+    if (band.length <= n) return band.slice();
+    const out = [];
+    const last = band.length - 1;
+    for (let i = 0; i < n; i++) {
+      out.push(band[Math.round((i * last) / Math.max(1, n - 1))]);
+    }
+    return out;
+  }
+
+  /**
+   * Depth-banded subset with x-spread (ends of each band) so mobile
+   * keeps far/mid/near without crowding the center.
+   */
+  function pickStand(entries, maxTrees) {
+    if (!maxTrees || maxTrees >= entries.length) return entries.slice();
+    const far = entries.filter(function (e) { return e.depth < 0.33; })
+      .sort(function (a, b) { return a.x - b.x; });
+    const mid = entries.filter(function (e) { return e.depth >= 0.33 && e.depth < 0.66; })
+      .sort(function (a, b) { return a.x - b.x; });
+    // Prefer the deepest near trees (true foreground), then spread by x.
+    const nearDeep = entries.filter(function (e) { return e.depth >= 0.66; })
+      .sort(function (a, b) { return b.depth - a.depth; });
+
+    const farN = Math.max(1, Math.round(maxTrees * 0.375));
+    const nearN = Math.max(1, Math.round(maxTrees * 0.25));
+    const midN = Math.max(1, maxTrees - farN - nearN);
+
+    const nearPool = nearDeep
+      .slice(0, Math.max(nearN * 2, Math.ceil(nearDeep.length * 0.6)))
+      .sort(function (a, b) { return a.x - b.x; });
+
+    return sampleBand(far, farN)
+      .concat(sampleBand(mid, midN), sampleBand(nearPool, nearN))
+      .slice(0, maxTrees);
+  }
+
   function plantForestHorizon(root, opts) {
     const options = opts || {};
     const reduce = !!options.reduce;
     const performance = !!options.performance;
     const grow = typeof options.grow === "function" ? options.grow : global.growHillTree;
-    if (!root || typeof grow !== "function") return;
+    if (!root || typeof grow !== "function") return 0;
 
     if (root._forestIO && typeof root._forestIO.disconnect === "function") {
       root._forestIO.disconnect();
@@ -44,7 +90,18 @@
     root.innerHTML = "";
     root.classList.add("forest-horizon");
 
-    const sorted = FOREST.slice().sort(function (a, b) {
+    const mobile = options.mobile != null ? !!options.mobile : isMobileForestViewport();
+    const maxTrees = options.maxTrees != null
+      ? options.maxTrees
+      : (mobile ? MOBILE_MAX_TREES : null);
+    // Bleed past left/right so crowns aren't boxed inside the viewport.
+    const overflowX = options.overflowX != null ? !!options.overflowX : mobile;
+    // Seat trunks on hills: far higher, near lower. Mobile portrait hills need a taller rise.
+    const nearFloor = options.nearFloor != null ? options.nearFloor : (mobile ? 2 : 2);
+    const hillRise = options.hillRise != null ? options.hillRise : (mobile ? 48 : 32);
+    const scaleMul = options.scaleMul != null ? options.scaleMul : (mobile ? 0.82 : 1);
+
+    const sorted = pickStand(FOREST, maxTrees).sort(function (a, b) {
       return a.depth - b.depth;
     });
 
@@ -52,12 +109,14 @@
       const figure = document.createElement("figure");
       figure.className = "forest-tree";
       figure.setAttribute("role", "listitem");
-      figure.style.left = entry.x * 100 + "%";
-      figure.style.height = entry.scale * 100 + "%";
+      // Map 0…1 stand into mild overscan so edge crowns hang past the viewport.
+      const x = overflowX ? entry.x * 1.22 - 0.11 : entry.x;
+      figure.style.left = x * 100 + "%";
+      figure.style.height = entry.scale * scaleMul * 100 + "%";
       figure.style.zIndex = String(Math.round(10 + entry.depth * 90));
       // Perspective: farther (smaller / lower depth) trees sit higher on the hillside.
       const hill = Math.max(0, Math.min(1, 1 - entry.depth));
-      const bottomPct = 2 + hill * 32;
+      const bottomPct = nearFloor + hill * hillRise;
       figure.style.bottom = bottomPct + "%";
 
       const canvas = document.createElement("canvas");
@@ -69,7 +128,7 @@
         "aria-label",
         "Tree habit " + entry.habit.toFixed(2) +
           (entry.leafPalette ? ", " + entry.leafPalette + " foliage" : "") +
-          " at " + Math.round(entry.x * 100) + "% along the horizon"
+          " at " + Math.round(x * 100) + "% along the horizon"
       );
       canvas.tabIndex = 0;
 
@@ -93,8 +152,11 @@
         leafColors: entry.leafColors
       });
     });
+
+    return sorted.length;
   }
 
   global.FOREST_HORIZON = FOREST;
+  global.FOREST_MOBILE_MQ = MOBILE_MQ;
   global.plantForestHorizon = plantForestHorizon;
 })(typeof window !== "undefined" ? window : globalThis);
