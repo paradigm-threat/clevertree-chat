@@ -499,7 +499,7 @@ footer {
   .pair-row { grid-template-columns: 1fr; }
 }
 
-/* /trees — hills + forest in the top half; copy sits below the band */
+/* /forest — hills + forest in the top half; copy sits below the band */
 .trees-body {
   position: relative;
   min-height: 100vh;

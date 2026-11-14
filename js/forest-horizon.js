@@ -1,4 +1,4 @@
-/* Code presets for the /trees overlapping horizon forest. */
+/* Code presets for the /forest overlapping horizon forest. */
 (function (global) {
   // Stable scenic stand: far→near via depth; smaller scale = farther.
   // leafPalette picks a named foliage range from TREE_LEAF_PALETTES.

@@ -1,6 +1,10 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/trees", "destination": "/forest", "permanent": true },
+    { "source": "/trees/", "destination": "/forest", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/try/flock-cameras", "destination": "/try" },
     { "source": "/try/thc-legalization", "destination": "/try" }

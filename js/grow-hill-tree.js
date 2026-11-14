@@ -1,4 +1,4 @@
-/* Shared hillside tree grower for the home hero and /trees forest. */
+/* Shared hillside tree grower for the home hero and /forest horizon. */
 
 var CLEVERTREE_ALWAYS_ANIMATE_KEY = "clevertree-always-animate";
 
