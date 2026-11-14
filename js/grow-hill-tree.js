@@ -29,6 +29,11 @@ var TREE_LEAF_PALETTES_NIGHT = {
 var TREE_LEAF_PALETTE_NAMES = Object.keys(TREE_LEAF_PALETTES);
 
 function prefersDarkScheme() {
+  if (typeof document !== "undefined" && document.documentElement) {
+    var forced = document.documentElement.getAttribute("data-theme");
+    if (forced === "dark") return true;
+    if (forced === "light") return false;
+  }
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
   try {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;

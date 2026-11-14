@@ -40,7 +40,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .clevertree-board {
+  html:not([data-theme="light"]) .clevertree-board {
     --ct-ink: #e8f2ea;
     --ct-ink-soft: #b8d0c0;
     --ct-muted: #9db5a8;
@@ -58,10 +58,33 @@
     --ct-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   }
 
-  .clevertree-board .ct-status-line,
-  .clevertree-board .ct-app-header {
+  html:not([data-theme="light"]) .clevertree-board .ct-status-line,
+  html:not([data-theme="light"]) .clevertree-board .ct-app-header {
     background: var(--ct-panel);
   }
+}
+
+html[data-theme="dark"] .clevertree-board {
+  --ct-ink: #e8f2ea;
+  --ct-ink-soft: #b8d0c0;
+  --ct-muted: #9db5a8;
+  --ct-paper: #121c18;
+  --ct-panel: #1a2820;
+  --ct-line: rgba(232, 242, 234, 0.16);
+  --ct-green: #5ecf8a;
+  --ct-green-deep: #3db870;
+  --ct-mint: #1e3328;
+  --ct-mint-deep: #243c30;
+  --ct-cream: #182820;
+  --ct-warn: #f0d078;
+  --ct-warn-bg: #3a2a12;
+  --ct-sim: #8ab4d4;
+  --ct-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .clevertree-board .ct-status-line,
+html[data-theme="dark"] .clevertree-board .ct-app-header {
+  background: var(--ct-panel);
 }
 
 .clevertree-board *,

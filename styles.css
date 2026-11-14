@@ -156,7 +156,6 @@ body.nav-open .nav-toggle-bars::after {
 @media (max-width: 800px) {
   .nav-toggle {
     display: inline-flex;
-    margin-left: auto;
   }
 
   .nav-links {
@@ -842,9 +841,10 @@ footer {
   }
 }
 
-/* Night theme — OS/browser dark; home hero stays daytime */
+/* Night theme — toggle (data-theme) overrides OS; home hero stays daytime */
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  html:not([data-theme="light"]) {
     --cream: #121c18;
     --cream-deep: #182820;
     --sky: #0b1a2e;
@@ -857,54 +857,183 @@ footer {
     --line: rgba(232, 242, 234, 0.18);
     --nav-panel: #1a2820;
   }
+}
 
-  body {
+html[data-theme="dark"] {
+  --cream: #121c18;
+  --cream-deep: #182820;
+  --sky: #0b1a2e;
+  --ink: #e8f2ea;
+  --green: #5ecf8a;
+  --leaf: #8fd94a;
+  --bark: #d4b08c;
+  --gold: #f0d078;
+  --muted: #a8c4b0;
+  --line: rgba(232, 242, 234, 0.18);
+  --nav-panel: #1a2820;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+
+/* Dark surface treatments (OS dark without light override, or forced dark) */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) body {
     background: linear-gradient(180deg, var(--sky) 0%, var(--cream) 22rem);
   }
-
-  .nav-toggle {
+  html:not([data-theme="light"]) .nav-toggle {
     background: var(--nav-panel);
   }
-
-  .nav-links {
+  html:not([data-theme="light"]) .nav-links {
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   }
-
-  .button {
+  html:not([data-theme="light"]) .button {
     color: #0e3f24;
   }
-
-  .section.focused {
+  html:not([data-theme="light"]) .section.focused {
     background: rgba(94, 207, 138, 0.1);
   }
-
-  /* Home hero island stays bright daytime */
-  .banner {
+  html:not([data-theme="light"]) .banner {
     background: linear-gradient(#4dc4ec 0%, #6ad1ef 12%, #6ad1ef 100%);
   }
-
-  .trees-body {
+  html:not([data-theme="light"]) .trees-body {
     background: linear-gradient(180deg, #0b1a2e 0%, #1a2a48 18%, #2a1840 38%, #143828 55%, var(--cream) 78%);
   }
-
-  .trees-bg {
+  html:not([data-theme="light"]) .trees-bg {
     background-color: #0a1e14;
     background-image: url("/images/forest-horizon-night.jpg");
     background-image: url("/images/forest-horizon-night.webp");
   }
-
-  .forest-canvas {
+  html:not([data-theme="light"]) .forest-canvas {
     filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
   }
+}
 
-  @media (max-width: 800px) {
-    .trees-body {
-      background: linear-gradient(180deg, #0b1a2e 0%, #1a2a48 16%, #2a1840 40%, #143828 58%, var(--cream) 80%);
-    }
+html[data-theme="dark"] body {
+  background: linear-gradient(180deg, var(--sky) 0%, var(--cream) 22rem);
+}
+html[data-theme="dark"] .nav-toggle {
+  background: var(--nav-panel);
+}
+html[data-theme="dark"] .nav-links {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+html[data-theme="dark"] .button {
+  color: #0e3f24;
+}
+html[data-theme="dark"] .section.focused {
+  background: rgba(94, 207, 138, 0.1);
+}
+html[data-theme="dark"] .banner {
+  background: linear-gradient(#4dc4ec 0%, #6ad1ef 12%, #6ad1ef 100%);
+}
+html[data-theme="dark"] .trees-body {
+  background: linear-gradient(180deg, #0b1a2e 0%, #1a2a48 18%, #2a1840 38%, #143828 55%, var(--cream) 78%);
+}
+html[data-theme="dark"] .trees-bg {
+  background-color: #0a1e14;
+  background-image: url("/images/forest-horizon-night.jpg");
+  background-image: url("/images/forest-horizon-night.webp");
+}
+html[data-theme="dark"] .forest-canvas {
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
+}
 
-    .trees-bg {
-      background-image: url("/images/forest-horizon-night-mobile.jpg");
-      background-image: url("/images/forest-horizon-night-mobile.webp");
-    }
+@media (prefers-color-scheme: dark) and (max-width: 800px) {
+  html:not([data-theme="light"]) .trees-body {
+    background: linear-gradient(180deg, #0b1a2e 0%, #1a2a48 16%, #2a1840 40%, #143828 58%, var(--cream) 80%);
+  }
+  html:not([data-theme="light"]) .trees-bg {
+    background-image: url("/images/forest-horizon-night-mobile.jpg");
+    background-image: url("/images/forest-horizon-night-mobile.webp");
+  }
+}
+
+@media (max-width: 800px) {
+  html[data-theme="dark"] .trees-body {
+    background: linear-gradient(180deg, #0b1a2e 0%, #1a2a48 16%, #2a1840 40%, #143828 58%, var(--cream) 80%);
+  }
+  html[data-theme="dark"] .trees-bg {
+    background-image: url("/images/forest-horizon-night-mobile.jpg");
+    background-image: url("/images/forest-horizon-night-mobile.webp");
+  }
+}
+
+/* Theme toggle control */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--cream);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--bark);
+  outline-offset: 2px;
+}
+
+.theme-toggle svg {
+  display: block;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.theme-toggle .icon-sun { display: none; }
+.theme-toggle .icon-moon { display: block; }
+
+html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .theme-toggle .icon-sun { display: block; }
+  html:not([data-theme="light"]) .theme-toggle .icon-moon { display: none; }
+  html:not([data-theme="light"]) .theme-toggle {
+    background: var(--nav-panel);
+  }
+}
+
+html[data-theme="dark"] .theme-toggle {
+  background: var(--nav-panel);
+}
+
+@media (max-width: 800px) {
+  .nav-toggle {
+    margin-left: 0;
+  }
+}
+
+@media (min-width: 801px) {
+  .header-actions {
+    order: 2;
+  }
+  .nav-links {
+    order: 3;
+    margin-left: 0;
   }
 }
