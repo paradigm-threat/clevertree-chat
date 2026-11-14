@@ -28,6 +28,18 @@ var TREE_LEAF_PALETTES_NIGHT = {
 
 var TREE_LEAF_PALETTE_NAMES = Object.keys(TREE_LEAF_PALETTES);
 
+var TREE_VW = 520;
+var TREE_VH = 400;
+var TREE_DEPTH = 7;
+var TREE_STEM_N = 2200;
+var TREE_LEAF_N = 12000;
+var TREE_TRUNK_X = TREE_VW * 0.5;
+var TREE_TRUNK_Y = TREE_VH - 8;
+var TREE_VIEW_PAD = 28;
+var TREE_RANGE_DEG = [34, 32, 36, 34, 38, 34, 32, 28];
+var TREE_LENGTHS = [64, 56, 48, 40, 32, 24, 16, 11];
+var TREE_BARK = ["#5c3d22", "#684628", "#755230", "#825e38", "#8f6a42", "#9c764c"];
+
 function prefersDarkScheme() {
   if (typeof document !== "undefined" && document.documentElement) {
     var forced = document.documentElement.getAttribute("data-theme");
@@ -117,29 +129,75 @@ function windAmpFor(level) {
   return 0;
 }
 
-function growHillTree(canvas, opts) {
+function clamp01Tree(v) {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+function easeOutTree(t) {
+  return 1 - (1 - t) * (1 - t);
+}
 
+function applyTreeTransform(ctx, transform) {
+  if (!transform) return;
+  if (transform.m) {
+    var m = transform.m;
+    ctx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
+    return;
+  }
+  var sx = transform.sx != null ? transform.sx : (transform.scale != null ? transform.scale : 1);
+  var sy = transform.sy != null ? transform.sy : sx;
+  ctx.setTransform(sx, 0, 0, sy, transform.tx || 0, transform.ty || 0);
+}
+
+/**
+ * Soft elliptical ground shade at the trunk base (local VW×VH space).
+ * Grows with u; no cast silhouette.
+ */
+function paintTreeShade(ctx, transform, u, opts) {
+  var o = opts || {};
+  var uu = clamp01Tree(u == null ? 1 : u);
+  if (uu <= 0) return;
+  var night = !!o.night;
+  var rx = (o.rx != null ? o.rx : 100) * uu;
+  var ry = (o.ry != null ? o.ry : 30) * uu;
+  var alpha = (night ? 0.32 : 0.24) * uu;
+  ctx.save();
+  applyTreeTransform(ctx, transform);
+  var cx = TREE_TRUNK_X;
+  var cy = TREE_TRUNK_Y + 6;
+  var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+  if (night) {
+    g.addColorStop(0, "rgba(0, 0, 0, " + alpha + ")");
+    g.addColorStop(0.55, "rgba(0, 0, 0, " + (alpha * 0.45) + ")");
+    g.addColorStop(1, "rgba(0, 0, 0, 0)");
+  } else {
+    g.addColorStop(0, "rgba(18, 36, 16, " + alpha + ")");
+    g.addColorStop(0.55, "rgba(18, 36, 16, " + (alpha * 0.4) + ")");
+    g.addColorStop(1, "rgba(18, 36, 16, 0)");
+  }
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Build stem/leaf buffers for one tree. Shared by home hero and forest stand.
+ * options.lod === "far" uses a lighter graph for distant canopy trees.
+ */
+function buildTreeModel(opts) {
   const options = opts && typeof opts === "object" ? opts : {};
-  const reduce = !!options.reduce;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  if (typeof canvas._growStop === "function") canvas._growStop();
-  canvas._growOpts = options;
-
-  // Wide virtual view so spreading habits are not clipped by the bitmap.
-  const VW = 520;
-  const VH = 400;
-  const DEPTH = 7;
-  const STEM_N = 2200;
-  const LEAF_N = 12000;
-  // Leader + laterals (not equal ±Y forks). Angles in degrees by depth.
-  const RANGE_DEG = [34, 32, 36, 34, 38, 34, 32, 28];
-  const LENGTHS = [64, 56, 48, 40, 32, 24, 16, 11];
-  const DURATION = options.duration > 0 ? options.duration : 30000;
-  const START_DELAY = options.delay > 0 ? options.delay : 0;
-  const TRUNK_X = VW * 0.5;
-  const TRUNK_Y = VH - 8;
-  const VIEW_PAD = 28;
+  const farLod = options.lod === "far";
+  const VW = TREE_VW;
+  const VH = TREE_VH;
+  const DEPTH = farLod ? 5 : TREE_DEPTH;
+  const STEM_N = farLod ? 700 : TREE_STEM_N;
+  const LEAF_N = farLod ? 2800 : TREE_LEAF_N;
+  const RANGE_DEG = TREE_RANGE_DEG;
+  const LENGTHS = TREE_LENGTHS;
+  const TRUNK_X = TREE_TRUNK_X;
+  const TRUNK_Y = TREE_TRUNK_Y;
+  const VIEW_PAD = TREE_VIEW_PAD;
 
   const sx0 = new Float32Array(STEM_N);
   const sy0 = new Float32Array(STEM_N);
@@ -163,11 +221,7 @@ function growHillTree(canvas, opts) {
   const lrot = new Float32Array(LEAF_N);
   const llen = new Float32Array(LEAF_N);
   const lshow = new Float32Array(LEAF_N);
-  const llandx = new Float32Array(LEAF_N);
-  const llandy = new Float32Array(LEAF_N);
-  const llandr = new Float32Array(LEAF_N);
   const lcol = new Uint8Array(LEAF_N);
-  const lfall = new Uint8Array(LEAF_N);
   const ldep = new Uint8Array(LEAF_N);
   const lstem = new Uint16Array(LEAF_N);
   const bx0 = new Float32Array(STEM_N);
@@ -176,52 +230,38 @@ function growHillTree(canvas, opts) {
   const by1 = new Float32Array(STEM_N);
   const bang = new Float32Array(STEM_N);
 
-  const BARK = ["#5c3d22", "#684628", "#755230", "#825e38", "#8f6a42", "#9c764c"];
+  const BARK = TREE_BARK;
   const LEAF = resolveLeafPalette(options);
 
   const seedBits = new Uint32Array(1);
   if (options.seed != null) {
     seedBits[0] = options.seed >>> 0;
-  } else {
+  } else if (typeof crypto !== "undefined" && crypto.getRandomValues) {
     crypto.getRandomValues(seedBits);
+  } else {
+    seedBits[0] = (Math.random() * 0xffffffff) >>> 0;
   }
   let seed = (seedBits[0] % 2147483646) + 1;
   function rnd() {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   }
-  // habit 0 = tall/thin, 1 = wide/spreading, mid = in between
   const habit = options.habit != null
     ? Math.max(0, Math.min(1, Number(options.habit)))
     : rnd();
   const leanSign = options.leanSign === -1 || options.leanSign === 1
     ? options.leanSign
     : null;
-  // 0 = airy, 1 = lush — chance of extra laterals / mid-trunk shoots.
   const branchiness = options.branchiness != null
     ? Math.max(0, Math.min(1, Number(options.branchiness)))
     : 0.35 + rnd() * 0.55;
-  // 0 = milder laterals, 1 = one side clearly dominates (breaks Y symmetry).
   const asymmetry = options.asymmetry != null
     ? Math.max(0, Math.min(1, Number(options.asymmetry)))
     : 0.35 + rnd() * 0.55;
   const sideBias = options.sideBias === -1 || options.sideBias === 1
     ? options.sideBias
     : (leanSign != null ? leanSign : (rnd() < 0.5 ? -1 : 1));
-  const clickable = options.clickable !== false;
-  // Grow-in drawing animation is the default. Wind sway is off (performance).
-  // One-shot buffer paint: reduce motion, performance:true, or animate:false.
-  const staticOnly = !!reduce || options.performance === true || options.animate === false;
-  const windLevel = "calm";
-  const windAmp = 0;
-  const alwaysAnimate = false;
-  const pauseAfterMs = Infinity;
-  const swayMaxFps = 0;
-  const getWindTime = typeof options.getWindTime === "function"
-    ? options.getWindTime
-    : function () { return performance.now(); };
-  // Tall = long trunk + long limbs; bushy = shorter trunk, still wide reach.
-  // Do not starve side length when habit is low (that made “tall” look skinny).
+
   const upScale = 1.02 + 0.55 * (1 - habit);
   const sideScale = 1.08 + 0.22 * habit;
   function clampHeading(angle) {
@@ -255,7 +295,6 @@ function growHillTree(canvas, opts) {
     sdep[idx] = s.depth;
     sParent[idx] = s.parent != null ? s.parent : -1;
     sAlong[idx] = s.along != null ? s.along : 1;
-    // Timing filled after the stem graph exists.
     sStart[idx] = 0;
     sEnd[idx] = 0;
     sWidthStart[idx] = 0;
@@ -265,7 +304,6 @@ function growHillTree(canvas, opts) {
   }
 
   const trunkLean = (leanSign != null ? leanSign * (2.2 + rnd() * 1.8) : (rnd() * 2 - 1) * 4) * Math.PI / 180;
-  // Tall trunks stretch; bushy trunks stay shorter so the crown reads wide.
   const trunkLen = stemLength(72 + 42 * (1 - habit), trunkLean, false);
   const trunk = addStem({
     x: TRUNK_X,
@@ -295,15 +333,12 @@ function growHillTree(canvas, opts) {
     const s = queue.shift();
     if (s.depth >= DEPTH) continue;
     if (n >= STEM_N - 4) continue;
-    // Weak tips on airy trees stop early so density actually varies.
     if (!s.isLeader && s.depth >= 3 && rnd() > 0.35 + 0.6 * branchiness) continue;
     const spread = RANGE_DEG[Math.min(s.depth, RANGE_DEG.length - 1)] * Math.PI / 180;
-    // Tall still opens laterals (long crown); bushy opens wider.
     const latOpen = (0.82 + 0.48 * habit) * (0.8 + 0.3 * asymmetry);
     const leaderKeep = 0.06 + 0.12 * (1 - habit);
     const kids = [];
 
-    // Near-straight leader — never an equal left/right Y split.
     const leaderWobble = (rnd() * 2 - 1) * spread * leaderKeep;
     kids.push({
       ox: s.x,
@@ -317,7 +352,6 @@ function growHillTree(canvas, opts) {
       side: s.side
     });
 
-    // Dominant lateral — long reach on tall trees, not a stub.
     const domSign = s.side;
     const domMag = spread * latOpen * (0.75 + 0.4 * rnd());
     kids.push({
@@ -332,7 +366,6 @@ function growHillTree(canvas, opts) {
       side: domSign
     });
 
-    // Opposite lateral — weaker when asymmetry is high (avoids mirrored Y).
     const oppChance = 0.18 + 0.5 * branchiness - 0.28 * asymmetry;
     if (rnd() < oppChance) {
       const oppMag = spread * latOpen * (0.28 + 0.35 * (1 - asymmetry)) * (0.6 + 0.4 * rnd());
@@ -349,7 +382,6 @@ function growHillTree(canvas, opts) {
       });
     }
 
-    // Mid-segment shoot — bushy trees get more; tall trees still get trunk laterals.
     const midChance = s.depth === 0
       ? 0.75 + 0.2 * habit
       : (s.depth <= 2 ? 0.28 + 0.4 * branchiness + 0.15 * habit : (s.depth === 3 ? 0.12 + 0.22 * branchiness : 0));
@@ -372,7 +404,6 @@ function growHillTree(canvas, opts) {
       });
     }
 
-    // Extra tip lateral on lush trees only (kept sparse to limit overlap).
     if (s.depth >= 1 && s.depth <= 4 && rnd() < 0.06 + 0.32 * branchiness) {
       const extraSign = rnd() < 0.5 ? domSign : -domSign;
       const extraMag = spread * (0.35 + 0.4 * rnd());
@@ -420,7 +451,6 @@ function growHillTree(canvas, opts) {
     }
   }
 
-  // If a rare habit still overruns the bitmap, scale about the trunk base — never clip.
   (function fitTreeInView() {
     let minX = Infinity;
     let maxX = -Infinity;
@@ -432,7 +462,6 @@ function growHillTree(canvas, opts) {
       minY = Math.min(minY, sy0[i], sy1[i]);
       maxY = Math.max(maxY, sy0[i], sy1[i]);
     }
-    // Reserve room for foliage beyond tip coords.
     const leafReach = 24;
     minX -= leafReach;
     maxX += leafReach;
@@ -459,8 +488,6 @@ function growHillTree(canvas, opts) {
     }
   })();
 
-  // Length-then-children: kids wait until parent length passes their attach + delay.
-  // Width thickens after length so the parent paints over the fork.
   (function retargetStemTiming() {
     for (let i = 0; i < n; i++) {
       const lenDur = (sdep[i] === 0 ? 0.14 : 0.1) + (0.02 * rnd());
@@ -495,14 +522,10 @@ function growHillTree(canvas, opts) {
     }
   })();
 
-  // Leaves after optional fit so tip coords match the drawn stems.
   let leaves = 0;
-  let falling = 0;
-  let tipOrdinal = 0;
-  const tipIds = [];
-  // Dense small foliage dabs — fuller canopy without giant see-through petals.
-  const leafMinDist = 3.2;
+  const leafMinDist = farLod ? 5.5 : 3.2;
   function leafTooClose(x, y) {
+    if (farLod) return false;
     for (let j = 0; j < leaves; j++) {
       const dx = lx[j] - x;
       const dy = ly[j] - y;
@@ -511,10 +534,10 @@ function growHillTree(canvas, opts) {
     return false;
   }
   for (let i = 0; i < n; i++) {
-    if (sdep[i] === DEPTH) tipIds.push(i);
     if (sdep[i] < 2) continue;
     const ang = sang[i];
-    const per = sdep[i] >= 5 ? 7 : (sdep[i] >= 3 ? 5 : 4);
+    let per = sdep[i] >= 5 ? 7 : (sdep[i] >= 3 ? 5 : 4);
+    if (farLod) per = Math.max(2, Math.round(per * 0.45));
     const base = Math.max(4.2, 7.5 - sdep[i] * 0.35);
     for (let k = 0; k < per; k++) {
       if (leaves >= LEAF_N) break;
@@ -530,48 +553,233 @@ function growHillTree(canvas, opts) {
       lstem[leaves] = i;
       lrot[leaves] = ang + (k - (per - 1) / 2) * 0.35 + (k % 3 - 1) * 0.4;
       llen[leaves] = base + (k % 4) * 0.55;
-      // Bloom just after this stem's length finishes — never on an invisible twig.
       lshow[leaves] = Math.max(0, Math.min(sEnd[i] + 0.01, 0.98));
       lcol[leaves] = (sdep[i] + k) % LEAF.length;
       ldep[leaves] = sdep[i];
-      // No falling-leaf cycle — it kept RAF alive after grow and lagged the page.
-      lfall[leaves] = 0;
       leaves += 1;
     }
     if (leaves >= LEAF_N) break;
-    if (sdep[i] === DEPTH) tipOrdinal += 1;
   }
 
-  const state = {
-    stems: n,
+  return {
+    VW: VW,
+    VH: VH,
+    DEPTH: DEPTH,
+    TRUNK_X: TRUNK_X,
+    TRUNK_Y: TRUNK_Y,
+    n: n,
     leaves: leaves,
-    falling: falling,
+    sx0: sx0,
+    sy0: sy0,
+    sx1: sx1,
+    sy1: sy1,
+    sw0: sw0,
+    sw1: sw1,
+    sang: sang,
+    sdep: sdep,
+    sParent: sParent,
+    sAlong: sAlong,
+    sStart: sStart,
+    sEnd: sEnd,
+    sWidthStart: sWidthStart,
+    sWidthEnd: sWidthEnd,
+    lx: lx,
+    ly: ly,
+    lox: lox,
+    loy: loy,
+    lrot: lrot,
+    llen: llen,
+    lshow: lshow,
+    lcol: lcol,
+    ldep: ldep,
+    lstem: lstem,
+    bx0: bx0,
+    by0: by0,
+    bx1: bx1,
+    by1: by1,
+    bang: bang,
+    BARK: BARK,
+    LEAF: LEAF,
     habit: habit,
     seed: seedBits[0],
     leanSign: leanSign != null ? leanSign : (trunkLean >= 0 ? 1 : -1),
     branchiness: branchiness,
     asymmetry: asymmetry,
     sideBias: sideBias,
-    wind: windLevel,
     leafPalette: (options && options.leafPalette) || "summer",
-    leafColors: LEAF,
-    alwaysAnimate: alwaysAnimate,
+    lod: farLod ? "far" : "full"
+  };
+}
+
+function drawStemPath(ctx, x0, y0, x1, y1, r0, r1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const len = Math.hypot(dx, dy) || 1;
+  const px = -dy / len;
+  const py = dx / len;
+  ctx.beginPath();
+  ctx.moveTo(x0 + px * r0, y0 + py * r0);
+  ctx.lineTo(x1 + px * r1, y1 + py * r1);
+  ctx.lineTo(x1 - px * r1, y1 - py * r1);
+  ctx.lineTo(x0 - px * r0, y0 - py * r0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x0, y0, r0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x1, y1, Math.max(0.2, r1), 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawLeafPath(ctx, x, y, angle, len) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  const s = Math.max(2.2, len);
+  ctx.beginPath();
+  ctx.ellipse(0, -s * 0.15, s * 0.55, s * 0.7, 0, 0, Math.PI * 2);
+  ctx.ellipse(-s * 0.35, -s * 0.45, s * 0.38, s * 0.48, -0.5, 0, Math.PI * 2);
+  ctx.ellipse(s * 0.32, -s * 0.4, s * 0.36, s * 0.46, 0.45, 0, Math.PI * 2);
+  ctx.ellipse(0, -s * 0.75, s * 0.3, s * 0.34, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function copyTreeRestPose(model) {
+  const n = model.n;
+  for (let i = 0; i < n; i++) {
+    model.bx0[i] = model.sx0[i];
+    model.by0[i] = model.sy0[i];
+    model.bx1[i] = model.sx1[i];
+    model.by1[i] = model.sy1[i];
+    model.bang[i] = model.sang[i];
+  }
+}
+
+/**
+ * Paint a built tree into ctx. Does not clear the surface.
+ * transform maps local VW×VH into the destination (omit for identity under current CTM).
+ * paintOpts.clear === true clears the canvas bitmap first (home hero).
+ */
+function paintTreeModel(ctx, model, u, transform, paintOpts) {
+  if (!ctx || !model) return;
+  const o = paintOpts || {};
+  const uu = clamp01Tree(u == null ? 1 : u);
+  const n = model.n;
+  const leaves = model.leaves;
+  const DEPTH = model.DEPTH;
+  const BARK = model.BARK;
+  const LEAF = model.LEAF;
+
+  if (o.clear && ctx.canvas) {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.restore();
+  }
+
+  copyTreeRestPose(model);
+
+  ctx.save();
+  applyTreeTransform(ctx, transform);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  function paintStemAt(i) {
+    const lenGrow = model.sEnd[i] - model.sStart[i] || 0.001;
+    const lenP = clamp01Tree((uu - model.sStart[i]) / lenGrow);
+    if (lenP <= 0) return;
+    const e = easeOutTree(lenP);
+    const wGrow = model.sWidthEnd[i] - model.sWidthStart[i] || 0.001;
+    let widthP;
+    if (uu < model.sWidthStart[i]) {
+      widthP = 0.42 + 0.28 * e;
+    } else {
+      widthP = 0.7 + 0.3 * easeOutTree(clamp01Tree((uu - model.sWidthStart[i]) / wGrow));
+    }
+    ctx.fillStyle = BARK[Math.min(model.sdep[i], BARK.length - 1)];
+    const x0 = model.sx0[i];
+    const y0 = model.sy0[i];
+    const x1 = model.sx1[i];
+    const y1 = model.sy1[i];
+    const r0 = model.sw0[i] * widthP;
+    const r1 = (model.sw0[i] + (model.sw1[i] - model.sw0[i]) * e) * widthP;
+    drawStemPath(
+      ctx,
+      x0,
+      y0,
+      x0 + (x1 - x0) * e,
+      y0 + (y1 - y0) * e,
+      r0,
+      Math.max(0.2, r1)
+    );
+  }
+
+  function paintLeafAt(i) {
+    if (uu < model.lshow[i]) return;
+    const bloom = easeOutTree(clamp01Tree((uu - model.lshow[i]) / 0.035));
+    if (bloom <= 0) return;
+    ctx.fillStyle = LEAF[model.lcol[i]];
+    drawLeafPath(
+      ctx,
+      model.lx[i],
+      model.ly[i],
+      model.lrot[i],
+      model.llen[i] * (uu < 1 ? (0.35 + 0.65 * bloom) : 1)
+    );
+  }
+
+  for (let d = DEPTH; d >= 0; d--) {
+    for (let i = 0; i < leaves; i++) {
+      if (model.ldep[i] === d) paintLeafAt(i);
+    }
+    for (let i = 0; i < n; i++) {
+      if (model.sdep[i] === d) paintStemAt(i);
+    }
+  }
+  ctx.restore();
+}
+
+function growHillTree(canvas, opts) {
+  const options = opts && typeof opts === "object" ? opts : {};
+  const reduce = !!options.reduce;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  if (typeof canvas._growStop === "function") canvas._growStop();
+  canvas._growOpts = options;
+
+  const VW = TREE_VW;
+  const VH = TREE_VH;
+  const DURATION = options.duration > 0 ? options.duration : 30000;
+  const START_DELAY = options.delay > 0 ? options.delay : 0;
+  const clickable = options.clickable !== false;
+  const staticOnly = !!reduce || options.performance === true || options.animate === false;
+  const shade = options.shade !== false;
+  const nightShade = options.night === true || (!options.dayLeaves && prefersDarkScheme());
+
+  const model = buildTreeModel(options);
+  const state = {
+    stems: model.n,
+    leaves: model.leaves,
+    falling: 0,
+    habit: model.habit,
+    seed: model.seed,
+    leanSign: model.leanSign,
+    branchiness: model.branchiness,
+    asymmetry: model.asymmetry,
+    sideBias: model.sideBias,
+    wind: "calm",
+    leafPalette: model.leafPalette,
+    leafColors: model.LEAF,
+    alwaysAnimate: false,
     motion: reduce ? "reduced" : "growing",
     alive: !reduce,
     u: reduce ? 1 : 0
   };
   canvas._grow = state;
+  canvas._growModel = model;
   canvas._swayVisible = true;
-
-  function clamp01(v) {
-    return v < 0 ? 0 : v > 1 ? 1 : v;
-  }
-  function easeOut(t) {
-    return 1 - (1 - t) * (1 - t);
-  }
-  function easeIn(t) {
-    return t * t;
-  }
 
   function layout() {
     const dpr = window.devicePixelRatio || 1;
@@ -590,175 +798,26 @@ function growHillTree(canvas, opts) {
     return true;
   }
 
-  function drawStem(x0, y0, x1, y1, r0, r1) {
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const len = Math.hypot(dx, dy) || 1;
-    const px = -dy / len;
-    const py = dx / len;
-    ctx.beginPath();
-    ctx.moveTo(x0 + px * r0, y0 + py * r0);
-    ctx.lineTo(x1 + px * r1, y1 + py * r1);
-    ctx.lineTo(x1 - px * r1, y1 - py * r1);
-    ctx.lineTo(x0 - px * r0, y0 - py * r0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x0, y0, r0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x1, y1, Math.max(0.2, r1), 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawLeaf(x, y, angle, len) {
-    // Small overlapping dabs read as a leafy puff, not a giant petal.
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    const s = Math.max(2.2, len);
-    ctx.beginPath();
-    ctx.ellipse(0, -s * 0.15, s * 0.55, s * 0.7, 0, 0, Math.PI * 2);
-    ctx.ellipse(-s * 0.35, -s * 0.45, s * 0.38, s * 0.48, -0.5, 0, Math.PI * 2);
-    ctx.ellipse(s * 0.32, -s * 0.4, s * 0.36, s * 0.46, 0.45, 0, Math.PI * 2);
-    ctx.ellipse(0, -s * 0.75, s * 0.3, s * 0.34, 0.1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function windPushX(now, salt) {
-    if (windAmp <= 0) return 0;
-    const t = now * 0.001;
-    return Math.sin(t * 1.35 + salt) * (windAmp * 55) +
-      Math.sin(t * 0.55 + salt * 1.7) * (windAmp * 25);
-  }
-
-  function computeBend(now) {
-    const t = now * 0.001;
-    for (let i = 0; i < n; i++) {
-      const depthFade = sdep[i] / Math.max(1, DEPTH);
-      const local = Math.sin(t * 1.2 + i * 0.17) * windAmp * (0.25 + 0.75 * depthFade);
-      const gust = Math.sin(t * 0.35 + sdep[i] * 0.4) * windAmp * 0.35 * depthFade;
-      bang[i] = sang[i] + local + gust;
-      const len = Math.hypot(sx1[i] - sx0[i], sy1[i] - sy0[i]);
-      let x0;
-      let y0;
-      if (sParent[i] < 0) {
-        x0 = sx0[i];
-        y0 = sy0[i];
-      } else {
-        const p = sParent[i];
-        const along = Math.max(0, Math.min(1, sAlong[i]));
-        x0 = bx0[p] + (bx1[p] - bx0[p]) * along;
-        y0 = by0[p] + (by1[p] - by0[p]) * along;
-      }
-      bx0[i] = x0;
-      by0[i] = y0;
-      bx1[i] = x0 + Math.sin(bang[i]) * len;
-      by1[i] = y0 - Math.cos(bang[i]) * len;
-    }
-  }
-
-  function copyRestPose() {
-    for (let i = 0; i < n; i++) {
-      bx0[i] = sx0[i];
-      by0[i] = sy0[i];
-      bx1[i] = sx1[i];
-      by1[i] = sy1[i];
-      bang[i] = sang[i];
-    }
-  }
-
-  function paintStemAt(i, u, bent) {
-    const lenGrow = sEnd[i] - sStart[i] || 0.001;
-    const lenP = clamp01((u - sStart[i]) / lenGrow);
-    if (lenP <= 0) return;
-    const e = easeOut(lenP);
-    const wGrow = sWidthEnd[i] - sWidthStart[i] || 0.001;
-    let widthP;
-    if (u < sWidthStart[i]) {
-      widthP = 0.42 + 0.28 * e;
-    } else {
-      widthP = 0.7 + 0.3 * easeOut(clamp01((u - sWidthStart[i]) / wGrow));
-    }
-    ctx.fillStyle = BARK[Math.min(sdep[i], BARK.length - 1)];
-    const x0 = bent ? bx0[i] : sx0[i];
-    const y0 = bent ? by0[i] : sy0[i];
-    const x1 = bent ? bx1[i] : sx1[i];
-    const y1 = bent ? by1[i] : sy1[i];
-    const r0 = sw0[i] * widthP;
-    const r1 = (sw0[i] + (sw1[i] - sw0[i]) * e) * widthP;
-    drawStem(
-      x0,
-      y0,
-      x0 + (x1 - x0) * e,
-      y0 + (y1 - y0) * e,
-      r0,
-      Math.max(0.2, r1)
-    );
-  }
-
-  function leafAttach(i) {
-    const s = lstem[i];
-    return {
-      x: bx1[s] + lox[i],
-      y: by1[s] + loy[i],
-      ang: bang[s]
-    };
-  }
-
-  function paintLeafAt(i, u, now, bent) {
-    if (u < lshow[i]) return;
-    const bloom = easeOut(clamp01((u - lshow[i]) / 0.035));
-    if (bloom <= 0) return;
-    ctx.fillStyle = LEAF[lcol[i]];
-    const attach = bent ? leafAttach(i) : { x: lx[i], y: ly[i], ang: lrot[i] };
-    const flutter = windAmp > 0
-      ? Math.sin(now * 0.004 + i * 0.9) * windAmp * 8
-      : 0;
-    drawLeaf(
-      attach.x + flutter,
-      attach.y + Math.abs(flutter) * 0.15,
-      lrot[i] + flutter * 0.04,
-      llen[i] * (u < 1 ? (0.35 + 0.65 * bloom) : 1)
-    );
-  }
-
-  function draw(u, now, bent) {
-    const tNow = now != null ? now : 0;
-    if (bent && windAmp > 0) computeBend(tNow);
-    else copyRestPose();
+  function draw(u) {
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    for (let d = DEPTH; d >= 0; d--) {
-      for (let i = 0; i < leaves; i++) {
-        if (ldep[i] === d) paintLeafAt(i, u, tNow, bent);
-      }
-      for (let i = 0; i < n; i++) {
-        if (sdep[i] === d) paintStemAt(i, u, bent);
-      }
+    const xf = {
+      m: [canvas.width / VW, 0, 0, canvas.height / VH, 0, 0]
+    };
+    if (shade) {
+      paintTreeShade(ctx, xf, u, { night: nightShade });
     }
+    paintTreeModel(ctx, model, u, xf, {});
   }
 
   let raf = 0;
   let stopped = false;
-  let swayPaused = false;
-  let animStartedAt = 0;
-  let pauseAfterDisabled = alwaysAnimate || pauseAfterMs === Infinity;
-  let lastSwayPaint = 0;
-  const watcher = new ResizeObserver(() => {
+  const watcher = new ResizeObserver(function () {
     if (stopped) return;
     if (!layout()) return;
-    // No wind sway — redraw current grow progress or the finished tree.
-    if (state.motion === "grow") {
-      draw(state.u, 0, false);
-      return;
-    }
-    draw(1, 0, false);
+    draw(state.motion === "grow" ? state.u : 1);
   });
   watcher.observe(canvas);
 
@@ -778,7 +837,6 @@ function growHillTree(canvas, opts) {
 
   function onClick(e) {
     e.preventDefault();
-    notifyPaused(false);
     stop();
     growHillTree(canvas, Object.assign({}, options, { delay: 0 }));
   }
@@ -786,7 +844,6 @@ function growHillTree(canvas, opts) {
   function onKey(e) {
     if (e.key !== "Enter" && e.key !== " ") return;
     e.preventDefault();
-    notifyPaused(false);
     stop();
     growHillTree(canvas, Object.assign({}, options, { delay: 0 }));
   }
@@ -803,106 +860,30 @@ function growHillTree(canvas, opts) {
     }
   }
 
-  /** One-shot paint of the finished tree into the canvas bitmap. No RAF. */
   function paintStatic() {
-    copyRestPose();
-    if (layout()) draw(1, 0, false);
+    if (layout()) draw(1);
     state.u = 1;
     state.motion = "static";
     state.alive = false;
     notifyPaused(false);
   }
 
-  function hitPauseDeadline(t) {
-    if (pauseAfterDisabled || pauseAfterMs === Infinity) return false;
-    if (!animStartedAt) return false;
-    return (t - animStartedAt) >= pauseAfterMs;
-  }
-
-  function pauseMotion(t) {
-    // Only after the timed window — and only once motion is actually stopped.
-    swayPaused = true;
-    state.motion = "paused";
-    state.alive = false;
-    state.u = 1;
-    // Settled frame: no wind bend / fall cycles so the scene looks stopped.
-    draw(1, t, false);
-    raf = 0;
-    notifyPaused(true);
-  }
-
-  function swayFrame(now) {
-    if (stopped) return;
-    if (swayPaused) {
-      raf = 0;
-      return;
-    }
-    if (document.hidden || canvas._swayVisible === false) {
-      raf = requestAnimationFrame(swayFrame);
-      return;
-    }
-    if (!layout()) {
-      raf = requestAnimationFrame(swayFrame);
-      return;
-    }
-    const t = getWindTime();
-    if (hitPauseDeadline(t)) {
-      pauseMotion(t);
-      return;
-    }
-    if (swayMaxFps > 0) {
-      const minDelta = 1000 / swayMaxFps;
-      if (t - lastSwayPaint < minDelta) {
-        raf = requestAnimationFrame(swayFrame);
-        return;
-      }
-      lastSwayPaint = t;
-    }
-    state.u = 1;
-    state.motion = "sway";
-    state.alive = true;
-    draw(1, t, windAmp > 0);
-    raf = requestAnimationFrame(swayFrame);
-  }
-
   function startSway() {
     if (stopped) return;
-    if (windAmp <= 0 && !falling) {
-      state.motion = "held";
-      state.alive = false;
-      if (layout()) draw(1, getWindTime(), false);
-      return;
-    }
-    const t = getWindTime();
-    if (hitPauseDeadline(t)) {
-      pauseMotion(t);
-      return;
-    }
-    swayPaused = false;
-    state.motion = "sway";
-    state.alive = true;
-    if (!raf) raf = requestAnimationFrame(swayFrame);
+    state.motion = "held";
+    state.alive = false;
+    if (layout()) draw(1);
   }
 
-  canvas._growResumeSway = function resumeSway(opts2) {
-    const o = opts2 || {};
-    if (o.always === true) {
-      setTreeAlwaysAnimatePreferred(true);
-      state.alwaysAnimate = true;
-      pauseAfterDisabled = true;
-    }
-    swayPaused = false;
-    notifyPaused(false);
+  canvas._growResumeSway = function resumeSway() {
     startSway();
   };
 
-  // Low-performance / reduced-motion: one-shot buffer paint.
   if (staticOnly) {
     paintStatic();
     return;
   }
 
-  // Grow-in drawing animation, then hold (no wind sway).
   notifyPaused(false);
   state.motion = "grow";
 
@@ -913,29 +894,26 @@ function growHillTree(canvas, opts) {
       raf = requestAnimationFrame(frame);
       return;
     }
-    if (!t0) {
-      t0 = now + START_DELAY;
-      animStartedAt = t0;
-    }
+    if (!t0) t0 = now + START_DELAY;
     if (now < t0) {
-      draw(0, now, false);
+      draw(0);
       raf = requestAnimationFrame(frame);
       return;
     }
     const u = Math.min(1, (now - t0) / DURATION);
     state.u = u;
     state.motion = "grow";
-    draw(u, now, false);
+    draw(u);
     if (u < 1) {
       raf = requestAnimationFrame(frame);
     } else {
       raf = 0;
-      // Hold finished frame — startSway is a no-op when windAmp is 0.
       startSway();
     }
   }
   raf = requestAnimationFrame(frame);
 }
+
 /** Deterministic catalog: habit × lean × branchiness × asymmetry × side bias. */
 function forestAlternationCatalog() {
   const habits = [
@@ -995,6 +973,14 @@ function forestAlternationCatalog() {
 
 if (typeof window !== "undefined") {
   window.growHillTree = growHillTree;
+  window.buildTreeModel = buildTreeModel;
+  window.paintTreeModel = paintTreeModel;
+  window.paintTreeShade = paintTreeShade;
+  window.applyTreeTransform = applyTreeTransform;
+  window.TREE_VW = TREE_VW;
+  window.TREE_VH = TREE_VH;
+  window.TREE_TRUNK_X = TREE_TRUNK_X;
+  window.TREE_TRUNK_Y = TREE_TRUNK_Y;
   window.forestAlternationCatalog = forestAlternationCatalog;
   window.treeWindAllowed = treeWindAllowed;
   window.effectiveWind = effectiveWind;

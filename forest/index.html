@@ -67,7 +67,7 @@
       </nav>
     </header>
     <main id="main" class="trees-page">
-      <div class="forest-horizon" id="forest" role="list" aria-label="Horizon forest"></div>
+      <div class="forest-horizon" id="forest" aria-label="Horizon forest"></div>
       <div class="trees-copy">
         <p class="kicker">Forest</p>
         <h1>Internet as a Forest</h1>
@@ -134,7 +134,7 @@
     const countEl = document.getElementById("forest-count");
 
     function plant() {
-      const n = plantForestHorizon(forest, { reduce: reduce, grow: growHillTree });
+      const n = plantForestHorizon(forest, { reduce: reduce });
       countEl.textContent = n + " trees";
     }
 
