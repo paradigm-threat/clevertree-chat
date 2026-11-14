@@ -474,26 +474,12 @@ function growHillTree(canvas, opts) {
       lshow[leaves] = Math.max(0, Math.min(sEnd[i] + 0.01, 0.98));
       lcol[leaves] = (sdep[i] + k) % LEAF.length;
       ldep[leaves] = sdep[i];
-      if (sdep[i] === DEPTH && k === 0 && tipOrdinal % 10 === 0) {
-        lfall[leaves] = 1;
-        falling += 1;
-      } else {
-        lfall[leaves] = 0;
-      }
+      // No falling-leaf cycle — it kept RAF alive after grow and lagged the page.
+      lfall[leaves] = 0;
       leaves += 1;
     }
     if (leaves >= LEAF_N) break;
     if (sdep[i] === DEPTH) tipOrdinal += 1;
-  }
-
-  let faller = 0;
-  for (let i = 0; i < leaves; i++) {
-    if (!lfall[i]) continue;
-    // Base landing under tip; wind drifts applied while falling.
-    llandx[i] = lx[i];
-    llandy[i] = TRUNK_Y - 2 + (faller % 3) * 1.6;
-    llandr[i] = lrot[i] + (faller % 2 === 0 ? 1.15 : -1.35);
-    faller += 1;
   }
 
   const state = {
@@ -668,56 +654,6 @@ function growHillTree(canvas, opts) {
     const flutter = windAmp > 0
       ? Math.sin(now * 0.004 + i * 0.9) * windAmp * 8
       : 0;
-
-    if (lfall[i]) {
-      // Continuous fall cycles after grow; during grow use timeline u.
-      // When sway is paused, keep fallers on the ground so motion looks stopped.
-      if (state.motion === "paused" && u >= 1) {
-        const landX = Math.max(
-          VIEW_PAD,
-          Math.min(VW - VIEW_PAD, attach.x)
-        );
-        drawLeaf(landX, llandy[i], llandr[i], llen[i]);
-        return;
-      }
-      let t;
-      if (u < 1) {
-        const begin = Math.max(0.84, lshow[i]);
-        if (u < begin) {
-          drawLeaf(attach.x + flutter, attach.y, lrot[i], llen[i] * (0.35 + 0.65 * bloom));
-          return;
-        }
-        t = easeIn(clamp01((u - begin) / (1 - begin)));
-      } else {
-        const cycle = 2.8 + (i % 5) * 0.35;
-        const phase = ((now * 0.001) / cycle + (i * 0.137) % 1);
-        const wrapped = phase - Math.floor(phase);
-        // 0..0.72 falling, 0.72..1 resting on ground then restart
-        if (wrapped > 0.72) {
-          const landX = Math.max(
-            VIEW_PAD,
-            Math.min(VW - VIEW_PAD, attach.x + windPushX(now, i * 0.41) * 0.85)
-          );
-          drawLeaf(
-            landX,
-            llandy[i],
-            llandr[i] + flutter * 0.05,
-            llen[i]
-          );
-          return;
-        }
-        t = easeIn(wrapped / 0.72);
-      }
-      const drift = windPushX(now, i * 0.41) * t;
-      const x = Math.max(
-        4,
-        Math.min(VW - 4, attach.x + (llandx[i] - lx[i]) * t + drift)
-      );
-      const y = attach.y + (llandy[i] - attach.y) * t;
-      drawLeaf(x, y, lrot[i] + (llandr[i] - lrot[i]) * t + flutter * 0.08, llen[i]);
-      return;
-    }
-
     drawLeaf(
       attach.x + flutter,
       attach.y + Math.abs(flutter) * 0.15,
