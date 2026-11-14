@@ -512,18 +512,19 @@ footer {
   right: 0;
   top: 0;
   z-index: 0;
-  height: min(52vh, 34rem);
+  /* Tall enough that near-tree trunks (~75–82% of band) stay above the fade */
+  height: min(58vh, 38rem);
   pointer-events: none;
   background-color: #7ecf6a;
   background-image: url("/images/forest-horizon.jpg");
   background-image: url("/images/forest-horizon.webp");
-  /* Keep enough sky that the raised sun stays visible; trunks still map onto hills */
-  background-position: center 50%;
-  background-size: cover;
+  /* Stretch so image Y% ≈ band Y% (matches depth→bottom% trunk seating) */
+  background-position: center top;
+  background-size: 100% 100%;
   background-repeat: no-repeat;
-  /* Fade only after near-tree trunk line (~86–90% of band), not mid-slope */
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 88%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 0%, #000 88%, transparent 100%);
+  /* Keep opaque through near trunks; soft fade only at the very bottom */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 93%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 93%, transparent 100%);
 }
 
 .trees-wrap {
@@ -541,7 +542,7 @@ footer {
     Subtract header space so copy begins just under the band, not a full
     header-height further down.
   */
-  padding-top: max(12rem, calc(min(52vh, 34rem) - 4.75rem));
+  padding-top: max(12rem, calc(min(58vh, 38rem) - 4.75rem));
   max-width: 40rem;
 }
 
