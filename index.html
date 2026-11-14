@@ -146,11 +146,12 @@
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (animateBtn) animateBtn.hidden = true;
     if (tree && tree.getContext) {
-      // Grow-in drawing animation; wind sway stays off.
+      // Grow-in drawing animation; wind sway stays off. Oak foliage range.
       growHillTree(tree, {
         reduce: reduce,
         wind: "calm",
-        duration: 20000
+        duration: 20000,
+        leafPalette: "oak"
       });
     }
     function capBanner() {

@@ -2,6 +2,36 @@
 
 var CLEVERTREE_ALWAYS_ANIMATE_KEY = "clevertree-always-animate";
 
+/** Common foliage ranges — each entry is a shade ramp for one tree. */
+var TREE_LEAF_PALETTES = {
+  oak: ["#1a5c22", "#226a28", "#2b7a2e", "#348a34", "#3f9a38", "#4eaa3c"],
+  maple: ["#2a7a28", "#3a8e2c", "#4aa230", "#5ab434", "#6ec438", "#84d242"],
+  pine: ["#0f3d28", "#145234", "#1a6840", "#217a4a", "#288854", "#2f9660"],
+  spruce: ["#143848", "#1a4854", "#205860", "#28686c", "#307878", "#388884"],
+  birch: ["#6a9a3a", "#7aac42", "#8abe4a", "#9ad052", "#a8d85e", "#b6e06a"],
+  willow: ["#5a8c38", "#6a9c40", "#7aac48", "#8abc50", "#9acc58", "#a8d864"],
+  olive: ["#4a6430", "#587238", "#668040", "#748e48", "#829c50", "#90aa58"],
+  cedar: ["#2a4820", "#345628", "#3e6430", "#487238", "#528040", "#5c8e48"],
+  aspen: ["#7ab034", "#8cbc3c", "#9ec844", "#b0d44c", "#c0dc58", "#d0e464"],
+  autumn: ["#8a4a18", "#a85a1c", "#c46a20", "#d87828", "#c05028", "#a03820"],
+  cherry: ["#d46a8a", "#e07898", "#c45878", "#b04868", "#e888a8", "#f098b0"],
+  summer: ["#1f6b28", "#247a24", "#2f8a28", "#3e9a32", "#4ea628", "#62b41e", "#78c422"]
+};
+
+var TREE_LEAF_PALETTE_NAMES = Object.keys(TREE_LEAF_PALETTES);
+
+function resolveLeafPalette(options) {
+  const o = options || {};
+  if (Array.isArray(o.leafColors) && o.leafColors.length) {
+    return o.leafColors.slice();
+  }
+  const name = typeof o.leafPalette === "string" ? o.leafPalette : "";
+  if (name && TREE_LEAF_PALETTES[name]) {
+    return TREE_LEAF_PALETTES[name].slice();
+  }
+  return TREE_LEAF_PALETTES.summer.slice();
+}
+
 function treeWindAllowed() {
   if (typeof window === "undefined") return false;
   try {
@@ -117,7 +147,7 @@ function growHillTree(canvas, opts) {
   const bang = new Float32Array(STEM_N);
 
   const BARK = ["#5c3d22", "#684628", "#755230", "#825e38", "#8f6a42", "#9c764c"];
-  const LEAF = ["#1f6b28", "#247a24", "#2f8a28", "#3e9a32", "#4ea628", "#62b41e", "#78c422"];
+  const LEAF = resolveLeafPalette(options);
 
   const seedBits = new Uint32Array(1);
   if (options.seed != null) {
@@ -493,6 +523,8 @@ function growHillTree(canvas, opts) {
     asymmetry: asymmetry,
     sideBias: sideBias,
     wind: windLevel,
+    leafPalette: (options && options.leafPalette) || "summer",
+    leafColors: LEAF,
     alwaysAnimate: alwaysAnimate,
     motion: reduce ? "reduced" : "growing",
     alive: !reduce,
@@ -939,4 +971,7 @@ if (typeof window !== "undefined") {
   window.treeAlwaysAnimatePreferred = treeAlwaysAnimatePreferred;
   window.setTreeAlwaysAnimatePreferred = setTreeAlwaysAnimatePreferred;
   window.CLEVERTREE_ALWAYS_ANIMATE_KEY = CLEVERTREE_ALWAYS_ANIMATE_KEY;
+  window.TREE_LEAF_PALETTES = TREE_LEAF_PALETTES;
+  window.TREE_LEAF_PALETTE_NAMES = TREE_LEAF_PALETTE_NAMES;
+  window.resolveLeafPalette = resolveLeafPalette;
 }
