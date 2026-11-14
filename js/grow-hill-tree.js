@@ -34,11 +34,74 @@ var TREE_DEPTH = 7;
 var TREE_STEM_N = 2200;
 var TREE_LEAF_N = 12000;
 var TREE_TRUNK_X = TREE_VW * 0.5;
-var TREE_TRUNK_Y = TREE_VH - 8;
+/** Leave room below the bole for soft ground shade (avoids canvas-bottom clip). */
+var TREE_TRUNK_Y = TREE_VH - 40;
 var TREE_VIEW_PAD = 28;
+var TREE_SHADE_RX = 110;
+var TREE_SHADE_RY = 36;
 var TREE_RANGE_DEG = [34, 32, 36, 34, 38, 34, 32, 28];
 var TREE_LENGTHS = [64, 56, 48, 40, 32, 24, 16, 11];
 var TREE_BARK = ["#5c3d22", "#684628", "#755230", "#825e38", "#8f6a42", "#9c764c"];
+
+function parseHexRgb(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex(r, g, b) {
+  const rr = Math.max(0, Math.min(255, Math.round(r)));
+  const gg = Math.max(0, Math.min(255, Math.round(g)));
+  const bb = Math.max(0, Math.min(255, Math.round(b)));
+  return "#" + ((1 << 24) | (rr << 16) | (gg << 8) | bb).toString(16).slice(1);
+}
+
+/** amt in [-1,1]: negative darkens, positive lightens (Bob Ross soft value steps). */
+function shadeHex(hex, amt) {
+  const rgb = parseHexRgb(hex);
+  if (!rgb) return hex;
+  const t = Math.max(-0.35, Math.min(0.35, amt));
+  if (t >= 0) {
+    return rgbToHex(
+      rgb.r + (255 - rgb.r) * t,
+      rgb.g + (255 - rgb.g) * t,
+      rgb.b + (255 - rgb.b) * t
+    );
+  }
+  const k = 1 + t;
+  return rgbToHex(rgb.r * k, rgb.g * k, rgb.b * k);
+}
+
+function mixHex(a, b, t) {
+  const A = parseHexRgb(a);
+  const B = parseHexRgb(b);
+  if (!A || !B) return a;
+  const u = Math.max(0, Math.min(1, t));
+  return rgbToHex(
+    A.r + (B.r - A.r) * u,
+    A.g + (B.g - A.g) * u,
+    A.b + (B.b - A.b) * u
+  );
+}
+
+/**
+ * Expand a palette into soft neighboring values — happy little color progressions,
+ * not a second art style.
+ */
+function enrichLeafPalette(base, rnd) {
+  const src = base && base.length ? base : TREE_LEAF_PALETTES.summer;
+  const out = [];
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    const next = src[(i + 1) % src.length];
+    out.push(shadeHex(c, -0.07 + rnd() * 0.04));
+    out.push(c);
+    out.push(shadeHex(c, 0.04 + rnd() * 0.05));
+    if (rnd() < 0.55) out.push(mixHex(c, next, 0.28 + rnd() * 0.25));
+  }
+  return out;
+}
 
 function prefersDarkScheme() {
   if (typeof document !== "undefined" && document.documentElement) {
@@ -149,50 +212,52 @@ function applyTreeTransform(ctx, transform) {
 }
 
 /**
- * Soft elliptical ground shade at the trunk base (local VW×VH space).
- * Grows with u; no cast silhouette.
+ * Subtle ground shade at the trunk base (local VW×VH space).
+ * Center→out radial fade reaches full transparency before the rim — no hard oval.
+ * Neutral dark only (not foliage-tinted). Grows with u.
  */
 function paintTreeShade(ctx, transform, u, opts) {
   var o = opts || {};
   var uu = clamp01Tree(u == null ? 1 : u);
   if (uu <= 0) return;
   var night = !!o.night;
-  var rx = (o.rx != null ? o.rx : 100) * uu;
-  var ry = (o.ry != null ? o.ry : 30) * uu;
+  var rx = (o.rx != null ? o.rx : TREE_SHADE_RX) * uu;
+  var ry = (o.ry != null ? o.ry : TREE_SHADE_RY) * uu;
+  if (rx < 1 || ry < 1) return;
+  // Clear+redraw stand can use live-strength shade; no multi-frame stacking.
   var alpha = (night ? 0.32 : 0.24) * uu;
+  var cx = TREE_TRUNK_X;
+  var cy = TREE_TRUNK_Y + 4;
+  var rgb = night ? "0, 0, 0" : "18, 36, 16";
   ctx.save();
   applyTreeTransform(ctx, transform);
-  var cx = TREE_TRUNK_X;
-  var cy = TREE_TRUNK_Y + 6;
-  var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
-  if (night) {
-    g.addColorStop(0, "rgba(0, 0, 0, " + alpha + ")");
-    g.addColorStop(0.55, "rgba(0, 0, 0, " + (alpha * 0.45) + ")");
-    g.addColorStop(1, "rgba(0, 0, 0, 0)");
-  } else {
-    g.addColorStop(0, "rgba(18, 36, 16, " + alpha + ")");
-    g.addColorStop(0.55, "rgba(18, 36, 16, " + (alpha * 0.4) + ")");
-    g.addColorStop(1, "rgba(18, 36, 16, 0)");
-  }
+  ctx.translate(cx, cy);
+  ctx.scale(1, ry / rx);
+  var g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+  g.addColorStop(0, "rgba(" + rgb + ", " + alpha + ")");
+  g.addColorStop(0.55, "rgba(" + rgb + ", " + (alpha * 0.45) + ")");
+  g.addColorStop(1, "rgba(" + rgb + ", 0)");
   ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.arc(0, 0, rx, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
 
 /**
  * Build stem/leaf buffers for one tree. Shared by home hero and forest stand.
- * options.lod === "far" uses a lighter graph for distant canopy trees.
+ * options.lod: "haze" (tiniest distant), "far", or full (default).
  */
 function buildTreeModel(opts) {
   const options = opts && typeof opts === "object" ? opts : {};
-  const farLod = options.lod === "far";
+  const lod = options.lod === "haze" || options.lod === "far" ? options.lod : "full";
+  const farLod = lod === "far" || lod === "haze";
+  const hazeLod = lod === "haze";
   const VW = TREE_VW;
   const VH = TREE_VH;
-  const DEPTH = farLod ? 5 : TREE_DEPTH;
-  const STEM_N = farLod ? 700 : TREE_STEM_N;
-  const LEAF_N = farLod ? 2800 : TREE_LEAF_N;
+  const DEPTH = hazeLod ? 4 : (farLod ? 5 : TREE_DEPTH);
+  const STEM_N = hazeLod ? 320 : (farLod ? 700 : TREE_STEM_N);
+  const LEAF_N = hazeLod ? 900 : (farLod ? 2800 : TREE_LEAF_N);
   const RANGE_DEG = TREE_RANGE_DEG;
   const LENGTHS = TREE_LENGTHS;
   const TRUNK_X = TREE_TRUNK_X;
@@ -221,17 +286,22 @@ function buildTreeModel(opts) {
   const lrot = new Float32Array(LEAF_N);
   const llen = new Float32Array(LEAF_N);
   const lshow = new Float32Array(LEAF_N);
-  const lcol = new Uint8Array(LEAF_N);
+  const lcol = new Uint16Array(LEAF_N);
   const ldep = new Uint8Array(LEAF_N);
   const lstem = new Uint16Array(LEAF_N);
+  const lsalt = new Float32Array(LEAF_N);
   const bx0 = new Float32Array(STEM_N);
   const by0 = new Float32Array(STEM_N);
   const bx1 = new Float32Array(STEM_N);
   const by1 = new Float32Array(STEM_N);
   const bang = new Float32Array(STEM_N);
 
-  const BARK = TREE_BARK;
-  const LEAF = resolveLeafPalette(options);
+  const barkShift = (options.barkShift != null
+    ? Number(options.barkShift)
+    : 0);
+  // Per-tree bark warmth/coolness filled after rnd exists — placeholder until seed.
+  let BARK = TREE_BARK;
+  let LEAF = resolveLeafPalette(options);
 
   const seedBits = new Uint32Array(1);
   if (options.seed != null) {
@@ -246,6 +316,12 @@ function buildTreeModel(opts) {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   }
+  // Soft per-tree bark drift (warm / cool) — same family, not a new palette.
+  const barkNudge = barkShift || ((rnd() - 0.5) * 0.1);
+  BARK = TREE_BARK.map(function (c) {
+    return shadeHex(mixHex(c, barkNudge > 0 ? "#a07040" : "#4a3828", Math.abs(barkNudge) * 0.9), barkNudge * 0.5);
+  });
+  LEAF = enrichLeafPalette(LEAF, rnd);
   const habit = options.habit != null
     ? Math.max(0, Math.min(1, Number(options.habit)))
     : rnd();
@@ -268,16 +344,29 @@ function buildTreeModel(opts) {
     const max = 1.15 + 0.7 * habit;
     return angle < -max ? -max : angle > max ? max : angle;
   }
+  /** Break “ladder rack” horizontals — tip flat limbs back toward vertical a bit. */
+  function organicAngle(angle) {
+    let a = angle + (rnd() - 0.5) * 0.32;
+    const absA = Math.abs(a);
+    const flat = Math.abs(absA - Math.PI / 2);
+    if (flat < 0.42) {
+      const tipUp = (a >= 0 ? -1 : 1) * (0.18 + rnd() * 0.42);
+      a += tipUp;
+    }
+    // Occasional droop or lift so siblings don’t share one pitch.
+    if (rnd() < 0.45) a += (rnd() - 0.5) * 0.4;
+    return clampHeading(a);
+  }
   function stemLength(base, angle, spur) {
     const side = Math.abs(Math.sin(angle));
     const habitScale = upScale * (1 - side) + sideScale * side;
-    const own = 0.92 + 0.22 * rnd();
-    const spurScale = spur ? 0.62 + 0.22 * rnd() : 1;
+    const own = 0.88 + 0.3 * rnd();
+    const spurScale = spur ? 0.55 + 0.35 * rnd() : 1;
     return base * habitScale * own * spurScale;
   }
 
   let n = 0;
-  function addStem(s) {
+  function addStemStraight(s) {
     if (n >= STEM_N) return null;
     const x1 = s.x + Math.sin(s.angle) * s.length;
     const y1 = s.y - Math.cos(s.angle) * s.length;
@@ -301,6 +390,39 @@ function buildTreeModel(opts) {
     sWidthEnd[idx] = 0;
     n += 1;
     return { x: x1, y: y1, radius: r1, bx: s.x, by: s.y, index: idx };
+  }
+  /** Most limbs get a soft crook so they don’t read as extruded rods. */
+  function addStem(s) {
+    const longEnough = s.length > (s.depth === 0 ? 28 : 12);
+    const crookChance = s.depth === 0 ? 0.35 : 0.78;
+    if (!longEnough || rnd() > crookChance || n >= STEM_N - 2) {
+      return addStemStraight(s);
+    }
+    const frac = 0.32 + rnd() * 0.4;
+    const kink = (rnd() - 0.5) * (s.depth === 0 ? 0.12 : 0.48);
+    const mid = addStemStraight({
+      x: s.x,
+      y: s.y,
+      angle: s.angle,
+      length: s.length * frac,
+      radius: s.radius,
+      depth: s.depth,
+      spur: s.spur,
+      parent: s.parent,
+      along: s.along
+    });
+    if (!mid) return null;
+    return addStemStraight({
+      x: mid.x,
+      y: mid.y,
+      angle: clampHeading(s.angle + kink),
+      length: s.length * (1 - frac),
+      radius: mid.radius,
+      depth: s.depth,
+      spur: s.spur,
+      parent: mid.index,
+      along: 1
+    });
   }
 
   const trunkLean = (leanSign != null ? leanSign * (2.2 + rnd() * 1.8) : (rnd() * 2 - 1) * 4) * Math.PI / 180;
@@ -334,17 +456,36 @@ function buildTreeModel(opts) {
     if (s.depth >= DEPTH) continue;
     if (n >= STEM_N - 4) continue;
     if (!s.isLeader && s.depth >= 3 && rnd() > 0.35 + 0.6 * branchiness) continue;
-    const spread = RANGE_DEG[Math.min(s.depth, RANGE_DEG.length - 1)] * Math.PI / 180;
+    const spread = RANGE_DEG[Math.min(s.depth, RANGE_DEG.length - 1)] * Math.PI / 180 * (0.85 + rnd() * 0.35);
     const latOpen = (0.82 + 0.48 * habit) * (0.8 + 0.3 * asymmetry);
-    const leaderKeep = 0.06 + 0.12 * (1 - habit);
+    const leaderKeep = 0.1 + 0.18 * (1 - habit);
     const kids = [];
+    const usedAngles = [];
+
+    function takeAngle(raw) {
+      let a = organicAngle(raw);
+      // Nudge away from near-duplicates so limbs don’t stack in parallel.
+      for (let t = 0; t < 4; t++) {
+        let clash = false;
+        for (let u = 0; u < usedAngles.length; u++) {
+          if (Math.abs(a - usedAngles[u]) < 0.18) {
+            clash = true;
+            break;
+          }
+        }
+        if (!clash) break;
+        a = organicAngle(raw + (rnd() - 0.5) * 0.7);
+      }
+      usedAngles.push(a);
+      return a;
+    }
 
     const leaderWobble = (rnd() * 2 - 1) * spread * leaderKeep;
     kids.push({
       ox: s.x,
       oy: s.y,
       along: 1,
-      angle: clampHeading(s.angle + leaderWobble),
+      angle: takeAngle(s.angle + leaderWobble),
       spur: false,
       isLeader: true,
       lengthMul: s.isLeader ? (1.02 + 0.12 * (1 - habit)) : 0.9,
@@ -352,31 +493,32 @@ function buildTreeModel(opts) {
       side: s.side
     });
 
-    const domSign = s.side;
-    const domMag = spread * latOpen * (0.75 + 0.4 * rnd());
+    // Dominant lateral — sometimes opposite the inherited side so crowns aren’t one-sided racks.
+    const domSign = rnd() < 0.18 ? -s.side : s.side;
+    const domMag = spread * latOpen * (0.55 + 0.7 * rnd());
     kids.push({
       ox: s.x,
       oy: s.y,
       along: 1,
-      angle: clampHeading(s.angle + domSign * domMag),
+      angle: takeAngle(s.angle + domSign * domMag),
       spur: false,
       isLeader: false,
-      lengthMul: 0.95 + 0.2 * rnd() + 0.12 * (1 - habit),
+      lengthMul: 0.85 + 0.35 * rnd() + 0.1 * (1 - habit),
       radiusMul: 0.58,
       side: domSign
     });
 
-    const oppChance = 0.18 + 0.5 * branchiness - 0.28 * asymmetry;
+    const oppChance = 0.22 + 0.5 * branchiness - 0.22 * asymmetry;
     if (rnd() < oppChance) {
-      const oppMag = spread * latOpen * (0.28 + 0.35 * (1 - asymmetry)) * (0.6 + 0.4 * rnd());
+      const oppMag = spread * latOpen * (0.22 + 0.55 * (1 - asymmetry)) * (0.5 + 0.55 * rnd());
       kids.push({
         ox: s.x,
         oy: s.y,
         along: 1,
-        angle: clampHeading(s.angle - domSign * oppMag),
+        angle: takeAngle(s.angle - domSign * oppMag),
         spur: true,
         isLeader: false,
-        lengthMul: 0.62 + 0.28 * rnd(),
+        lengthMul: 0.55 + 0.4 * rnd(),
         radiusMul: 0.48,
         side: -domSign
       });
@@ -386,35 +528,35 @@ function buildTreeModel(opts) {
       ? 0.75 + 0.2 * habit
       : (s.depth <= 2 ? 0.28 + 0.4 * branchiness + 0.15 * habit : (s.depth === 3 ? 0.12 + 0.22 * branchiness : 0));
     if (midChance > 0 && rnd() < midChance) {
-      const along = 0.28 + rnd() * 0.45;
+      const along = 0.22 + rnd() * 0.55;
       const mx = s.bx + (s.x - s.bx) * along;
       const my = s.by + (s.y - s.by) * along;
       const midSign = rnd() < 0.55 ? domSign : -domSign;
-      const midMag = spread * (0.55 + 0.45 * habit) * (0.55 + 0.4 * rnd());
+      const midMag = spread * (0.4 + 0.65 * habit) * (0.4 + 0.65 * rnd());
       kids.push({
         ox: mx,
         oy: my,
         along: along,
-        angle: clampHeading(s.angle + midSign * midMag),
+        angle: takeAngle(s.angle + midSign * midMag),
         spur: true,
         isLeader: false,
-        lengthMul: 0.55 + 0.28 * rnd(),
+        lengthMul: 0.48 + 0.4 * rnd(),
         radiusMul: 0.42,
         side: midSign
       });
     }
 
-    if (s.depth >= 1 && s.depth <= 4 && rnd() < 0.06 + 0.32 * branchiness) {
+    if (s.depth >= 1 && s.depth <= 4 && rnd() < 0.08 + 0.36 * branchiness) {
       const extraSign = rnd() < 0.5 ? domSign : -domSign;
-      const extraMag = spread * (0.35 + 0.4 * rnd());
+      const extraMag = spread * (0.25 + 0.55 * rnd());
       kids.push({
         ox: s.x,
         oy: s.y,
         along: 1,
-        angle: clampHeading(s.angle + extraSign * extraMag * 0.85),
+        angle: takeAngle(s.angle + extraSign * extraMag),
         spur: true,
         isLeader: false,
-        lengthMul: 0.42 + 0.22 * rnd(),
+        lengthMul: 0.38 + 0.32 * rnd(),
         radiusMul: 0.4,
         side: extraSign
       });
@@ -441,7 +583,8 @@ function buildTreeModel(opts) {
         y: made.y,
         bx: kid.ox,
         by: kid.oy,
-        angle: kid.angle,
+        // Continue from tip heading (may differ after a crook).
+        angle: sang[made.index],
         radius: made.radius,
         depth: s.depth + 1,
         side: kid.side,
@@ -523,7 +666,7 @@ function buildTreeModel(opts) {
   })();
 
   let leaves = 0;
-  const leafMinDist = farLod ? 5.5 : 3.2;
+  const leafMinDist = hazeLod ? 7 : (farLod ? 5.5 : 3.2);
   function leafTooClose(x, y) {
     if (farLod) return false;
     for (let j = 0; j < leaves; j++) {
@@ -537,24 +680,31 @@ function buildTreeModel(opts) {
     if (sdep[i] < 2) continue;
     const ang = sang[i];
     let per = sdep[i] >= 5 ? 7 : (sdep[i] >= 3 ? 5 : 4);
-    if (farLod) per = Math.max(2, Math.round(per * 0.45));
+    // Slight cluster density wobble so crowns aren't stamped evenly.
+    per = Math.max(2, per + (rnd() < 0.35 ? 1 : 0) - (rnd() < 0.25 ? 1 : 0));
+    if (hazeLod) per = Math.max(1, Math.round(per * 0.28));
+    else if (farLod) per = Math.max(2, Math.round(per * 0.45));
     const base = Math.max(4.2, 7.5 - sdep[i] * 0.35);
     for (let k = 0; k < per; k++) {
       if (leaves >= LEAF_N) break;
-      const back = (k % 4) * 1.15;
-      const side = ((k % 5) - 2) * 1.4;
+      const back = (k % 4) * 1.15 + (rnd() - 0.5) * 1.4;
+      const side = ((k % 5) - 2) * 1.4 + (rnd() - 0.5) * 1.8;
       const px = sx1[i] - Math.sin(ang) * back + Math.cos(ang) * side;
-      const py = sy1[i] + Math.cos(ang) * back + Math.sin(ang) * side * 0.35;
+      const py = sy1[i] + Math.cos(ang) * back + Math.sin(ang) * side * (0.28 + rnd() * 0.2);
       if (leafTooClose(px, py)) continue;
       lx[leaves] = px;
       ly[leaves] = py;
       lox[leaves] = px - sx1[i];
       loy[leaves] = py - sy1[i];
       lstem[leaves] = i;
-      lrot[leaves] = ang + (k - (per - 1) / 2) * 0.35 + (k % 3 - 1) * 0.4;
-      llen[leaves] = base + (k % 4) * 0.55;
-      lshow[leaves] = Math.max(0, Math.min(sEnd[i] + 0.01, 0.98));
-      lcol[leaves] = (sdep[i] + k) % LEAF.length;
+      lrot[leaves] = ang + (rnd() - 0.5) * 1.25 + (k - (per - 1) / 2) * 0.18;
+      llen[leaves] = base * (0.78 + rnd() * 0.5);
+      lshow[leaves] = Math.max(0, Math.min(sEnd[i] + 0.008 + rnd() * 0.03, 0.98));
+      // Prefer nearby palette steps with a little wander — progressive color, not stripes.
+      const prefer = (sdep[i] * 2 + k) % Math.max(1, LEAF.length);
+      const wander = Math.floor((rnd() - 0.5) * 4);
+      lcol[leaves] = (prefer + wander + LEAF.length * 4) % LEAF.length;
+      lsalt[leaves] = rnd();
       ldep[leaves] = sdep[i];
       leaves += 1;
     }
@@ -593,6 +743,7 @@ function buildTreeModel(opts) {
     lcol: lcol,
     ldep: ldep,
     lstem: lstem,
+    lsalt: lsalt,
     bx0: bx0,
     by0: by0,
     bx1: bx1,
@@ -607,7 +758,7 @@ function buildTreeModel(opts) {
     asymmetry: asymmetry,
     sideBias: sideBias,
     leafPalette: (options && options.leafPalette) || "summer",
-    lod: farLod ? "far" : "full"
+    lod: lod
   };
 }
 
@@ -632,16 +783,28 @@ function drawStemPath(ctx, x0, y0, x1, y1, r0, r1) {
   ctx.fill();
 }
 
-function drawLeafPath(ctx, x, y, angle, len) {
+function drawLeafPath(ctx, x, y, angle, len, salt, cheap) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
   const s = Math.max(2.2, len);
+  const t = salt == null ? 0.5 : salt;
+  // Tiny cluster asymmetry so dabs don't share one silhouette.
+  const ox = (t - 0.5) * s * 0.22;
+  const oy = (t * 0.7 - 0.35) * s * 0.12;
+  const lean = (t - 0.5) * 0.35;
   ctx.beginPath();
-  ctx.ellipse(0, -s * 0.15, s * 0.55, s * 0.7, 0, 0, Math.PI * 2);
-  ctx.ellipse(-s * 0.35, -s * 0.45, s * 0.38, s * 0.48, -0.5, 0, Math.PI * 2);
-  ctx.ellipse(s * 0.32, -s * 0.4, s * 0.36, s * 0.46, 0.45, 0, Math.PI * 2);
-  ctx.ellipse(0, -s * 0.75, s * 0.3, s * 0.34, 0.1, 0, Math.PI * 2);
+  ctx.ellipse(ox, -s * 0.15 + oy, s * (0.5 + t * 0.12), s * (0.62 + t * 0.14), lean, 0, Math.PI * 2);
+  if (!cheap) {
+    ctx.ellipse(-s * 0.35 + ox * 0.5, -s * 0.45 + oy, s * 0.38, s * 0.48, -0.5 + lean, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.32 - ox * 0.4, -s * 0.4, s * 0.36, s * 0.46, 0.45 - lean * 0.5, 0, Math.PI * 2);
+    if (t > 0.28) {
+      ctx.ellipse(ox * 0.3, -s * (0.68 + t * 0.12), s * 0.28, s * 0.32, 0.1 + lean, 0, Math.PI * 2);
+    }
+  } else if (t > 0.45) {
+    // Far/haze: one side dab instead of a 3–4 ellipse cluster.
+    ctx.ellipse(-s * 0.28 + ox * 0.4, -s * 0.42 + oy, s * 0.34, s * 0.42, -0.4 + lean, 0, Math.PI * 2);
+  }
   ctx.fill();
   ctx.restore();
 }
@@ -698,13 +861,18 @@ function paintTreeModel(ctx, model, u, transform, paintOpts) {
     } else {
       widthP = 0.7 + 0.3 * easeOutTree(clamp01Tree((uu - model.sWidthStart[i]) / wGrow));
     }
-    ctx.fillStyle = BARK[Math.min(model.sdep[i], BARK.length - 1)];
+    // Occasional step between bark values so limbs aren't one flat stripe.
+    const bi = Math.min(model.sdep[i], BARK.length - 1);
+    const barkAlt = BARK[Math.min(bi + (i % 3 === 0 ? 1 : 0), BARK.length - 1)];
+    ctx.fillStyle = i % 5 === 0 ? barkAlt : BARK[bi];
     const x0 = model.sx0[i];
     const y0 = model.sy0[i];
     const x1 = model.sx1[i];
     const y1 = model.sy1[i];
-    const r0 = model.sw0[i] * widthP;
-    const r1 = (model.sw0[i] + (model.sw1[i] - model.sw0[i]) * e) * widthP;
+    // Hairline width wobble — still the same limb, just less extruded-looking.
+    const fat = 0.94 + ((i * 17) % 7) * 0.012;
+    const r0 = model.sw0[i] * widthP * fat;
+    const r1 = (model.sw0[i] + (model.sw1[i] - model.sw0[i]) * e) * widthP * fat;
     drawStemPath(
       ctx,
       x0,
@@ -716,17 +884,22 @@ function paintTreeModel(ctx, model, u, transform, paintOpts) {
     );
   }
 
+  const cheapLeaves = !!(o.cheapLeaves || model.lod === "far" || model.lod === "haze");
+
   function paintLeafAt(i) {
     if (uu < model.lshow[i]) return;
     const bloom = easeOutTree(clamp01Tree((uu - model.lshow[i]) / 0.035));
     if (bloom <= 0) return;
-    ctx.fillStyle = LEAF[model.lcol[i]];
+    ctx.fillStyle = LEAF[model.lcol[i] % LEAF.length];
+    const salt = model.lsalt ? model.lsalt[i] : 0.5;
     drawLeafPath(
       ctx,
       model.lx[i],
       model.ly[i],
       model.lrot[i],
-      model.llen[i] * (uu < 1 ? (0.35 + 0.65 * bloom) : 1)
+      model.llen[i] * (uu < 1 ? (0.35 + 0.65 * bloom) : 1),
+      salt,
+      cheapLeaves
     );
   }
 

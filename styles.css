@@ -657,7 +657,7 @@ footer {
   z-index: 0;
   /* Tall enough that near-tree trunks (~75–82% of band) stay above the fade */
   height: min(58vh, 38rem);
-  overflow: visible;
+  overflow: hidden;
   pointer-events: none;
   background-color: #1f5c32;
   background-image: url("/images/forest-horizon.jpg");
@@ -672,22 +672,31 @@ footer {
 }
 
 .trees-wrap {
+  /* Above absolute #forest so header/copy never paint under the canvas */
   position: relative;
   z-index: 2;
 }
 
 .trees-page {
   padding: 0 0 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 .trees-copy {
   /*
-    Clear the fixed forest band (.trees-bg is viewport-top–anchored).
-    Subtract header space so copy begins just under the band, not a full
-    header-height further down.
+    Clear the forest band (document-top–anchored, scrolls away with the hero).
+    Title/prose stay above the stand via .trees-wrap z-index.
   */
+  position: relative;
+  z-index: 1;
   padding-top: max(12rem, calc(min(58vh, 38rem) - 4.75rem));
   max-width: 40rem;
+}
+
+.trees-wrap > header {
+  position: relative;
+  z-index: 2;
 }
 
 .trees-lead {
@@ -779,20 +788,21 @@ footer {
 }
 
 .forest-horizon {
-  position: fixed;
+  /*
+    Absolute (not fixed): scrolls away with the hero so mid-page prose is never
+    under the canvas. Sibling of .trees-bg; flush viewport width (no -10% bleed).
+    z-index 0 under .trees-wrap (2) so title/prose stay readable when bands meet.
+  */
+  position: absolute;
   left: 0;
   right: 0;
   top: max(4vh, 2.5rem);
-  z-index: 1;
+  z-index: 0;
   width: 100%;
   margin: 0;
   height: min(44vh, 28rem);
-  overflow: visible;
+  overflow: hidden;
   pointer-events: none;
-}
-
-.forest-horizon .forest-tree {
-  pointer-events: auto;
 }
 
 .forest-tree {
@@ -810,7 +820,21 @@ footer {
   height: 100%;
   aspect-ratio: 520 / 400;
   cursor: pointer;
-  filter: drop-shadow(0 12px 16px rgba(14, 63, 36, 0.2));
+  /* Ground shade is painted in-canvas; CSS drop-shadow clipped at the bitmap edge */
+  filter: none;
+}
+
+/* Single stand canvas: one buffer, band-sized, clear+redraw each frame */
+.forest-canvas--stand {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  cursor: default;
+  pointer-events: none;
+  filter: none;
 }
 
 /* Narrow viewports: portrait hills art, taller band, tree bleed past edges */
@@ -832,12 +856,13 @@ footer {
   }
 
   .forest-horizon {
-    /* Wider than the viewport so left/right trees can hang off without clipping */
-    left: -10%;
-    right: -10%;
-    width: auto;
+    /* Flush to viewport — no -10% bleed (page skew fix) */
+    left: 0;
+    right: 0;
+    width: 100%;
     top: max(5vh, 2.75rem);
     height: min(55vh, 34rem);
+    overflow: hidden;
   }
 }
 
@@ -916,7 +941,7 @@ html[data-theme="dark"] {
     background-image: url("/images/forest-horizon-night.webp");
   }
   html:not([data-theme="light"]) .forest-canvas {
-    filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
+    filter: none;
   }
 }
 
@@ -947,7 +972,7 @@ html[data-theme="dark"] .trees-bg {
   background-image: url("/images/forest-horizon-night.webp");
 }
 html[data-theme="dark"] .forest-canvas {
-  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
+  filter: none;
 }
 
 @media (prefers-color-scheme: dark) and (max-width: 460px) {

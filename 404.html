@@ -26,6 +26,7 @@
 <body class="trees-body">
   <a class="skip" href="#main">Skip to content</a>
   <div class="trees-bg" aria-hidden="true"></div>
+  <div class="forest-horizon" id="forest" aria-label="Horizon forest"></div>
   <div class="wrap trees-wrap">
     <header>
       <a class="wordmark" href="/">
@@ -54,7 +55,6 @@
       </nav>
     </header>
     <main id="main" class="trees-page">
-      <div class="forest-horizon" id="forest" role="list" aria-label="Horizon forest"></div>
       <div class="trees-copy not-found-copy">
         <p class="kicker">404</p>
         <h1>This page doesn't exist, but here's a nice forest instead</h1>
@@ -75,7 +75,7 @@
     const forest = document.getElementById("forest");
 
     function plant() {
-      plantForestHorizon(forest, { reduce: reduce, grow: growHillTree });
+      plantForestHorizon(forest, { reduce: reduce });
     }
 
     function watchMq(mq, fn) {
