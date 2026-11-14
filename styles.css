@@ -229,6 +229,39 @@ h1 {
 
 .button:hover { background: #014824; }
 
+button.button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.button-secondary {
+  background: transparent;
+  color: var(--green);
+  border: 1.5px solid rgba(2, 94, 45, 0.45);
+}
+
+.button-secondary:hover {
+  background: rgba(2, 94, 45, 0.08);
+  color: #014824;
+}
+
+.not-found-copy {
+  max-width: 36rem;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin: 1.75rem 0 0;
+}
+
+.not-found-actions .button {
+  margin-top: 0;
+}
+
 .button:focus-visible,
 .nav-try:focus-visible,
 .wordmark:focus-visible {

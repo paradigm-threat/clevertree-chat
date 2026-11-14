@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page not found — Clevertree Chat</title>
+  <meta name="description" content="This page doesn't exist, but here's a nice forest instead.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#6ad1ef">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="trees-body">
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="trees-bg" aria-hidden="true"></div>
+  <div class="wrap trees-wrap">
+    <header>
+      <a class="wordmark" href="/">
+        <img src="/icon-128x128.png" alt="" width="32" height="32">
+        Clevertree Chat
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="nav-try" href="/forest">Forest</a>
+        <a class="nav-try" href="/extension">Extension</a>
+        <a class="nav-try" href="/dev">Dev</a>
+        <a class="nav-try" href="/try">See demo</a>
+      </nav>
+    </header>
+    <main id="main" class="trees-page">
+      <div class="forest-horizon" id="forest" role="list" aria-label="Horizon forest"></div>
+      <div class="trees-copy not-found-copy">
+        <p class="kicker">404</p>
+        <h1>This page doesn't exist, but here's a nice forest instead</h1>
+        <p class="not-found-actions">
+          <button type="button" class="button not-found-back" id="go-back">Go back</button>
+          <a class="button button-secondary" href="/">Go to home page</a>
+        </p>
+      </div>
+    </main>
+    <footer>
+      <p>Clevertree Chat, called Cleverchat for short. The name can change. The debates stay.</p>
+    </footer>
+  </div>
+  <script src="/js/grow-hill-tree.js"></script>
+  <script src="/js/forest-horizon.js"></script>
+  <script>
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    plantForestHorizon(document.getElementById("forest"), {
+      reduce: reduce,
+      grow: growHillTree
+    });
+
+    document.getElementById("go-back").addEventListener("click", function () {
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+      window.location.href = "/";
+    });
+  </script>
+</body>
+</html>
