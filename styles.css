@@ -503,7 +503,7 @@ footer {
 .trees-body {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(180deg, #4dc4ec 0%, #68d5f6 28%, #d4f3fb 52%, var(--cream) 72%);
+  background: linear-gradient(180deg, #5bb8e8 0%, #7ec8ef 18%, #f0c98a 42%, #d4f3fb 58%, var(--cream) 78%);
 }
 
 .trees-bg {
