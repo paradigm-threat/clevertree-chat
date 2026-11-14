@@ -499,38 +499,41 @@ footer {
   .pair-row { grid-template-columns: 1fr; }
 }
 
-/* /trees — copy scrolls; hills + forest sit mid-lower (not flush to screen bottom) */
+/* /trees — hills + forest occupy the top half; copy overlays them */
 .trees-body {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(180deg, #4dc4ec 0%, #68d5f6 35%, #d4f3fb 70%, var(--cream) 100%);
+  background: linear-gradient(180deg, #4dc4ec 0%, #68d5f6 28%, #d4f3fb 52%, var(--cream) 72%);
 }
 
 .trees-bg {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  top: 0;
   z-index: 0;
-  /* Taller band so the hill crest sits higher; trees plant mid-slope */
-  height: min(62vh, 40rem);
+  height: min(52vh, 34rem);
   pointer-events: none;
   background-color: #7ecf6a;
   background-image: url("/images/forest-horizon.jpg");
   background-image: url("/images/forest-horizon.webp");
-  background-position: center 42%;
+  background-position: center 55%;
   background-size: cover;
   background-repeat: no-repeat;
+  /* Soft fade into the lower page so the stand doesn't hard-cut mid-viewport */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 72%, transparent 100%);
 }
 
 .trees-wrap {
   position: relative;
   z-index: 2;
-  padding-bottom: calc(min(58vh, 36rem) + 1.5rem);
 }
 
 .trees-page {
   padding: 1.2rem 0 2rem;
+  /* Keep early copy in the forest band; lower page stays clear */
+  min-height: min(52vh, 34rem);
 }
 
 .trees-lead {
@@ -551,12 +554,11 @@ footer {
   position: fixed;
   left: 0;
   right: 0;
-  /* Lift the whole stand off the bottom of the viewport */
-  bottom: max(4vh, 1.5rem);
+  top: max(4vh, 2.5rem);
   z-index: 1;
   width: 100%;
   margin: 0;
-  height: min(46vh, 28rem);
+  height: min(44vh, 28rem);
   overflow: visible;
   pointer-events: none;
 }
