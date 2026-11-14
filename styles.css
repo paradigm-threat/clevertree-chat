@@ -224,6 +224,7 @@ body.nav-open .nav-toggle-bars::after {
 .banner-frame {
   position: relative;
   z-index: 1;
+  /* Intrinsic hero.jpg width; JS sets exact naturalWidth for 1:1 CSS pixels */
   width: 1024px;
   max-width: 100%;
   min-width: 0;
@@ -235,6 +236,8 @@ body.nav-open .nav-toggle-bars::after {
   max-width: 100%;
   height: auto;
   display: block;
+  /* Avoid browser resampling when the laid-out size matches the bitmap */
+  image-rendering: auto;
 }
 
 .grow-tree {

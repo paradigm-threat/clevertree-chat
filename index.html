@@ -175,38 +175,28 @@
         dayLeaves: true
       });
     }
-    function capBanner() {
+    function sizeBanner() {
       if (!frame || !photo) return;
-      if (reduce) {
-        frame.style.width = "";
-        photo.style.width = "";
-        return;
-      }
       const nw = photo.naturalWidth;
       const nh = photo.naturalHeight;
       if (!nw || !nh) return;
       const portrait = window.matchMedia("(orientation: portrait)").matches;
+      // Wait until <picture> has swapped to the matching source.
       if (portrait !== (nh > nw)) {
         frame.style.width = "";
         photo.style.width = "";
         return;
       }
-      const dpr = window.devicePixelRatio || 1;
-      const cap = Math.min(nw, nw / dpr);
-      frame.style.width = cap + "px";
-      photo.style.width = cap + "px";
+      // 1:1 with the bitmap in CSS pixels (1024 landscape / 682 portrait).
+      // Do not divide by devicePixelRatio — that was shrinking the hero on retina.
+      frame.style.width = nw + "px";
+      photo.style.width = nw + "px";
     }
     if (photo) {
-      if (photo.complete) capBanner();
-      photo.addEventListener("load", capBanner);
-      window.addEventListener("resize", capBanner);
-      const watchDpr = () => {
-        window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener("change", () => {
-          capBanner();
-          watchDpr();
-        }, { once: true });
-      };
-      watchDpr();
+      if (photo.complete) sizeBanner();
+      photo.addEventListener("load", sizeBanner);
+      window.addEventListener("resize", sizeBanner);
+      window.matchMedia("(orientation: portrait)").addEventListener("change", sizeBanner);
     }
   </script>
   <script src="/js/site-theme.js"></script>
