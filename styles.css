@@ -672,7 +672,7 @@ footer {
 }
 
 .trees-wrap {
-  /* Above absolute #forest so header/copy never paint under the canvas */
+  /* Above fixed #forest so header/copy never paint under the canvas */
   position: relative;
   z-index: 2;
 }
@@ -685,8 +685,9 @@ footer {
 
 .trees-copy {
   /*
-    Clear the forest band (document-top–anchored, scrolls away with the hero).
-    Title/prose stay above the stand via .trees-wrap z-index.
+    Clear the fixed forest band (.trees-bg / #forest stay viewport-anchored).
+    Title stays above trees via .trees-wrap z-index; lower prose sits on cream
+    so the fixed stand never reads through or over the copy.
   */
   position: relative;
   z-index: 1;
@@ -723,6 +724,12 @@ footer {
 
 .trees-narrative {
   max-width: 40rem;
+  /* Opaque panel so fixed trees cannot show through scrolled prose */
+  background: var(--cream);
+  box-shadow: 0 0 0 3rem var(--cream);
+  border-radius: 0.25rem;
+  position: relative;
+  z-index: 1;
 }
 
 .trees-narrative .band {
@@ -789,15 +796,15 @@ footer {
 
 .forest-horizon {
   /*
-    Absolute (not fixed): scrolls away with the hero so mid-page prose is never
-    under the canvas. Sibling of .trees-bg; flush viewport width (no -10% bleed).
-    z-index 0 under .trees-wrap (2) so title/prose stay readable when bands meet.
+    Fixed with .trees-bg: stand stays in the viewport while the page scrolls.
+    z-index 1 under .trees-wrap (2) so title/prose stay above the trees.
+    Flush width (no -10% bleed).
   */
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   top: max(4vh, 2.5rem);
-  z-index: 0;
+  z-index: 1;
   width: 100%;
   margin: 0;
   height: min(44vh, 28rem);
