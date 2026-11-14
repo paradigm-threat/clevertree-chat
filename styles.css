@@ -517,8 +517,8 @@ footer {
   background-color: #7ecf6a;
   background-image: url("/images/forest-horizon.jpg");
   background-image: url("/images/forest-horizon.webp");
-  /* Bias toward lower hills so trunk bases (depth→bottom%) sit on terrain */
-  background-position: center 62%;
+  /* Keep enough sky that the raised sun stays visible; trunks still map onto hills */
+  background-position: center 50%;
   background-size: cover;
   background-repeat: no-repeat;
   /* Fade only after near-tree trunk line (~86–90% of band), not mid-slope */
