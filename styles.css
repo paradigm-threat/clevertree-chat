@@ -791,6 +791,10 @@ footer {
   pointer-events: none;
 }
 
+.forest-horizon .forest-tree {
+  pointer-events: auto;
+}
+
 .forest-tree {
   position: absolute;
   /* bottom set in JS from depth — far trees sit higher on the hill */
@@ -807,18 +811,6 @@ footer {
   aspect-ratio: 520 / 400;
   cursor: pointer;
   filter: drop-shadow(0 12px 16px rgba(14, 63, 36, 0.2));
-}
-
-/* Single stand canvas: fills the horizon band; shade is painted in-canvas */
-.forest-canvas--stand {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
-  cursor: default;
-  pointer-events: none;
-  filter: none;
 }
 
 /* Narrow viewports: portrait hills art, taller band, tree bleed past edges */
@@ -923,7 +915,7 @@ html[data-theme="dark"] {
     background-image: url("/images/forest-horizon-night.jpg");
     background-image: url("/images/forest-horizon-night.webp");
   }
-  html:not([data-theme="light"]) .forest-canvas:not(.forest-canvas--stand) {
+  html:not([data-theme="light"]) .forest-canvas {
     filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
   }
 }
@@ -954,7 +946,7 @@ html[data-theme="dark"] .trees-bg {
   background-image: url("/images/forest-horizon-night.jpg");
   background-image: url("/images/forest-horizon-night.webp");
 }
-html[data-theme="dark"] .forest-canvas:not(.forest-canvas--stand) {
+html[data-theme="dark"] .forest-canvas {
   filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.45));
 }
 
