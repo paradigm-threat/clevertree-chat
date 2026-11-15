@@ -1,12 +1,13 @@
-"""Phase-2 hardware shape, measured without booting it.
+"""Phase-2 hardware shape, measured without booting it by default.
 
 The always-on path is the debate API. The batch path writes job.json and then
-these dry-run scripts echo the Spot calls. CLEVERTREE_SPOT_WAKE is not set.
+these scripts echo (or, when CLEVERTREE_SPOT_WAKE=1, request) Spot calls.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -16,6 +17,15 @@ WAKE = ROOT / "infra" / "spot-wake-comments.sh"
 STOP = ROOT / "infra" / "spot-decommission-comments.sh"
 LATENCY = "gauge/live-key-latency.json"
 ECHO = "gauge/batch-echo.json"
+
+
+def spot_wake_enabled() -> bool:
+    return os.environ.get("CLEVERTREE_SPOT_WAKE", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 def record_submit(debate, slot: str, latency_ms: float) -> None:
@@ -39,12 +49,19 @@ def record_submit(debate, slot: str, latency_ms: float) -> None:
 
 
 def measure_batch(debate) -> dict:
-    """Echo the Spot wake and delete. Does not create a cloudspace."""
-    wake = _echo(WAKE)
-    stop = _echo(STOP)
+    """Run wake/decommission scripts. Boots hardware only when wake env + token set."""
+    wake_on = spot_wake_enabled()
+    env = os.environ.copy()
+    if wake_on:
+        env["CLEVERTREE_SPOT_WAKE"] = "1"
+    wake = _echo(WAKE, env=env)
+    stop = _echo(STOP, env=env)
+    # Real API call only when wake is on and the script reports API_CALLED=1.
+    api_called = wake_on and "API_CALLED=1" in wake
     note = {
-        "booted": False,
-        "cloud_api_called": False,
+        "booted": api_called,
+        "cloud_api_called": api_called,
+        "wake_requested": wake_on,
         "class": "gpu.vs2.xlargeplusplus-sjc",
         "wake": wake,
         "decommission": stop,
@@ -58,7 +75,7 @@ def measure_batch(debate) -> dict:
     return note
 
 
-def _echo(path: Path) -> str:
+def _echo(path: Path, *, env: dict | None = None) -> str:
     if not path.is_file():
         return f"# missing {path.name} (echo skipped)\n"
     completed = subprocess.run(
@@ -66,6 +83,7 @@ def _echo(path: Path) -> str:
         check=False,
         capture_output=True,
         text=True,
+        env=env or os.environ.copy(),
     )
     if completed.returncode != 0:
         err = (completed.stderr or completed.stdout or "").strip()

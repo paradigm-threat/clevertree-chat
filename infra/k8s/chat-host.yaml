@@ -53,14 +53,30 @@ spec:
               export CLEVERTREE_COMMENTS_PATH=/app/var/clevertree-live/comments
               export CLEVERTREE_AUTH_PATH=/app/var/clevertree-live/auth
               export CLEVERTREE_GIT_FALLBACK=1
+              # Full SoT on PVC: skip fixture seed; optional clone when marker missing + token.
+              export CLEVERTREE_SEED_FIXTURES="${CLEVERTREE_SEED_FIXTURES:-0}"
+              export CLEVERTREE_FETCH="${CLEVERTREE_FETCH:-1}"
+              # GPU wake stays off until RACKSPACE_SPOT_TOKEN is in the secret.
+              export CLEVERTREE_SPOT_WAKE="${CLEVERTREE_SPOT_WAKE:-0}"
               export CLEVERTREE_IRC_ENABLE="${CLEVERTREE_IRC_ENABLE:-1}"
               export CLEVERTREE_IRC_HOST="${CLEVERTREE_IRC_HOST:-flashbackrepository.org}"
               export CLEVERTREE_IRC_PORT="${CLEVERTREE_IRC_PORT:-6697}"
               export CLEVERTREE_IRC_TLS="${CLEVERTREE_IRC_TLS:-1}"
               export CLEVERTREE_IRC_NICK="${CLEVERTREE_IRC_NICK:-clevertree-si}"
               export CLEVERTREE_IRC_PREFIX="${CLEVERTREE_IRC_PREFIX:-pt}"
+              if [[ ! -f /app/var/clevertree-live/comments/.clevertree-full-sot ]] \
+                && [[ -n "${CLEVERTREE_GITHUB_TOKEN:-}" ]] \
+                && [[ -x /app/scripts/bootstrap_comments_checkout.sh || -f /app/scripts/bootstrap_comments_checkout.sh ]]; then
+                bash /app/scripts/bootstrap_comments_checkout.sh /app/var/clevertree-live/comments || true
+              fi
               exec python3 scripts/chat_host.py 8790
           env:
+            - name: CLEVERTREE_SEED_FIXTURES
+              value: "0"
+            - name: CLEVERTREE_FETCH
+              value: "1"
+            - name: CLEVERTREE_SPOT_WAKE
+              value: "0"
             - name: CLEVERTREE_IRC_ENABLE
               value: "1"
             - name: CLEVERTREE_IRC_HOST

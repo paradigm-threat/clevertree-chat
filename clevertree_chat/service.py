@@ -78,16 +78,26 @@ class DebateService:
 
     def drain_for_page(self, page: str, topic: str = "", visitor: str = "") -> dict:
         result = self.debate.drain()
+        hooks = {}
+        if result.commits:
+            try:
+                from clevertree_chat.batch_hooks import after_drain
+
+                hooks = after_drain(self.debate, topics=[topic] if topic else None)
+            except Exception:
+                hooks = {"error": "hooks_failed"}
         echo = measure_batch(self.debate)
         return {
             "hardware_should_shut_down": result.hardware_should_shut_down,
             "message": result.message,
             "commits": result.commits,
             "batch_notice": result.message,
-            "cloud_api_called": False,
-            "booted": False,
+            "cloud_api_called": bool(echo.get("cloud_api_called")),
+            "booted": bool(echo.get("booted")),
+            "wake_requested": bool(echo.get("wake_requested")),
             "wake": echo["wake"],
             "decommission": echo["decommission"],
+            "hooks": hooks,
             "view": self.view_for_page(page, topic, visitor=visitor) if topic else None,
         }
 

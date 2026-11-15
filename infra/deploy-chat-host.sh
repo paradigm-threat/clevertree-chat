@@ -19,14 +19,17 @@ cp "$ROOT/api/debate.py" "$STAGE/api/" 2>/dev/null || true
 # Keep api/demo.py only for legacy local scripts; host no longer imports it.
 cp "$ROOT/api/demo.py" "$STAGE/api/" 2>/dev/null || true
 
-cp "$ROOT/scripts/chat_host.py" "$ROOT/scripts/seed_live_comments_from_fixtures.py" "$STAGE/scripts/"
+cp "$ROOT/scripts/chat_host.py" "$ROOT/scripts/seed_live_comments_from_fixtures.py" \
+  "$ROOT/scripts/bootstrap_comments_checkout.sh" "$STAGE/scripts/"
+chmod +x "$STAGE/scripts/bootstrap_comments_checkout.sh"
 cp "$ROOT/chat/index.html" "$STAGE/chat/"
 cp "$ROOT/fronts/snippet/clevertree-board.js" "$ROOT/fronts/snippet/clevertree-board.css" \
   "$ROOT/fronts/snippet/embed.html" "$STAGE/fronts/snippet/"
 cp "$ROOT/fixtures/pt-review/"*.json "$STAGE/fixtures/pt-review/"
 cp "$ROOT/styles.css" "$ROOT/icon-128x128.png" "$ROOT/favicon.ico" "$ROOT/requirements.txt" "$STAGE/"
-# Gauge dry-run scripts (missing files must not break drain)
+# Gauge wake/decommission scripts (default dry-run; CLEVERTREE_SPOT_WAKE gates API)
 cp "$ROOT/infra/spot-wake-comments.sh" "$ROOT/infra/spot-decommission-comments.sh" "$STAGE/infra/"
+chmod +x "$STAGE/infra/spot-wake-comments.sh" "$STAGE/infra/spot-decommission-comments.sh"
 
 # Comments tree is created/seeded at container start (ConfigMap size limit).
 tar -C "$STAGE" -czf /tmp/clevertree-chat-host.tgz .

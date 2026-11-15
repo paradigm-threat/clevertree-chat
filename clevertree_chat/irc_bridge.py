@@ -8,6 +8,7 @@ import os
 import threading
 import time
 import uuid as uuidlib
+from pathlib import Path
 from typing import Any
 
 from clevertree_chat.irc_client import IrcClient, channel_for_topic, topic_for_channel
@@ -138,11 +139,26 @@ class IrcBridge:
         client = self._client
         if client and nick.lower() == client.nick.lower():
             return
-        # Skip CTCP / commands
-        if text.startswith("\x01") or text.startswith("!"):
+        # Skip CTCP
+        if text.startswith("\x01"):
             return
         topic = topic_for_channel(self.prefix, target)
         if not topic:
+            return
+        # Owner answer → fold into rules / KB (not a debate post)
+        lower = text.lower()
+        if lower.startswith("!answer ") or lower.startswith("si answer:"):
+            answer = text.split(" ", 1)[1].strip() if " " in text else ""
+            if lower.startswith("si answer:"):
+                answer = text.split(":", 1)[1].strip()
+            if answer:
+                try:
+                    self._fold_owner_answer(topic, answer, nick)
+                except Exception as exc:
+                    log.warning("IRC answer fold failed: %s", exc)
+            return
+        # Other !commands stay out of the debate map
+        if text.startswith("!"):
             return
         # Strip optional <nick> wrapper if someone pasted board format
         body = text
@@ -155,6 +171,42 @@ class IrcBridge:
         except Exception as exc:
             log.warning("IRC→submit failed: %s", exc)
             self._echo_ids.discard(fp)
+
+    def _fold_owner_answer(self, topic: str, answer: str, nick: str) -> None:
+        """Append human answer into owner-answers.md and a rules.md note."""
+        from clevertree_chat import live_runtime as live
+
+        service = live.open_service()
+        root = Path(service.debate.repo.path)
+        page = topic  # review rooms use page==topic
+        base = root / "pages" / page / "topics" / topic
+        base.mkdir(parents=True, exist_ok=True)
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        line = f"- ({stamp}) <{nick}> {answer.strip()}\n"
+        answers_rel = f"pages/{page}/topics/{topic}/owner-answers.md"
+        answers_path = root / answers_rel
+        prev = answers_path.read_text(encoding="utf-8") if answers_path.is_file() else "# Owner answers\n\n"
+        if not prev.endswith("\n"):
+            prev += "\n"
+        writes: dict[str, str] = {answers_rel: prev + line}
+        rules_rel = "rules.md"
+        rules_path = root / rules_rel
+        rules_prev = (
+            rules_path.read_text(encoding="utf-8")
+            if rules_path.is_file()
+            else "# Debate rules\n\n"
+        )
+        note = f"\n## Owner answer ({topic})\n\n{answer.strip()}\n"
+        if note.strip() not in rules_prev:
+            writes[rules_rel] = rules_prev.rstrip() + "\n" + note
+        service.debate.repo.commit_changes(
+            writes, [], f"fold IRC owner answer for {topic}", nick[:40] or "irc"
+        )
+        live._persist()
+        client = self._client
+        if client and client.ready:
+            ch = self.ensure_channel(topic)
+            client.privmsg(ch, f"Noted owner answer from {nick}. Folded into rules.")
 
     def _submit_from_irc(self, topic: str, body: str, nick: str) -> None:
         from clevertree_chat import live_runtime as live

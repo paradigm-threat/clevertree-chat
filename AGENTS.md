@@ -38,12 +38,12 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 
 ## Near-future goals (priority)
 
-1. **Full SoT mount on Intake** — PVC keeps live comments across rollouts; next: mount full comments checkout (not fixture seed only) + GitHub sync when desired.
-2. **Real batch SI pass** — wake Spot GPU when needed (`CLEVERTREE_SPOT_WAKE`); run a true curator once end-to-end (file + summarize + ask humans on low confidence).
-3. **Internet investigations** — batch cites and fetches live counters (today: URL recorded, **page not fetched**). Prove egress from Intake/Spot vs Vercel.
-4. **Anti-bot / anti-spam access** — measure what blocks plain HTTP, headless browsers, and APIs before wiring fetch into the curator. No fetch path exists yet.
-5. **Human loop** — low-confidence → `questions.md` already; deliver asks on IRC and fold answers into `rules.md` / KB.
-6. **Spam court + URL associations** — `associations.json` provisional page noted on first URL-room submit; spam court + batch merge/link still next.
+1. **Full SoT mount on Intake** — PVC + `.clevertree-full-sot` / `bootstrap_comments_checkout.sh`; optional GitHub token sync on empty PVC.
+2. **Real batch SI pass** — heuristic drain + `batch_hooks` on Intake; Spot GPU wake gated by `CLEVERTREE_SPOT_WAKE` + `RACKSPACE_SPOT_TOKEN` (off in prod until token mounted).
+3. **Internet investigations** — `clevertree_chat/fetch.py` + `CLEVERTREE_FETCH=1` cites/fetches suggested-counter URLs (soft-fail on blocks).
+4. **Anti-bot / anti-spam access** — `probe_egress` records block/captcha signals; expand coverage as fetch hits more hosts.
+5. **Human loop** — `questions.md` → IRC `SI ask`; owners reply `!answer` / `si answer:` → fold into `owner-answers.md` + `rules.md`.
+6. **Spam court + URL associations** — drain hooks refresh `associations.json` (www fold) and write `spam-state.json` from court clocks.
 
 ## Locked product rules (don’t undo)
 

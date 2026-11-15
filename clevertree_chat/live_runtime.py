@@ -118,6 +118,9 @@ def _maybe_seed_fixtures(cpath: Path) -> None:
     """One-shot light PT seed when the comments tree has no review pages yet."""
     if os.environ.get("CLEVERTREE_SEED_FIXTURES", "1").strip() in {"0", "false", "no"}:
         return
+    # Full SoT mount (PVC bootstrap) — never overwrite with fixture seed.
+    if (cpath / ".clevertree-full-sot").is_file():
+        return
     marker = cpath / ".clevertree-seeded"
     if marker.is_file():
         return
@@ -409,12 +412,20 @@ def run_drain_once() -> dict | None:
     service = open_service()
     with _lock:
         result = service.debate.drain()
+        hooks = {}
         if result.commits:
+            try:
+                from clevertree_chat.batch_hooks import after_drain
+
+                hooks = after_drain(service.debate)
+            except Exception:
+                hooks = {"error": "hooks_failed"}
             _persist()
         return {
             "hardware_should_shut_down": result.hardware_should_shut_down,
             "message": result.message,
             "commits": result.commits,
+            "hooks": hooks,
         }
 
 
@@ -440,6 +451,12 @@ def start_drain_worker(interval_s: float = 2.0) -> None:
                     with _lock:
                         drained = service.debate.drain()
                     if drained.commits:
+                        try:
+                            from clevertree_chat.batch_hooks import after_drain
+
+                            after_drain(service.debate, topics=list(dirty))
+                        except Exception:
+                            pass
                         _persist()
                         notice = drained.message or "Organized."
                         for topic in dirty:

@@ -8,14 +8,14 @@ The back is the deep pass. A job file on the `comments` branch is the queue. The
 
 Cleverchat is an independent product repo. Other apps (including MyProblem) may mount it; they depend on Cleverchat, not the reverse. The debate is never written into the host page repo. `page.json` can pin a canonical URL or a content commit and flag the thesis stale. Nothing is written back to the host.
 
-## Spot, dry run only
+## Spot wake gate
 
-Phase 1 does not create a cloudspace. The scripts only echo the calls:
+By default the scripts only echo the calls (no network):
 
 - `infra/spot-wake-comments.sh` echoes `createCloudspace` and `createSpotNodePool` for class `gpu.vs2.xlargeplusplus-sjc` in `us-west-sjc-1`, org `paradigmthreat`, about $0.15/hr.
 - `infra/spot-decommission-comments.sh` echoes `deleteSpotNodePool` and `deleteCloudspace`.
 
-They do not curl and they do not call the network. Leaving the A30 at desired=0 is not the idle state. On-demand A30 is not this path. A comments cloudspace is its own box so a debate pass does not sit behind ticket vision, and a vision job does not keep this GPU up.
+Set `CLEVERTREE_SPOT_WAKE=1` to mark a wake request. A real Spot create/delete runs only when `RACKSPACE_SPOT_TOKEN` (or `CLEVERTREE_SPOT_TOKEN`) is also present; otherwise the script stays soft-fail dry-run and `cloud_api_called` remains false. Leaving the A30 at desired=0 is not the idle state. On-demand A30 is not this path. A comments cloudspace is its own box so a debate pass does not sit behind ticket vision, and a vision job does not keep this GPU up.
 
 Curator commits use the service id `clevertree-chat-ai`. A person's name is never the author of a rewritten room. Each batch commit can be published to every local remote that serves the comments branch. The index and the files it points at are part of that commit.
 
@@ -27,6 +27,8 @@ A browser extension and an HTML snippet are small fronts in `fronts/`. They norm
 
 The always-on path is this site's API, `POST /api/debate` and `GET /api/debate`. It files the starting slot and records submit latency for that slot in `gauge/live-key-latency.json` on the comments branch. The number is how long the live submit took. It is not a GPU measurement.
 
-The batch path is the in-process curator. Submit writes `pages/<page>/job.json`. The page then calls the drain action. That drain runs the phase-1 engine. It does not boot hardware. After the queue is empty, `clevertree_chat.gauge` runs the two scripts above and stores their echo. The wake echo names `createCloudspace` and class `gpu.vs2.xlargeplusplus-sjc`. The other echo names `deleteCloudspace`. `cloud_api_called` stays false.
+The batch path is the in-process curator. Submit writes `pages/<page>/job.json`. The page then calls the drain action. That drain runs the phase-1 engine plus `batch_hooks` (associations, spam court clocks, optional live fetch of suggested-counter URLs when `CLEVERTREE_FETCH=1`, IRC delivery of `questions.md` asks). After the queue is empty, `clevertree_chat.gauge` runs the two Spot scripts and stores their echo. The wake echo names `createCloudspace` and class `gpu.vs2.xlargeplusplus-sjc`. The other echo names `deleteCloudspace`.
 
-`CLEVERTREE_SPOT_WAKE` is the name reserved for a later real wake. It is not set. The scripts do not read it, and they do not call the Spot API. A comments pass that should shut the hardware down still only says so.
+`CLEVERTREE_SPOT_WAKE` gates a real wake. Production Intake keeps it `0` until a Spot token is mounted. Owner answers on IRC (`!answer …` or `si answer: …`) fold into `owner-answers.md` and `rules.md`.
+
+Full comments SoT: mount via PVC (or `scripts/bootstrap_comments_checkout.sh`). Marker `.clevertree-full-sot` skips fixture seed. Set `CLEVERTREE_SEED_FIXTURES=0` on Intake.

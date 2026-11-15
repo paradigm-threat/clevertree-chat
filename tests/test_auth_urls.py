@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -240,25 +241,39 @@ class UrlTests(unittest.TestCase):
 
 
 class HardwareTests(unittest.TestCase):
-    def test_spot_scripts_only_echo_and_do_not_touch_the_network(self):
+    def test_spot_scripts_default_dry_run_no_api(self):
+        """Unset CLEVERTREE_SPOT_WAKE → echo only; no network even if curl is in the script."""
         wake = ROOT / "infra" / "spot-wake-comments.sh"
         stop = ROOT / "infra" / "spot-decommission-comments.sh"
-        banned = ("curl", "wget", "nc ", "ncat", "ssh ", "http://", "https://", "/dev/tcp", "python", "node ")
-        for path in (wake, stop):
-            text = path.read_text().lower()
-            for word in banned:
-                self.assertNotIn(word, text)
-        wake_out = subprocess.run(["bash", str(wake)], check=True, capture_output=True, text=True).stdout
-        stop_out = subprocess.run(["bash", str(stop)], check=True, capture_output=True, text=True).stdout
+        env = {k: v for k, v in os.environ.items() if k not in {
+            "CLEVERTREE_SPOT_WAKE", "RACKSPACE_SPOT_TOKEN", "CLEVERTREE_SPOT_TOKEN",
+        }}
+        wake_out = subprocess.run(
+            ["bash", str(wake)], check=True, capture_output=True, text=True, env=env
+        ).stdout
+        stop_out = subprocess.run(
+            ["bash", str(stop)], check=True, capture_output=True, text=True, env=env
+        ).stdout
         self.assertIn("createCloudspace", wake_out)
         self.assertIn("createSpotNodePool", wake_out)
         self.assertIn("gpu.vs2.xlargeplusplus-sjc", wake_out)
         self.assertIn("paradigmthreat", wake_out)
         self.assertIn("us-west-sjc-1", wake_out)
         self.assertIn("0.15", wake_out)
+        self.assertIn("WAKE_REQUESTED=0", wake_out)
+        self.assertIn("API_CALLED=0", wake_out)
         self.assertIn("deleteSpotNodePool", stop_out)
         self.assertIn("deleteCloudspace", stop_out)
         self.assertIn("paradigmthreat", stop_out)
+        self.assertIn("API_CALLED=0", stop_out)
+        # Wake requested without token still soft-fails dry-run
+        env_wake = dict(env)
+        env_wake["CLEVERTREE_SPOT_WAKE"] = "1"
+        gated = subprocess.run(
+            ["bash", str(wake)], check=True, capture_output=True, text=True, env=env_wake
+        ).stdout
+        self.assertIn("WAKE_REQUESTED=1", gated)
+        self.assertIn("API_CALLED=0", gated)
 
 
 if __name__ == "__main__":
