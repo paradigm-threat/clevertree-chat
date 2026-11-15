@@ -1,13 +1,13 @@
 /**
- * Clevertree Chat side panel — simplified Debate board wired to Intake.
+ * Clevertree Chat side panel — durable host, domain-level page scope.
  */
 (function () {
   const DEFAULT_API = "https://api.clevertree.chat";
   const VISITOR_KEY = "clevertree.visitor";
-  const DEMO_KEY = "clevertree.demoMode";
   const API_KEY = "clevertree.apiBase";
+  const COACH_KEY = "clevertree.coachSeen";
 
-  const GUIDED = {
+  const STARTERS = {
     "flock-cameras": "Should cities use camera networks?",
     "thc-legalization": "Should adult-use cannabis be legal?",
   };
@@ -20,13 +20,8 @@
     count: document.getElementById("count-pill"),
     board: document.getElementById("board"),
     activity: document.getElementById("activity"),
-    demoBox: document.getElementById("demo-box"),
-    demoHeading: document.getElementById("demo-heading"),
-    demoMessage: document.getElementById("demo-message"),
-    btnContinue: document.getElementById("btn-continue"),
-    btnContinueText: document.getElementById("btn-continue-text"),
-    btnDemoToggle: document.getElementById("btn-demo-toggle"),
-    btnReset: document.getElementById("btn-reset"),
+    coachBox: document.getElementById("coach-box"),
+    btnCoachSkip: document.getElementById("btn-coach-skip"),
     composer: document.getElementById("composer"),
     body: document.getElementById("body"),
     hint: document.getElementById("composer-hint"),
@@ -37,23 +32,19 @@
   const store = {
     apiBase: DEFAULT_API,
     visitor: "",
-    topic: "flock-cameras",
-    guided: true,
+    topic: "",
     pageUrl: "",
     pageNorm: "",
     pageLabel: "",
-    board: emptyBoard("flock-cameras"),
-    demoMode: true,
-    demoPaused: false,
-    demoQueue: [],
-    demoMessage: "",
-    demoStepLabel: "",
+    board: emptyBoard(""),
+    coachSeen: false,
     expandedKeyId: null,
     busy: false,
     liveState: "closed",
     liveText: "Connecting…",
     socket: null,
     reconnectTimer: 0,
+    pinTopic: "",
   };
 
   function storageGet(keys) {
@@ -74,7 +65,6 @@
     return storageSet({ [VISITOR_KEY]: id });
   }
 
-  /** Cached UUID only — never mint locally. Server identify/resolve issue IDs. */
   async function cachedVisitor() {
     if (store.visitor) return store.visitor;
     const data = await storageGet([VISITOR_KEY]);
@@ -96,16 +86,16 @@
   }
 
   function readPrefs() {
-    return storageGet([DEMO_KEY, API_KEY, VISITOR_KEY]).then(function (data) {
+    return storageGet([API_KEY, VISITOR_KEY, COACH_KEY]).then(function (data) {
       if (data[API_KEY]) store.apiBase = String(data[API_KEY]).replace(/\/$/, "");
       if (data[VISITOR_KEY]) store.visitor = data[VISITOR_KEY];
-      if (data[DEMO_KEY] === "0") store.demoMode = false;
-      else if (data[DEMO_KEY] === "1") store.demoMode = true;
+      if (data[COACH_KEY] === "1" || data[COACH_KEY] === true) store.coachSeen = true;
     });
   }
 
-  function writeDemoPref(on) {
-    return storageSet({ [DEMO_KEY]: on ? "1" : "0" });
+  function markCoachSeen() {
+    store.coachSeen = true;
+    return storageSet({ [COACH_KEY]: "1" });
   }
 
   function escapeHtml(s) {
@@ -141,11 +131,22 @@
     );
   }
 
+  /** Domain-level debate path for extension tabs. */
+  function domainNormalized(href) {
+    if (!href || !/^https?:/i.test(href) || typeof normalizeUrl !== "function") return "";
+    try {
+      const u = new URL(href);
+      return normalizeUrl(u.protocol + "//" + u.hostname + "/");
+    } catch (e) {
+      return "";
+    }
+  }
+
   function emptyBoard(topicId, title) {
     return {
       topic: {
         id: topicId,
-        title: title || GUIDED[topicId] || humanizeKey(topicId) || "This page",
+        title: title || STARTERS[topicId] || humanizeKey(topicId) || "This site",
         invite: "Explore the main perspectives, then add your own point.",
       },
       keys: [],
@@ -157,15 +158,14 @@
   function viewToBoard(view, topicId) {
     const pageTitle =
       (view && view.page && view.page.title) ||
-      GUIDED[topicId] ||
+      STARTERS[topicId] ||
       store.pageLabel ||
-      "This page";
+      "This site";
     if (view && view.page) {
       if (view.page.normalized) store.pageNorm = view.page.normalized;
       if (view.page.title) store.pageLabel = view.page.title;
       if (view.page.url) store.pageUrl = view.page.url;
     }
-    if (view && typeof view.guided === "boolean") store.guided = view.guided;
     if (!view || !view.exists) {
       return emptyBoard(topicId, pageTitle);
     }
@@ -196,7 +196,6 @@
           keys: [],
           provisionalKeys: [],
           author: c.mine ? "me" : "peer",
-          simulated: !!c.injected,
         };
       }
       const keys = (c.keys || []).filter(function (k) {
@@ -251,12 +250,10 @@
         kind: row.kind === "batch" ? "batch" : "live",
         text:
           row.kind === "batch"
-            ? row.body || view.batch_notice || "Board updated"
+            ? row.body || "Board updated"
             : row.mine
               ? "Your point is live"
-              : row.injected
-                ? "Simulated participant added a point"
-                : (row.author || "Participant") + " contributed a point",
+              : (row.author || "Participant") + " contributed a point",
         at: clockAt(),
         highlight: false,
       });
@@ -264,7 +261,7 @@
     return {
       topic: {
         id: topicId,
-        title: pageTitle || GUIDED[topicId] || store.pageLabel || humanizeKey(topicId),
+        title: pageTitle || store.pageLabel || humanizeKey(topicId),
         invite: "Explore the main perspectives, then add your own point.",
       },
       keys: keys,
@@ -284,13 +281,6 @@
     store.board.activity.forEach(function (a, i) {
       if (i > 0) a.highlight = false;
     });
-  }
-
-  function detectGuidedFromUrl(href) {
-    if (!href) return null;
-    if (href.indexOf("flock-cameras") >= 0) return "flock-cameras";
-    if (href.indexOf("thc-legalization") >= 0) return "thc-legalization";
-    return null;
   }
 
   async function activeTab() {
@@ -329,88 +319,33 @@
     return data;
   }
 
-  /** Ask the host for topic + visitor IDs for this tab (or a forced guided demo). */
   async function resolveOnServer(opts) {
     const o = opts || {};
     const visitor = await cachedVisitor();
-    if (o.forcedTopic && GUIDED[o.forcedTopic]) {
-      const data = await apiPost({
+    if (o.forcedTopic && STARTERS[o.forcedTopic]) {
+      return apiPost({
         action: "resolve",
         url: "https://api.clevertree.chat/chat/" + o.forcedTopic,
         visitor: visitor || undefined,
       });
-      return data;
     }
     const tab = await activeTab();
     const href = (tab && tab.url) || "";
-    let normalized = "";
-    try {
-      if (href && /^https?:/i.test(href) && typeof normalizeUrl === "function") {
-        normalized = normalizeUrl(href);
-      }
-    } catch (e) {}
+    const normalized = domainNormalized(href);
     return apiPost({
       action: "resolve",
       url: href || "",
       normalized: normalized || undefined,
+      page_scope: "domain",
       visitor: visitor || undefined,
     });
   }
 
-  function applyView(view, opts) {
+  function applyView(view) {
     store.board = viewToBoard(view, store.topic);
     if (!store.expandedKeyId && store.board.keys[0]) {
       store.expandedKeyId = store.board.keys[0].id;
     }
-    if (opts && opts.highlightActivity && store.board.activity[0]) {
-      store.board.activity[0].highlight = true;
-    }
-  }
-
-  function pauseOrApply(beat) {
-    if (!store.guided || !store.demoMode) {
-      if (typeof beat.apply === "function") beat.apply();
-      render();
-      return;
-    }
-    store.demoQueue.push(beat);
-    if (!store.demoPaused) advanceDemo();
-    else render();
-  }
-
-  function advanceDemo() {
-    const next = store.demoQueue.shift();
-    if (!next) {
-      store.demoPaused = false;
-      store.demoMessage = "";
-      store.demoStepLabel = "";
-      render();
-      return;
-    }
-    if (typeof next.apply === "function") next.apply();
-    store.demoPaused = true;
-    store.demoMessage = next.message || "Something updated.";
-    store.demoStepLabel = next.label || "Update";
-    render();
-  }
-
-  function continueDemo() {
-    if (!store.demoPaused) return;
-    advanceDemo();
-  }
-
-  function setDemoMode(on) {
-    store.demoMode = !!on && store.guided;
-    writeDemoPref(store.demoMode);
-    if (!store.demoMode) {
-      while (store.demoQueue.length) {
-        const b = store.demoQueue.shift();
-        if (typeof b.apply === "function") b.apply();
-      }
-      store.demoPaused = false;
-      store.demoMessage = "";
-    }
-    render();
   }
 
   function postsForKey(keyId) {
@@ -439,9 +374,7 @@
     const who =
       post.author === "me"
         ? '<span class="ct-who--me">You</span>'
-        : post.simulated
-          ? '<span class="ct-who--sim">Simulated</span>'
-          : "<span>Participant</span>";
+        : "<span>Participant</span>";
     return (
       '<article class="ct-post"><div class="ct-post-meta">' +
       who +
@@ -459,11 +392,7 @@
     let html = "";
     if (!keys.length && !unfiled.length) {
       html +=
-        '<p class="ct-invite">' +
-        (store.guided
-          ? "Demo start — post a point. The script organizes it; a simulated peer may reply."
-          : "Nothing on this page yet — add the first point. The board stays empty until you write.") +
-        "</p>";
+        '<p class="ct-invite">Nothing on this site yet — add the first point. The board stays empty until you write.</p>';
     } else {
       html += '<p class="ct-invite">' + escapeHtml(store.board.topic.invite) + "</p>";
     }
@@ -483,10 +412,12 @@
         " pts</span></button>";
       if (expanded) {
         html += '<p class="ct-summary">' + escapeHtml(key.summary) + "</p>";
-        html += posts.slice(0, 5).map(postCardHtml).join("") || '<p class="ct-muted">No points yet.</p>';
+        html +=
+          posts.slice(0, 5).map(postCardHtml).join("") ||
+          '<p class="ct-muted">No points yet.</p>';
         if (key.countersTo && key.countersTo.length) {
           html +=
-            "<ul class=\"ct-counter-list\">" +
+            '<ul class="ct-counter-list">' +
             key.countersTo
               .map(function (id) {
                 return "<li>" + escapeHtml(humanizeKey(id)) + "</li>";
@@ -529,45 +460,20 @@
   function render() {
     els.status.dataset.live = store.liveState;
     els.status.textContent = store.liveText + (store.busy ? " · Posting…" : "");
-    els.badge.textContent = store.guided ? "Demo" : "Page";
-    els.badge.dataset.mode = store.guided ? "demo" : "page";
+    const pinned = !!store.pinTopic;
+    els.badge.textContent = pinned ? "Demo" : "Site";
+    els.badge.dataset.mode = pinned ? "demo" : "page";
     els.title.textContent = store.board.topic.title;
-    els.page.textContent = store.guided
-      ? "Guided demo · " + store.topic
-      : store.pageNorm || store.pageLabel;
+    els.page.textContent = store.pageNorm || store.pageLabel || store.topic || "—";
     els.page.title = store.pageUrl || store.pageNorm;
     els.count.textContent =
       store.board.keys.length +
       " perspectives · " +
       store.board.posts.length +
       " points";
-
-    if (store.guided) {
-      els.demoBox.hidden = false;
-      els.demoBox.classList.toggle("is-paused", store.demoPaused);
-      if (!store.demoMode) {
-        els.demoHeading.textContent = "Guided demo is off";
-        els.demoMessage.textContent = "Updates arrive continuously.";
-        els.btnDemoToggle.textContent = "Enable demo mode";
-        els.btnContinue.disabled = true;
-        els.btnContinueText.hidden = true;
-      } else {
-        els.demoHeading.textContent = store.demoPaused
-          ? store.demoStepLabel || "Paused"
-          : "Guided walkthrough";
-        els.demoMessage.textContent =
-          store.demoMessage ||
-          "You’re in a guided debate. It pauses after each update — simulated peers and SI organization included.";
-        els.btnDemoToggle.textContent = "Disable demo mode";
-        els.btnContinue.disabled = !store.demoPaused;
-        els.btnContinueText.hidden = !store.demoPaused;
-      }
-      els.hint.textContent = "Demo script · Jordan is server-injected when the script says so.";
-    } else {
-      els.demoBox.hidden = true;
-      els.hint.textContent = "Empty until you write. Soft tags may be revised by batch.";
-    }
-
+    els.coachBox.hidden = store.coachSeen;
+    els.hint.textContent =
+      "One debate per site. Empty until you write. Soft tags may be revised by batch.";
     renderBoard();
     renderActivity();
     els.btnPost.disabled = store.busy;
@@ -597,10 +503,9 @@
     render();
     try {
       const filed = await call({ action: "submit", body: body });
-      if (filed.view) applyView(filed.view, { highlightActivity: true });
+      if (filed.view) applyView(filed.view);
       pushActivity("live", "Your point is live", true);
-      store.demoMode = false;
-      writeDemoPref(false);
+      await markCoachSeen();
       els.body.value = "";
     } catch (err) {
       setStatus(err.message || "Could not post.", true);
@@ -610,10 +515,6 @@
       store.busy = false;
       render();
     }
-  }
-
-  async function resetDemo() {
-    setStatus("Reset removed on live boards.", true);
   }
 
   async function connectWs() {
@@ -630,23 +531,27 @@
       const u = new URL(base);
       u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
       u.pathname = "/api/chat/ws";
-      u.search = "?topic=" + encodeURIComponent(store.topic) + "&visitor=" + encodeURIComponent(visitor);
+      u.search =
+        "?topic=" +
+        encodeURIComponent(store.topic) +
+        "&visitor=" +
+        encodeURIComponent(visitor);
       ws = new WebSocket(u.toString());
     } catch (e) {
       store.liveState = "error";
-      store.liveText = store.guided ? "Demo · socket failed" : "Socket failed";
+      store.liveText = "Socket failed";
       render();
       return;
     }
     store.socket = ws;
     ws.addEventListener("open", function () {
       store.liveState = "open";
-      store.liveText = store.guided ? "Demo · connected" : "Connected";
+      store.liveText = "Connected";
       render();
     });
     ws.addEventListener("close", function () {
       store.liveState = "closed";
-      store.liveText = store.guided ? "Demo · reconnecting…" : "Reconnecting…";
+      store.liveText = "Reconnecting…";
       render();
       window.clearTimeout(store.reconnectTimer);
       store.reconnectTimer = window.setTimeout(connectWs, 1600);
@@ -666,71 +571,44 @@
       }
       if (msg.type === "post.live" && msg.comment) {
         const mine = msg.comment.author_uuid === visitor;
-        const injected = !!msg.comment.injected;
         if (mine && store.busy) return;
-        pauseOrApply({
-          label: injected ? "Another voice" : mine ? "Your point" : "New point",
-          message: injected
-            ? "A simulated participant added another perspective."
-            : mine
-              ? "Your point is live."
-              : "Someone added a point.",
-          apply: function () {
-            if (msg.view) applyView(msg.view);
-            pushActivity(
-              "live",
-              injected
-                ? "Simulated participant added a point"
-                : mine
-                  ? "Your point is live"
-                  : "Participant contributed a point",
-              true
-            );
-          },
-        });
+        if (msg.view) applyView(msg.view);
+        pushActivity(
+          "live",
+          mine ? "Your point is live" : "Participant contributed a point",
+          true
+        );
+        render();
         return;
       }
       if (msg.type === "batch.notice") {
-        pauseOrApply({
-          label: "Organizing",
-          message: msg.notice || "Clevertree is grouping points into perspectives.",
-          apply: function () {
-            if (msg.view) applyView(msg.view);
-            pushActivity("batch", msg.notice || "Organizing in background", true);
-          },
-        });
+        if (msg.view) applyView(msg.view);
+        pushActivity("batch", msg.notice || "Organizing in background", true);
+        render();
         return;
       }
       if (msg.type === "board.snapshot" && msg.view) {
-        pauseOrApply({
-          label: "Board changed",
-          message: "The board updated — here’s what changed.",
-          apply: function () {
-            applyView(msg.view, { highlightActivity: true });
-            pushActivity("batch", "Board updated", true);
-          },
-        });
+        applyView(msg.view);
+        pushActivity("batch", "Board updated", true);
+        render();
       }
     });
   }
 
   async function bindTopic(opts) {
     const o = opts || {};
-    store.demoQueue = [];
-    store.demoPaused = false;
     store.expandedKeyId = null;
     store.liveText = "Resolving…";
     store.liveState = "closed";
+    if (o.forcedTopic) store.pinTopic = o.forcedTopic;
+    else if (!o.keepPin) store.pinTopic = "";
     render();
     try {
       const resolved = await resolveOnServer(o);
       store.topic = resolved.topic;
-      store.guided = false;
-      store.demoMode = false;
-      writeDemoPref(false);
       store.pageUrl = resolved.url || store.pageUrl || "";
       store.pageNorm = resolved.normalized || resolved.topic;
-      store.pageLabel = resolved.title || GUIDED[resolved.topic] || resolved.topic;
+      store.pageLabel = resolved.title || STARTERS[resolved.topic] || resolved.topic;
       if (resolved.view) applyView(resolved.view);
       else store.board = emptyBoard(store.topic, store.pageLabel);
       setStatus("");
@@ -754,23 +632,16 @@
     render();
   });
 
-  els.btnContinue.addEventListener("click", continueDemo);
-  els.btnContinueText.addEventListener("click", continueDemo);
-  els.btnDemoToggle.addEventListener("click", function () {
-    setDemoMode(!store.demoMode);
+  els.btnCoachSkip.addEventListener("click", function () {
+    markCoachSeen().then(render);
   });
-  els.btnReset.addEventListener("click", resetDemo);
   document.getElementById("btn-refresh").addEventListener("click", function () {
     bindTopic();
   });
   document.getElementById("btn-flock").addEventListener("click", function () {
-    store.demoMode = true;
-    writeDemoPref(true);
     bindTopic({ forcedTopic: "flock-cameras" });
   });
   document.getElementById("btn-thc").addEventListener("click", function () {
-    store.demoMode = true;
-    writeDemoPref(true);
     bindTopic({ forcedTopic: "thc-legalization" });
   });
 
@@ -782,14 +653,12 @@
   });
 
   chrome.tabs.onActivated.addListener(function () {
-    if (!store.guided || !GUIDED[store.topic]) bindTopic();
+    if (store.pinTopic) return;
+    bindTopic();
   });
   chrome.tabs.onUpdated.addListener(function (tabId, info, tab) {
     if (info.status !== "complete" || !tab.active) return;
-    if (store.guided && GUIDED[store.topic] && !detectGuidedFromUrl(tab.url || "")) {
-      /* user pinned a guided demo — keep it until Refresh / page mode */
-      return;
-    }
+    if (store.pinTopic) return;
     bindTopic();
   });
 

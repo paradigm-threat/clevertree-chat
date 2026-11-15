@@ -59,10 +59,15 @@ def measure_batch(debate) -> dict:
 
 
 def _echo(path: Path) -> str:
+    if not path.is_file():
+        return f"# missing {path.name} (echo skipped)\n"
     completed = subprocess.run(
         ["sh", str(path)],
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
     )
+    if completed.returncode != 0:
+        err = (completed.stderr or completed.stdout or "").strip()
+        return f"# {path.name} exit {completed.returncode}: {err}\n"
     return completed.stdout

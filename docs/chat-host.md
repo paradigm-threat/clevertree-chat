@@ -27,6 +27,8 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_GITHUB_TOKEN` + `CLEVERTREE_COMMENTS_SYNC=1` | Pull/push via GitHub API (optional) |
 | `CLEVERTREE_USE_SIBLING=1` | Dev: use `../clevertree-chat-comments` |
 | `CLEVERTREE_GIT_FALLBACK=1` | Force dulwich when `git` is absent |
+| `CLEVERTREE_IRC_ENABLE=1` | Start Ergo IRC bridge (see [irc-backbone.md](irc-backbone.md)) |
+| `CLEVERTREE_IRC_*` | Host/port/TLS/nick/prefix for the bridge |
 
 ## Public hostnames
 

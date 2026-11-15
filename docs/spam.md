@@ -4,6 +4,8 @@ Spam is ascertained by the **batch SI**, not by a public vote that auto-deletes.
 
 Related: [`default-rules.md`](default-rules.md) · [`policy.md`](policy.md) · [`cases/batch-decisions.md`](cases/batch-decisions.md) · [`person-space.md`](person-space.md).
 
+**Library:** clock helpers live in [`clevertree_chat/spam_court.py`](../clevertree_chat/spam_court.py) (`lifecycle_state`, `SpamClocks`). Batch drain does not yet write flags automatically — GPU SI / human loop applies them.
+
 ---
 
 ## One-sentence rule

@@ -177,10 +177,16 @@ def _page_title(norm: str, href: str = "") -> str:
         return (norm or "This page")[:64]
 
 
-def resolve_page(url: str = "", normalized: str = "", visitor: str = "") -> dict:
+def resolve_page(
+    url: str = "",
+    normalized: str = "",
+    visitor: str = "",
+    page_scope: str = "",
+) -> dict:
     ident = identify(visitor)
     raw = (url or "").strip()
     norm_in = (normalized or "").strip()
+    scope = (page_scope or "").strip().lower()
     hay = f"{raw} {norm_in}".lower()
     for slug, title in STARTER_TITLES.items():
         if slug in hay:
@@ -196,6 +202,7 @@ def resolve_page(url: str = "", normalized: str = "", visitor: str = "") -> dict
                 "title": title,
                 "exists": bool(view.get("exists")),
                 "view": view,
+                "page_scope": scope or "path",
             }
 
     norm = norm_in
@@ -209,6 +216,10 @@ def resolve_page(url: str = "", normalized: str = "", visitor: str = "") -> dict
             norm = "local/unparsed/"
     if not norm:
         norm = "local/new-tab/"
+
+    # Extension: whole registrable domain → one debate (collapse path + query).
+    if scope in {"domain", "site", "host"}:
+        norm = _domain_only_norm(norm, raw)
 
     topic = "u-" + hashlib.sha256(norm.encode("utf-8")).hexdigest()[:16]
     title = _page_title(norm, raw)
@@ -224,7 +235,26 @@ def resolve_page(url: str = "", normalized: str = "", visitor: str = "") -> dict
         "title": title,
         "exists": bool(view.get("exists")),
         "view": view,
+        "page_scope": scope or "path",
     }
+
+
+def _domain_only_norm(norm: str, raw: str = "") -> str:
+    """Collapse a normalized URL (or href) to suffix/host/ only."""
+    try:
+        if raw.startswith("http://") or raw.startswith("https://"):
+            parts = urlparse(raw)
+            host = (parts.hostname or "").lower().removeprefix("www.")
+            if host:
+                # Re-normalize via full URL with path /
+                return normalize_url(f"{parts.scheme}://{host}/")
+        # norm shape: publicSuffix/host/path?...
+        bits = norm.split("/", 2)
+        if len(bits) >= 2:
+            return f"{bits[0]}/{bits[1]}/"
+    except Exception:
+        pass
+    return norm
 
 
 def view_topic(topic: str, visitor: str = "", focus: str = "") -> dict:
@@ -257,6 +287,7 @@ def dispatch(payload: dict, query: dict, cookie: str = "") -> tuple[int, dict]:
             url=str(payload.get("url") or query.get("url") or ""),
             normalized=str(payload.get("normalized") or query.get("normalized") or ""),
             visitor=visitor,
+            page_scope=str(payload.get("page_scope") or query.get("page_scope") or ""),
         )
     if action == "topics":
         return 200, {
@@ -438,11 +469,12 @@ def _dirty_topics(service: DebateService) -> list[str]:
 
 
 def fanout_submit(topic: str, visitor: str, body: dict) -> None:
-    """Broadcast post.live after a successful submit."""
+    """Broadcast post.live after a successful submit; mirror to IRC when bridged."""
     view = body.get("view") or view_topic(topic, visitor)
     filed = str(body.get("comment_id") or body.get("id") or "")
     starting = body.get("starting") or "uncategorized"
     text = body.get("body") or ""
+    author = (view.get("visitor") or {}).get("name") or "Visitor"
     HUB.broadcast(
         topic,
         {
@@ -450,7 +482,7 @@ def fanout_submit(topic: str, visitor: str, body: dict) -> None:
             "topic": topic,
             "comment": {
                 "id": filed,
-                "author": (view.get("visitor") or {}).get("name") or "Visitor",
+                "author": author,
                 "author_uuid": visitor,
                 "body": text,
                 "keys": [],
@@ -464,3 +496,11 @@ def fanout_submit(topic: str, visitor: str, body: dict) -> None:
             "activity": activity_from_view(view, visitor),
         },
     )
+    try:
+        from clevertree_chat.irc_bridge import get_bridge
+
+        bridge = get_bridge()
+        if bridge is not None:
+            bridge.announce_submit(topic, str(text), str(author))
+    except Exception:
+        pass

@@ -184,6 +184,16 @@ def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
     live.open_service()
     live.start_drain_worker()
+    try:
+        from clevertree_chat.irc_bridge import enabled, start_bridge
+
+        if enabled():
+            start_bridge()
+            print("IRC bridge enabled", flush=True)
+        else:
+            print("IRC bridge off (set CLEVERTREE_IRC_ENABLE=1)", flush=True)
+    except Exception as exc:
+        print(f"IRC bridge not started: {exc}", flush=True)
     server = ThreadingHTTPServer(("0.0.0.0", port), ChatHandler)
     print(f"clevertree realtime AI host http://127.0.0.1:{port}/chat", flush=True)
     print(f"websocket ws://127.0.0.1:{port}/api/chat/ws", flush=True)

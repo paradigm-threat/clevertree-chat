@@ -4,6 +4,8 @@ Any public URL can host a Clevertree Chat debate. That does **not** mean every U
 
 Related: [`infra.md`](infra.md) · [`person-space.md`](person-space.md) · [`cases/flock-cameras.md`](cases/flock-cameras.md) · MyProblem [`knowledge-base.md`](../../myproblem/docs/knowledge-base.md) · [`topical-repos.md`](../../myproblem/docs/topical-repos.md).
 
+**Library:** graph helpers in [`clevertree_chat/associations.py`](../clevertree_chat/associations.py) (`add_alias`, `link_related`, `resolve_canonical`). Extension resolves with `page_scope=domain` (one debate per site); embed sites may keep path-level pages. Batch drain does not yet rewrite `associations.json` automatically.
+
 ---
 
 ## One-sentence rule

@@ -1,14 +1,15 @@
 # Clevertree Chat — browser extension
 
-MV3 Chromium side panel. Simplified Debate board matching the web demos.
+MV3 Chromium side panel. Durable Debate board on `api.clevertree.chat`.
 
 ## What it does
 
 - Opens a **side panel** when you click the toolbar icon.
-- Asks **https://api.clevertree.chat** to mint the visitor UUID (`action=identify`) and map the tab URL to a topic id (`action=resolve`). IDs are not generated in the extension.
-- Posts go through durable `/api/chat`; batch SI drains in the background. Live updates use `/api/chat/ws`.
+- Asks **https://api.clevertree.chat** to mint the visitor UUID (`action=identify`) and map the **whole site** (domain-level `page_scope`) to a topic (`action=resolve`). IDs are not generated in the extension.
+- Posts go through durable `/api/chat`; batch SI drains in the background. Live updates use `/api/chat/ws` (and IRC when the host bridge is on).
 - Board stays **empty until you write**.
-- Starter topics (Flock / THC) and any-page boards are live durable — no scripted peers.
+- Short skippable first-use coach (`clevertree.coachSeen`).
+- Toolbar links open live flock / THC boards (not scripted demos).
 
 ## Load unpacked
 
@@ -23,6 +24,13 @@ MV3 Chromium side panel. Simplified Debate board matching the web demos.
 |------|------|
 | `manifest.json` | MV3 + side panel |
 | `background.js` | Open panel on action click |
-| `sidepanel.html` / `.css` / `.js` | Simplified board UI |
-| `normalize-url.js` | Tab URL → debate path |
+| `sidepanel.html` / `.css` / `.js` | Board UI |
+| `normalize-url.js` | Tab URL → debate path (domain collapse in sidepanel) |
 | `icons/` | Toolbar icons |
+
+## Tests
+
+```bash
+node tests/test_extension_normalize.js
+python3 -m unittest tests.test_irc_and_live -v
+```

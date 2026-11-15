@@ -8,7 +8,7 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 mkdir -p "$STAGE/api" "$STAGE/clevertree_chat/demos" "$STAGE/scripts" "$STAGE/chat" \
-  "$STAGE/fronts/snippet" "$STAGE/fixtures/pt-review" "$STAGE/var/clevertree-live"
+  "$STAGE/fronts/snippet" "$STAGE/fixtures/pt-review" "$STAGE/var/clevertree-live" "$STAGE/infra"
 
 # Full library surface for DebateService + dulwich git fallback
 cp "$ROOT/clevertree_chat/"*.py "$STAGE/clevertree_chat/"
@@ -24,6 +24,8 @@ cp "$ROOT/fronts/snippet/clevertree-board.js" "$ROOT/fronts/snippet/clevertree-b
   "$ROOT/fronts/snippet/embed.html" "$STAGE/fronts/snippet/"
 cp "$ROOT/fixtures/pt-review/"*.json "$STAGE/fixtures/pt-review/"
 cp "$ROOT/styles.css" "$ROOT/icon-128x128.png" "$ROOT/favicon.ico" "$ROOT/requirements.txt" "$STAGE/"
+# Gauge dry-run scripts (missing files must not break drain)
+cp "$ROOT/infra/spot-wake-comments.sh" "$ROOT/infra/spot-decommission-comments.sh" "$STAGE/infra/"
 
 # Comments tree is created/seeded at container start (ConfigMap size limit).
 tar -C "$STAGE" -czf /tmp/clevertree-chat-host.tgz .

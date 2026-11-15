@@ -128,6 +128,19 @@ html, body {
 
 .ct-linkish:hover { color: var(--ct-green-deep); }
 
+.ct-coach {
+  margin: 0.5rem 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ct-line);
+  border-radius: 0.55rem;
+  background: var(--ct-panel);
+}
+.ct-coach h2 {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 1rem;
+}
+.ct-coach p { margin: 0; color: var(--ct-ink-soft); font-size: 0.86rem; }
+
 .ct-demo {
   margin: 0.65rem 0.85rem 0;
   padding: 0.7rem 0.75rem;

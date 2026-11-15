@@ -35,7 +35,26 @@ spec:
               pip install --no-cache-dir -q -r /app/requirements.txt
               export CLEVERTREE_COMMENTS_PATH=/app/var/clevertree-live/comments
               export CLEVERTREE_GIT_FALLBACK=1
+              export CLEVERTREE_IRC_ENABLE="${CLEVERTREE_IRC_ENABLE:-1}"
+              export CLEVERTREE_IRC_HOST="${CLEVERTREE_IRC_HOST:-flashbackrepository.org}"
+              export CLEVERTREE_IRC_PORT="${CLEVERTREE_IRC_PORT:-6697}"
+              export CLEVERTREE_IRC_TLS="${CLEVERTREE_IRC_TLS:-1}"
+              export CLEVERTREE_IRC_NICK="${CLEVERTREE_IRC_NICK:-clevertree-si}"
+              export CLEVERTREE_IRC_PREFIX="${CLEVERTREE_IRC_PREFIX:-pt}"
               exec python3 scripts/chat_host.py 8790
+          env:
+            - name: CLEVERTREE_IRC_ENABLE
+              value: "1"
+            - name: CLEVERTREE_IRC_HOST
+              value: flashbackrepository.org
+            - name: CLEVERTREE_IRC_PORT
+              value: "6697"
+            - name: CLEVERTREE_IRC_TLS
+              value: "1"
+            - name: CLEVERTREE_IRC_NICK
+              value: clevertree-si
+            - name: CLEVERTREE_IRC_PREFIX
+              value: pt
           ports:
             - containerPort: 8790
               hostPort: 8790

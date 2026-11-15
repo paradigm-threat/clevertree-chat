@@ -23,22 +23,26 @@ Standing debate, not a reply thread. People post original points; the **batch SI
 
 Deploy chat host: `bash infra/deploy-chat-host.sh` (kubeconfig `~/.kube/myproblem-intake.yaml`).
 
+IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge (`CLEVERTREE_IRC_ENABLE=1`), `#pt-<topic>` ↔ durable submit.
+
 ## What works today
 
 - **Realtime AI host** on `api.clevertree.chat`: durable `/api/chat` (+ `/api/debate` alias) → comments checkout; WS fan-out; always-on heuristic drain
+- **IRC bridge** (when enabled): PRIVMSG ↔ submit; WS mirrors the same events
 - Live boards `/chat`, `/chat/flock-cameras`, `/chat/thc-legalization`, PT review `/chat/5g` / `geoengineering` / `general` (seeded or full SoT via `CLEVERTREE_COMMENTS_PATH`)
 - Heuristic batch (file keys, `other`, pairs, positions, questions) — no GPU yet
-- Extension → `api.clevertree.chat` only; first-use skippable coach on the web board
+- Extension → `api.clevertree.chat` only; domain-level page scope; first-use skippable coach
 - ~5.4k Paradigm Threat posts refiled on the comments branch
+- Association graph + spam court **clock helpers** in library (batch application still GPU/human loop)
 
 ## Near-future goals (priority)
 
 1. **Full SoT mount on Intake** — point host at the full comments checkout (not fixture seed only); GitHub sync when desired.
-2. **Real batch SI pass** — wake Spot GPU when needed; run a true curator once end-to-end (file + summarize + ask humans on low confidence).
+2. **Real batch SI pass** — wake Spot GPU when needed (`CLEVERTREE_SPOT_WAKE`); run a true curator once end-to-end (file + summarize + ask humans on low confidence).
 3. **Internet investigations** — batch cites and fetches live counters (today: URL recorded, **page not fetched**). Prove egress from Intake/Spot vs Vercel.
 4. **Anti-bot / anti-spam access** — measure what blocks plain HTTP, headless browsers, and APIs before wiring fetch into the curator. No fetch path exists yet.
-5. **Human loop** — low-confidence → `questions.md` already; deliver asks (IRC or equivalent) and fold answers into `rules.md` / KB.
-6. **Spam court + URL associations** — hide/contest clocks; batch canonicalization of mirror pages (architecture locked, not built).
+5. **Human loop** — low-confidence → `questions.md` already; deliver asks on IRC and fold answers into `rules.md` / KB.
+6. **Spam court + URL associations** — apply `spam_court` / `associations` in drain (helpers landed; batch wiring next).
 
 ## Locked product rules (don’t undo)
 
