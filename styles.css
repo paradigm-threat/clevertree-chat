@@ -696,12 +696,46 @@ footer {
 .trees-copy {
   /*
     Clear the fixed forest band (.trees-bg / #forest share --trees-band-h).
-    Title stays above trees via .trees-wrap z-index.
+    Full .wrap width — do not inherit front-page .lead / .band p measure caps.
+    Frosted cream starts at the title so trees show through while copy stays legible.
   */
   position: relative;
   z-index: 1;
-  padding-top: max(12rem, calc(var(--trees-band-h) - 4.75rem));
-  max-width: 40rem;
+  isolation: isolate;
+  width: 100%;
+  max-width: none;
+  padding: max(12rem, calc(var(--trees-band-h) - 4.75rem)) 0.95rem 1.75rem;
+  margin-inline: 0;
+}
+
+.trees-copy::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  top: max(12rem, calc(var(--trees-band-h) - 4.75rem));
+  bottom: 0;
+  border-radius: 0.4rem;
+  pointer-events: none;
+  /* One frost only — mid opacity between the old 55% halo and 80% fill */
+  background: color-mix(in srgb, var(--cream) 68%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.trees-copy > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Undo homepage column measure so forest prose fills the article */
+.trees-copy .lead,
+.trees-copy .band p,
+.trees-lead,
+.trees-bridge,
+.trees-narrative {
+  max-width: none;
 }
 
 .trees-wrap > header {
@@ -710,12 +744,10 @@ footer {
 }
 
 .trees-lead {
-  max-width: 40rem;
   color: var(--ink);
 }
 
 .trees-bridge {
-  max-width: 40rem;
   margin: 0.85rem 0 0;
   color: var(--ink);
   font-family: var(--serif);
@@ -731,10 +763,6 @@ footer {
   margin: 1rem 0 1.4rem;
 }
 
-.trees-narrative {
-  max-width: 40rem;
-}
-
 .trees-narrative .band {
   padding: 2.75rem 0;
 }
@@ -744,7 +772,7 @@ footer {
 }
 
 .trees-narrative h2 {
-  max-width: 22ch;
+  max-width: none;
   font-size: clamp(1.65rem, 3vw, 2.35rem);
   margin-bottom: 1rem;
 }
@@ -864,6 +892,10 @@ footer {
 
   .trees-copy {
     padding-top: max(14rem, calc(var(--trees-band-h) - 4.75rem));
+  }
+
+  .trees-copy::before {
+    top: max(14rem, calc(var(--trees-band-h) - 4.75rem));
   }
 }
 
