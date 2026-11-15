@@ -31,8 +31,9 @@
   <main>
     <h1>Embed Clevertree Debate board</h1>
     <p>
-      Guided demos use the Debate board UI only (not the legacy activity-list widget).
-      Point <code>data-api-base</code> at the Intake chat host for live WebSocket updates.
+      Live durable boards on the Intake host. The board stays <strong>empty</strong> until someone writes.
+      Point <code>data-api-base</code> at the chat host for WebSocket updates. Any-URL boards (extension) normalize
+      with <code>normalizeUrl</code> in <code>fronts/extension/normalize-url.js</code> before <code>resolve</code>.
     </p>
     <pre>&lt;link rel="stylesheet" href="https://api.clevertree.chat/fronts/snippet/clevertree-board.css"&gt;
 &lt;div
@@ -40,11 +41,10 @@
   data-api="chat"
   data-api-base="https://api.clevertree.chat"
   data-topic="thc-legalization"
-  data-guided="true"
 &gt;&lt;/div&gt;
 &lt;script src="https://api.clevertree.chat/fronts/snippet/clevertree-board.js"&gt;&lt;/script&gt;</pre>
     <p>
-      Live demos:
+      Live boards:
       <a href="https://api.clevertree.chat/chat/thc-legalization">thc-legalization</a>
       ·
       <a href="https://api.clevertree.chat/chat/flock-cameras">flock-cameras</a>.
@@ -53,7 +53,6 @@
       data-clevertree-board
       data-api="chat"
       data-topic="flock-cameras"
-      data-guided="true"
       style="margin-top:1.5rem"
     ></div>
   </main>

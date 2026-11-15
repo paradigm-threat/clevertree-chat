@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Intake-style Clevertree Chat host: static /chat + /api/chat HTTP + WebSocket.
+"""Realtime AI server: durable /api/chat + WebSocket on comments SoT.
 
 Default: http://127.0.0.1:8790
-Production: reverse-proxied on intake.myproblem.app (see docs/chat-host.md).
+Production: api.clevertree.chat (see docs/chat-host.md).
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from api import demo  # noqa: E402
 from clevertree_chat.chat_hub import HUB, activity_from_view  # noqa: E402
+from clevertree_chat import live_runtime as live  # noqa: E402
 from clevertree_chat.wsutil import accept_key, encode_close, encode_text, iter_frames  # noqa: E402
 
 PORT = 8790
@@ -34,7 +34,7 @@ class ChatHandler(SimpleHTTPRequestHandler):
         sys.stderr.write("%s\n" % (fmt % args))
 
     def do_OPTIONS(self):
-        if self.path.startswith("/api/chat"):
+        if self.path.startswith("/api/chat") or self.path.startswith("/api/debate"):
             self.send_response(204)
             self._cors()
             self.end_headers()
@@ -45,7 +45,7 @@ class ChatHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path in ("/api/chat/ws", "/api/chat/ws/"):
             return self._websocket(parsed)
-        if parsed.path.startswith("/api/chat"):
+        if parsed.path.startswith("/api/chat") or parsed.path.startswith("/api/debate"):
             return self._api(parsed, {})
         if parsed.path == "/chat" or parsed.path.startswith("/chat/"):
             self.path = "/chat/index.html"
@@ -54,7 +54,7 @@ class ChatHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
-        if parsed.path.startswith("/api/chat"):
+        if parsed.path.startswith("/api/chat") or parsed.path.startswith("/api/debate"):
             length = int(self.headers.get("Content-Length") or 0)
             payload = json.loads(self.rfile.read(length).decode() or "{}") if length else {}
             return self._api(parsed, payload)
@@ -69,61 +69,36 @@ class ChatHandler(SimpleHTTPRequestHandler):
 
     def _api(self, parsed, payload: dict):
         query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
-        # Map /api/chat -> demo dispatch (same actions)
         try:
-            code, body = demo.dispatch(payload, query)
+            code, body = live.dispatch(payload, query, self.headers.get("Cookie") or "")
             if isinstance(body, dict) and "view" in body:
-                body["activity"] = activity_from_view(body["view"], str(payload.get("visitor") or query.get("visitor") or ""))
+                body["activity"] = activity_from_view(
+                    body["view"], str(payload.get("visitor") or query.get("visitor") or "")
+                )
             elif isinstance(body, dict) and body.get("exists") is not None:
-                body["activity"] = activity_from_view(body, str(payload.get("visitor") or query.get("visitor") or ""))
-            # Fan-out after mutating actions
+                body["activity"] = activity_from_view(
+                    body, str(payload.get("visitor") or query.get("visitor") or "")
+                )
             action = payload.get("action") or query.get("action") or "view"
             topic = str(payload.get("topic") or query.get("topic") or "")
             visitor = str(payload.get("visitor") or query.get("visitor") or "")
             if action == "submit" and code == 200 and topic:
-                comment = None
-                state = demo.board(topic)
-                if state.get("pending"):
-                    comment = next(c for c in state["comments"] if c["id"] == state["pending"])
-                HUB.broadcast(
-                    topic,
-                    {
-                        "type": "post.live",
-                        "topic": topic,
-                        "comment": {
-                            "id": comment["id"] if comment else "",
-                            "author": comment["author_name"] if comment else "",
-                            "author_uuid": comment.get("author_uuid") if comment else "",
-                            "body": comment["body"] if comment else "",
-                            "keys": [],
-                            "starting": "uncategorized",
-                            "placed": False,
-                            "mine": bool(visitor) and comment and comment.get("author_uuid") == visitor,
-                            "injected": False,
-                            "kind": "post",
-                        },
-                        "view": body.get("view"),
-                    },
-                )
+                live.fanout_submit(topic, visitor, body if isinstance(body, dict) else {})
             if action == "drain" and code == 200 and topic:
                 HUB.broadcast(
                     topic,
                     {
                         "type": "batch.notice",
                         "topic": topic,
-                        "notice": body.get("batch_notice") or body.get("message") or "",
-                        "view": body.get("view"),
+                        "notice": (body or {}).get("batch_notice")
+                        or (body or {}).get("message")
+                        or "",
+                        "view": (body or {}).get("view"),
                     },
                 )
                 HUB.broadcast(
                     topic,
-                    {"type": "board.snapshot", "topic": topic, "view": body.get("view")},
-                )
-            if action == "replay" and code == 200 and topic:
-                HUB.cancel_timer(topic)
-                HUB.broadcast(
-                    topic,
-                    {"type": "board.snapshot", "topic": topic, "view": body.get("view")},
+                    {"type": "board.snapshot", "topic": topic, "view": (body or {}).get("view")},
                 )
         except ValueError as exc:
             code, body = 400, {"error": str(exc)}
@@ -150,13 +125,6 @@ class ChatHandler(SimpleHTTPRequestHandler):
         if not topic:
             self.send_error(400, "topic required")
             return
-        try:
-            from clevertree_chat.demos import get_demo
-
-            get_demo(topic)
-        except ValueError as exc:
-            self.send_error(400, str(exc))
-            return
 
         self.send_response(101, "Switching Protocols")
         self.send_header("Upgrade", "websocket")
@@ -169,9 +137,8 @@ class ChatHandler(SimpleHTTPRequestHandler):
             self.wfile.flush()
 
         HUB.subscribe(topic, send_raw)
-        # Hello + current snapshot
         try:
-            view = demo.build_view(topic, visitor)
+            view = live.view_topic(topic, visitor)
             send_raw(
                 json.dumps(
                     {
@@ -193,7 +160,7 @@ class ChatHandler(SimpleHTTPRequestHandler):
                     break
                 buf.extend(chunk)
                 for opcode, payload in iter_frames(buf):
-                    if opcode == 0x8:  # close
+                    if opcode == 0x8:
                         try:
                             self.wfile.write(encode_close())
                             self.wfile.flush()
@@ -215,9 +182,12 @@ class ChatHandler(SimpleHTTPRequestHandler):
 
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else PORT
+    live.open_service()
+    live.start_drain_worker()
     server = ThreadingHTTPServer(("0.0.0.0", port), ChatHandler)
-    print(f"clevertree chat host http://127.0.0.1:{port}/chat", flush=True)
+    print(f"clevertree realtime AI host http://127.0.0.1:{port}/chat", flush=True)
     print(f"websocket ws://127.0.0.1:{port}/api/chat/ws", flush=True)
+    print(f"comments SoT {live.comments_path()}", flush=True)
     server.serve_forever()
 
 

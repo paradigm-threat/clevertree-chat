@@ -25,14 +25,15 @@ Deploy chat host: `bash infra/deploy-chat-host.sh` (kubeconfig `~/.kube/myproble
 
 ## What works today
 
-- Guided demos + PT review boards on `api.clevertree.chat` (`/chat`, `/chat/5g`, `/chat/geoengineering`, `/chat/general`)
-- Heuristic / catalog batch (file keys, `other` for non-arguments, pairs, positions, questions)
-- Extension talks to `api.clevertree.chat` only (no MyProblem / localhost)
+- **Realtime AI host** on `api.clevertree.chat`: durable `/api/chat` (+ `/api/debate` alias) → comments checkout; WS fan-out; always-on heuristic drain
+- Live boards `/chat`, `/chat/flock-cameras`, `/chat/thc-legalization`, PT review `/chat/5g` / `geoengineering` / `general` (seeded or full SoT via `CLEVERTREE_COMMENTS_PATH`)
+- Heuristic batch (file keys, `other`, pairs, positions, questions) — no GPU yet
+- Extension → `api.clevertree.chat` only; first-use skippable coach on the web board
 - ~5.4k Paradigm Threat posts refiled on the comments branch
 
 ## Near-future goals (priority)
 
-1. **Chat UI in the wild** — durable submit → comments git; fix `/api/debate` (currently 504); always-on drain worker; not demo-only boards.
+1. **Full SoT mount on Intake** — point host at the full comments checkout (not fixture seed only); GitHub sync when desired.
 2. **Real batch SI pass** — wake Spot GPU when needed; run a true curator once end-to-end (file + summarize + ask humans on low confidence).
 3. **Internet investigations** — batch cites and fetches live counters (today: URL recorded, **page not fetched**). Prove egress from Intake/Spot vs Vercel.
 4. **Anti-bot / anti-spam access** — measure what blocks plain HTTP, headless browsers, and APIs before wiring fetch into the curator. No fetch path exists yet.

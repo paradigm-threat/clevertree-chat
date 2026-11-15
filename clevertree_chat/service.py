@@ -17,12 +17,18 @@ class DebateService:
         self.auth = auth
 
     def view(self, topic: str, focus: str = "", visitor: str = "") -> dict:
+        return self.view_for_page(PAGE, topic, focus=focus, visitor=visitor)
+
+    def view_for_page(self, page: str, topic: str, focus: str = "", visitor: str = "") -> dict:
         if not str(topic or "").strip():
-            return build_view(self.debate, page=PAGE, topic="", focus=focus, visitor=visitor)
-        return build_view(self.debate, page=PAGE, topic=topic, focus=focus, visitor=visitor)
+            return build_view(self.debate, page=page, topic="", focus=focus, visitor=visitor)
+        return build_view(self.debate, page=page, topic=topic, focus=focus, visitor=visitor)
 
     def preview(self, topic: str, body: str) -> dict:
-        result = self.debate.preview(page=PAGE, topic=topic, body=body or "")
+        return self.preview_for_page(PAGE, topic, body)
+
+    def preview_for_page(self, page: str, topic: str, body: str) -> dict:
+        result = self.debate.preview(page=page, topic=topic, body=body or "")
         result["filed"] = False
         return result
 
@@ -35,10 +41,24 @@ class DebateService:
         name: str | None = None,
         session: Session | None = None,
     ) -> dict:
+        return self.submit_for_page(
+            PAGE, visitor, topic, body, chosen=chosen, name=name, session=session
+        )
+
+    def submit_for_page(
+        self,
+        page: str,
+        visitor: str,
+        topic: str,
+        body: str,
+        chosen: str | None = None,
+        name: str | None = None,
+        session: Session | None = None,
+    ) -> dict:
         started = time.perf_counter()
         filed = self.debate.submit(
             visitor,
-            page=PAGE,
+            page=page,
             topic=topic,
             body=body,
             chosen=chosen or None,
@@ -49,21 +69,26 @@ class DebateService:
         latency_ms = (time.perf_counter() - started) * 1000
         record_submit(self.debate, filed["starting"], latency_ms)
         filed["latency_ms"] = round(latency_ms, 3)
-        filed["view"] = self.view(topic, visitor=visitor)
+        filed["body"] = body
+        filed["view"] = self.view_for_page(page, topic, visitor=visitor)
         return filed
 
     def drain(self, topic: str = "", visitor: str = "") -> dict:
+        return self.drain_for_page(PAGE, topic, visitor)
+
+    def drain_for_page(self, page: str, topic: str = "", visitor: str = "") -> dict:
         result = self.debate.drain()
         echo = measure_batch(self.debate)
         return {
             "hardware_should_shut_down": result.hardware_should_shut_down,
             "message": result.message,
             "commits": result.commits,
+            "batch_notice": result.message,
             "cloud_api_called": False,
             "booted": False,
             "wake": echo["wake"],
             "decommission": echo["decommission"],
-            "view": self.view(topic, visitor=visitor) if topic else None,
+            "view": self.view_for_page(page, topic, visitor=visitor) if topic else None,
         }
 
     def vote(

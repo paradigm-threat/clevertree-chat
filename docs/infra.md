@@ -2,7 +2,7 @@
 
 The front of the product is the live path. While someone writes, it may show a suggested existing category. That suggestion does not file the post. The author does not wait on the batch, and the live path does not boot a GPU.
 
-**Chat host:** the containable UI, `/api/chat`, and WebSocket fan-out run on the chat host (`scripts/chat_host.py`, see [`chat-host.md`](chat-host.md)). Peer posts are server-injected. Cleverchat’s public hostname is **`https://api.clevertree.chat`** (same hardware as Intake). Vercel does not own the demo socket — `clevertree.chat/try` links to `https://api.clevertree.chat/chat/…`.
+**Chat host (realtime AI server):** the containable UI, durable `/api/chat`, WebSocket fan-out, and always-on heuristic drain run on the chat host (`scripts/chat_host.py`, see [`chat-host.md`](chat-host.md)). No scripted peers. Cleverchat’s public hostname is **`https://api.clevertree.chat`** (same hardware as Intake). Vercel does not own the socket — `clevertree.chat/try` links to `https://api.clevertree.chat/chat/…`.
 
 The back is the deep pass. A job file on the `comments` branch is the queue. The worker checks out `comments` only, drains every dirty page, and lets new comments that arrive during the drain join that same drain. When the queue is empty, the result says the hardware should shut down.
 

@@ -32,6 +32,9 @@ spec:
             - |
               set -euo pipefail
               tar -xzf /code/tree.tar.gz -C /app
+              pip install --no-cache-dir -q -r /app/requirements.txt
+              export CLEVERTREE_COMMENTS_PATH=/app/var/clevertree-live/comments
+              export CLEVERTREE_GIT_FALLBACK=1
               exec python3 scripts/chat_host.py 8790
           ports:
             - containerPort: 8790
@@ -41,21 +44,21 @@ spec:
             httpGet:
               path: /chat
               port: 8790
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /chat
               port: 8790
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             periodSeconds: 10
           resources:
             requests:
               cpu: "50m"
-              memory: "64Mi"
+              memory: "128Mi"
             limits:
               cpu: "500m"
-              memory: "256Mi"
+              memory: "512Mi"
           volumeMounts:
             - name: code
               mountPath: /code

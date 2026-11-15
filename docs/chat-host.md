@@ -1,71 +1,53 @@
-# Clevertree Chat host
+# Clevertree Chat host (realtime AI server)
 
-The guided multi-person debate runs on the **chat host**, not on Vercel marketing.
+The always-on **realtime AI server** runs on the chat host: lightweight preview/submit, WebSocket fan-out, and an always-on heuristic batch drain. It does **not** boot a GPU.
 
 | | |
 |--|--|
 | Process | `python3 scripts/chat_host.py` (default `:8790`) |
 | UI | `/chat`, `/chat/<topic>` |
-| HTTP API | `/api/chat` (`view`, `preview`, `submit`, `drain`, `replay`, plus `identify` / `resolve` for the extension) |
+| HTTP API | `/api/chat` and `/api/debate` (same durable dispatch) |
 | WebSocket | `/api/chat/ws?topic=…&visitor=…` |
 | Events | `hello`, `post.live`, `batch.notice`, `board.snapshot` |
-
-Extension identity:
-
-- `action=identify` — mint or validate a visitor UUID (server-issued).
-- `action=resolve` — normalize a tab URL and return `{ topic, guided, visitor, view, … }`. Freeform pages get `u-<sha256…>` topic ids; guided demos keep fixed slugs.
-
-## Public hostnames (same process)
-
-| Hostname | Role |
-|--|--|
-| **https://api.clevertree.chat** | Cleverchat public API + demos + extension (entire hostname → `:8790`) |
-| `https://intake.myproblem.app` | Shared Intake node; chat paths also proxy to `:8790`; tickets stay on `:8787` |
-
-Cleverchat product links and the browser extension use **api.clevertree.chat** only.
+| SoT | Local comments checkout (`CLEVERTREE_COMMENTS_PATH`) → optional GitHub push |
 
 ## Behavior
 
-- The visitor posts only through the containable composer.
-- Peer speakers (Jordan in the guided scripts) are **injected by the server** after a visitor beat drains, then fanned out over WebSocket.
-- Activity rows mark `data-mine="true"` for the visitor and a different accent for others.
+- Visitor posts through the board composer; IDs from `identify` / `resolve`.
+- Submit files a starting slot onto the comments tree immediately.
+- Background drain worker runs heuristic SI organization; clients are not the curator.
+- No scripted peers (Jordan/Maya). First-use coach is UI-only and skippable.
+
+## Environment
+
+| Var | Role |
+|--|--|
+| `CLEVERTREE_COMMENTS_PATH` | Comments checkout (created if missing) |
+| `CLEVERTREE_AUTH_PATH` | Auth tree (default under `var/clevertree-live/auth`) |
+| `CLEVERTREE_GITHUB_TOKEN` + `CLEVERTREE_COMMENTS_SYNC=1` | Pull/push via GitHub API (optional) |
+| `CLEVERTREE_USE_SIBLING=1` | Dev: use `../clevertree-chat-comments` |
+| `CLEVERTREE_GIT_FALLBACK=1` | Force dulwich when `git` is absent |
+
+## Public hostnames
+
+| Hostname | Role |
+|--|--|
+| **https://api.clevertree.chat** | Cleverchat API + live boards + extension |
+| `https://intake.myproblem.app` | Shared Intake node; chat paths → `:8790` |
 
 ## Deploy
-
-From this repo (ops still use the shared Intake kubeconfig by default):
 
 ```bash
 bash infra/deploy-chat-host.sh
 ```
 
-That script:
-
-1. Packs a slim tree into ConfigMap `clevertree-chat-code`
-2. Applies [`infra/k8s/chat-host.yaml`](../infra/k8s/chat-host.yaml) (Python host on `:8790`, hostNetwork)
-3. Patches Caddy with dual sites: `api.clevertree.chat` → `:8790`; `intake.myproblem.app` chat paths → `:8790`, tickets → `:8787`
-
-Caddy dual-domain is mirrored in `myproblem-tickets/infra/k8s/intake-caddy.yaml` so ticket rollouts keep both hosts.
-
-Public Cleverchat URLs:
-
-- `https://api.clevertree.chat/chat`
-- `https://api.clevertree.chat/chat/thc-legalization`
-- `https://api.clevertree.chat/chat/flock-cameras`
-- Filed PT backlog review (seeded from comments / `fixtures/pt-review/`):
-  - `https://api.clevertree.chat/chat/5g`
-  - `https://api.clevertree.chat/chat/geoengineering`
-  - `https://api.clevertree.chat/chat/general`
-
-Set `CLEVERTREE_PT_COMMENTS` to a comments-repo checkout to seed full trees; otherwise the host uses the JSON fixtures.
-
-Vercel (`clevertree.chat`) keeps marketing and links here. It does not own the demo socket.
+Packs the library, seeds light PT fixtures into `var/clevertree-live/comments`, installs `dulwich`, and rolls the Intake deployment.
 
 ## Local
 
 ```bash
+export CLEVERTREE_COMMENTS_PATH=/tmp/clevertree-comments
+python3 scripts/seed_live_comments_from_fixtures.py "$CLEVERTREE_COMMENTS_PATH"  # optional PT seed
 python3 scripts/chat_host.py 8790
-# open http://127.0.0.1:8790/chat/thc-legalization
-npx playwright test tests/e2e/chat-websocket.spec.ts
+# open http://127.0.0.1:8790/chat/flock-cameras
 ```
-
-Boards are in-memory for this pass (prove UI + WS). Git `comments` branch persistence comes later.

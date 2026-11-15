@@ -596,24 +596,11 @@
     setStatus("");
     render();
     try {
-      const filed = await call({ action: "submit", body: body, name: "You" });
-      pauseOrApply({
-        label: "Your point",
-        message: "Your point is live — even before organization.",
-        apply: function () {
-          applyView(filed.view, { highlightActivity: true });
-          pushActivity("live", "Your point is live", true);
-        },
-      });
-      const drained = await call({ action: "drain" });
-      pauseOrApply({
-        label: "Organizing",
-        message: drained.batch_notice || drained.message || "Board updated.",
-        apply: function () {
-          applyView(drained.view, { highlightActivity: true });
-          pushActivity("batch", drained.batch_notice || drained.message || "Board updated", true);
-        },
-      });
+      const filed = await call({ action: "submit", body: body });
+      if (filed.view) applyView(filed.view, { highlightActivity: true });
+      pushActivity("live", "Your point is live", true);
+      store.demoMode = false;
+      writeDemoPref(false);
       els.body.value = "";
     } catch (err) {
       setStatus(err.message || "Could not post.", true);
@@ -626,16 +613,7 @@
   }
 
   async function resetDemo() {
-    try {
-      const data = await call({ action: "replay" });
-      store.demoQueue = [];
-      store.demoPaused = false;
-      applyView(data.view);
-      setStatus("Reset.");
-      render();
-    } catch (err) {
-      setStatus(err.message || "Reset failed.", true);
-    }
+    setStatus("Reset removed on live boards.", true);
   }
 
   async function connectWs() {
@@ -747,15 +725,12 @@
     try {
       const resolved = await resolveOnServer(o);
       store.topic = resolved.topic;
-      store.guided = !!resolved.guided;
+      store.guided = false;
+      store.demoMode = false;
+      writeDemoPref(false);
       store.pageUrl = resolved.url || store.pageUrl || "";
       store.pageNorm = resolved.normalized || resolved.topic;
       store.pageLabel = resolved.title || GUIDED[resolved.topic] || resolved.topic;
-      if (store.guided) {
-        if (o.forcedTopic) store.demoMode = true;
-      } else {
-        store.demoMode = false;
-      }
       if (resolved.view) applyView(resolved.view);
       else store.board = emptyBoard(store.topic, store.pageLabel);
       setStatus("");

@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clevertree Chat — Guided demos</title>
-  <meta name="description" content="Interactive guided demos of Clevertree Chat. Not live hosted topics — scripted walkthroughs with simulated peers.">
+  <title>Clevertree Chat — Live debates</title>
+  <meta name="description" content="Live standing debates on durable boards. SI organizes perspectives; it does not pick winners.">
   <meta name="theme-color" content="#D4F3FB">
   <meta name="robots" content="noindex">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Clevertree Chat">
-  <meta property="og:title" content="Clevertree Chat — Guided demos only">
-  <meta property="og:description" content="Interactive guided demos. Not live hosted topics — scripted walkthroughs with simulated peers.">
+  <meta property="og:title" content="Clevertree Chat — Live debates">
+  <meta property="og:description" content="Live standing debates on durable boards. SI organizes; humans prefer.">
   <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -31,35 +31,34 @@
         <img src="/icon-128x128.png" alt="" width="32" height="32">
         Clevertree Chat
       </a>
-      <a class="nav-try" href="/chat" aria-current="page">Guided demos</a>
+      <a class="nav-try" href="/chat" aria-current="page">Live debates</a>
     </header>
     <main id="main" class="try-page">
-      <p class="demo-only-banner" id="demo-banner" role="status">Interactive demo only · not a live hosted topic</p>
-      <p class="kicker" id="host-kicker">Guided demos</p>
+      <p class="kicker" id="host-kicker">Live debates</p>
       <h1 id="host-title">Standing debate</h1>
-      <p class="lead-quiet" id="host-lead">Scripted walkthroughs. Simulated peers. Demo pauses are UI-only.</p>
-      <p id="host-blurb">Pick a guided topic below. Nothing here is a real debate we are hosting yet — it is a product demo of the Debate board.</p>
+      <p class="lead-quiet" id="host-lead">Durable boards. Real posts. SI organizes the map — it does not vote or pick winners.</p>
+      <p id="host-blurb">Pick a topic. First visit gets a short skippable tour; after that the board is just the board.</p>
       <p id="host-links" class="hint">
-        <a href="/chat/thc-legalization">thc-legalization demo</a>
+        <a href="/chat/thc-legalization">thc-legalization</a>
         ·
-        <a href="/chat/flock-cameras">flock-cameras demo</a>
+        <a href="/chat/flock-cameras">flock-cameras</a>
         ·
-        <a href="/chat/5g">5g review</a>
+        <a href="/chat/5g">5g</a>
         ·
-        <a href="/chat/geoengineering">geoengineering review</a>
+        <a href="/chat/geoengineering">geoengineering</a>
         ·
-        <a href="/chat/general">general review</a>
+        <a href="/chat/general">general</a>
         ·
         <a href="https://clevertree.chat/try">Marketing site</a>
       </p>
       <div id="demo-chooser" class="map" hidden>
-        <p class="topic">Guided demo topics</p>
+        <p class="topic">Open topics</p>
         <div class="pair">
-          <a href="/chat/flock-cameras">flock-cameras demo</a>
+          <a href="/chat/flock-cameras">flock-cameras</a>
           <span class="vs">or</span>
-          <a href="/chat/thc-legalization">thc-legalization demo</a>
+          <a href="/chat/thc-legalization">thc-legalization</a>
         </div>
-        <p class="topic" style="margin-top:1.25rem">Filed PT backlog (review)</p>
+        <p class="topic" style="margin-top:1.25rem">Filed PT backlog</p>
         <div class="pair">
           <a href="/chat/5g">5g</a>
           <span class="vs">·</span>
@@ -69,15 +68,9 @@
         </div>
       </div>
       <div id="demo-mount" hidden></div>
-      <aside class="demo-note">
-        <p>
-          We can think of many topics worth demoing that we are not putting here because they are too hot for a guided walkthrough — Israel–Palestine among them.
-          We are still eager to run those debates in Clevertree. Standing arguments, not reply threads, are how we expect to lower the inflammation current feeds keep feeding, and to make progress instead of another endless holy war.
-        </p>
-      </aside>
     </main>
     <footer>
-      <p>Cleverchat API host · guided demos only. Marketing lives on clevertree.chat.</p>
+      <p>Cleverchat realtime AI host · durable comments. Marketing on clevertree.chat.</p>
     </footer>
   </div>
   <script>
@@ -91,34 +84,26 @@
       const links = document.getElementById("host-links");
       const chooser = document.getElementById("demo-chooser");
       const mount = document.getElementById("demo-mount");
-      const banner = document.getElementById("demo-banner");
       const copy = {
         "flock-cameras": {
           title: "Should cities use camera networks?",
-          blurb:
-            "Demo script: you post as the visitor; Jordan is injected by the server and labeled simulated. Demo mode pauses after each update so you can Continue — the server is not waiting.",
-          review: false,
+          blurb: "Live durable board. Post a point; SI organizes perspectives in the background.",
         },
         "thc-legalization": {
           title: "Should adult-use cannabis be legal?",
-          blurb:
-            "Demo script: you post as the visitor; peer beats are injected over WebSocket and labeled simulated. Demo mode pauses after each update so you can Continue — the server is not waiting.",
-          review: false,
+          blurb: "Live durable board. Post a point; SI organizes perspectives in the background.",
         },
         "5g": {
-          title: "5G — filed backlog (review)",
-          blurb: "Refiled Paradigm Threat backlog for review. Not a guided script.",
-          review: true,
+          title: "5G — filed backlog",
+          blurb: "Paradigm Threat backlog on the comments SoT — live readable board.",
         },
         geoengineering: {
-          title: "Geoengineering — filed backlog (review)",
-          blurb: "Refiled Paradigm Threat backlog for review. Not a guided script.",
-          review: true,
+          title: "Geoengineering — filed backlog",
+          blurb: "Paradigm Threat backlog on the comments SoT — live readable board.",
         },
         general: {
-          title: "General — filed backlog (review)",
-          blurb: "Refiled Paradigm Threat backlog for review (capped per key). Not a guided script.",
-          review: true,
+          title: "General — filed backlog",
+          blurb: "Paradigm Threat backlog on the comments SoT — live readable board.",
         },
       };
       if (!topic) {
@@ -128,29 +113,20 @@
       }
       const meta = copy[topic] || {
         title: topic,
-        blurb: "Guided product demo on the chat host — not a live hosted debate.",
-        review: false,
+        blurb: "Live durable board on the chat host.",
       };
-      kicker.textContent = meta.review ? "Filed backlog review" : "Interactive demo only";
+      kicker.textContent = "Live debate";
       title.textContent = meta.title;
-      lead.textContent = meta.review
-        ? "Read-only review of filed PT comments on the Debate board."
-        : "Not a live topic. Scripted walkthrough with simulated peers.";
+      lead.textContent = "Durable board. Real posts. Short coach on first visit only.";
       blurb.textContent = meta.blurb;
-      if (banner) {
-        banner.textContent = meta.review
-          ? "Filed PT backlog · review board · not a guided walkthrough"
-          : "Interactive demo only · scripted walkthrough · not a live hosted topic";
-      }
       chooser.hidden = true;
       mount.hidden = false;
       mount.setAttribute("data-clevertree-board", "");
       mount.setAttribute("data-api", "chat");
       mount.setAttribute("data-topic", topic);
-      mount.setAttribute("data-guided", meta.review ? "false" : "true");
       document.title = meta.title + " — Clevertree Chat";
       links.innerHTML =
-        '<a href="/chat">All demos</a> · <a href="https://clevertree.chat/try">Marketing site</a> · <a href="https://clevertree.chat/try/ui">UI lab (mock)</a>';
+        '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/try">Marketing site</a>';
     })();
   </script>
   <script src="/fronts/snippet/clevertree-board.js"></script>

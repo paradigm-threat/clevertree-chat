@@ -1,11 +1,11 @@
 /**
- * Clevertree Debate board — live guided-demo widget.
- * Mount: <div data-clevertree-board data-api="chat" data-topic="flock-cameras" data-guided="true"></div>
- * Host: HTTP /api/chat + WS /api/chat/ws. Demo pause is UI-only.
+ * Clevertree Debate board — live durable widget.
+ * Mount: <div data-clevertree-board data-api="chat" data-topic="flock-cameras"></div>
+ * Host: HTTP /api/chat + WS /api/chat/ws. First-use coach is skippable UI only.
  */
 (function () {
   const VISITOR_KEY = "clevertree.visitor";
-  const DEMO_KEY = "clevertree.demoMode";
+  const COACH_KEY = "clevertree.coachSeen";
 
   function visitorId() {
     let id = localStorage.getItem(VISITOR_KEY);
@@ -16,19 +16,17 @@
     return id;
   }
 
-  function readDemoPref(guided) {
-    if (!guided) return false;
+  function coachSeen() {
     try {
-      const v = localStorage.getItem(DEMO_KEY);
-      if (v === "0") return false;
-      if (v === "1") return true;
-    } catch (e) {}
-    return true;
+      return localStorage.getItem(COACH_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
   }
 
-  function writeDemoPref(on) {
+  function markCoachSeen() {
     try {
-      localStorage.setItem(DEMO_KEY, on ? "1" : "0");
+      localStorage.setItem(COACH_KEY, "1");
     } catch (e) {}
   }
 
@@ -39,8 +37,8 @@
 
   function apiPath(el) {
     const mode = el.getAttribute("data-api") || "chat";
-    if (mode === "live") return "/api/debate";
-    if (mode === "demo") return "/api/demo";
+    // live/debate/demo all hit the durable chat host path now
+    if (mode === "live" || mode === "debate") return "/api/debate";
     return "/api/chat";
   }
 
@@ -306,16 +304,12 @@
     el._boardMounted = true;
     el.classList.add("clevertree-board");
 
-    const guided = (el.getAttribute("data-guided") || "true") !== "false";
     const topicId = topicOf(el);
 
     const store = {
       board: emptyBoard(topicId),
-      demoMode: readDemoPref(guided),
-      demoPaused: false,
-      demoQueue: [],
-      demoMessage: "",
-      demoStepLabel: "",
+      coachOpen: !coachSeen(),
+      coachStep: 0,
       selectedKeyId: null,
       expandedKeyId: null,
       focusLink: null,
@@ -328,17 +322,24 @@
       composerOpen: false,
       savedScroll: 0,
       liveState: "closed",
-      liveText: guided ? "Demo · connecting…" : "Connecting…",
+      liveText: "Connecting…",
       status: "",
       busy: false,
     };
 
+    const COACH_STEPS = [
+      "Write a point in your own words — no reply threads.",
+      "Perspectives are keys: distinct angles, not winners.",
+      "Activity shows what just happened on the board.",
+      "SI organizes the map; it does not vote or pick sides.",
+    ];
+
     function connectedLabel() {
-      return guided ? "Demo · connected" : "Live";
+      return "Live";
     }
 
     function reconnectLabel() {
-      return guided ? "Demo · reconnecting…" : "Reconnecting…";
+      return "Reconnecting…";
     }
 
     function applyView(view, opts) {
@@ -353,49 +354,18 @@
       }
     }
 
-    function pauseOrApply(beat) {
-      if (!store.demoMode) {
-        if (typeof beat.apply === "function") beat.apply();
-        rerender();
-        return;
-      }
-      store.demoQueue.push(beat);
-      if (!store.demoPaused) advanceDemo();
-      else rerender();
-    }
-
-    function advanceDemo() {
-      const next = store.demoQueue.shift();
-      if (!next) {
-        store.demoPaused = false;
-        store.demoMessage = "";
-        store.demoStepLabel = "";
-        rerender();
-        return;
-      }
-      if (typeof next.apply === "function") next.apply();
-      store.demoPaused = true;
-      store.demoMessage = next.message || "Something updated.";
-      store.demoStepLabel = next.label || "Update";
+    function dismissCoach() {
+      store.coachOpen = false;
+      markCoachSeen();
       rerender();
     }
 
-    function continueDemo() {
-      if (!store.demoPaused) return;
-      advanceDemo();
-    }
-
-    function setDemoMode(on) {
-      store.demoMode = !!on && guided;
-      writeDemoPref(store.demoMode);
-      if (!store.demoMode) {
-        while (store.demoQueue.length) {
-          const b = store.demoQueue.shift();
-          if (typeof b.apply === "function") b.apply();
-        }
-        store.demoPaused = false;
-        store.demoMessage = "";
+    function advanceCoach() {
+      if (store.coachStep >= COACH_STEPS.length - 1) {
+        dismissCoach();
+        return;
       }
+      store.coachStep += 1;
       rerender();
     }
 
@@ -480,37 +450,25 @@
       );
     }
 
-    function demoBoxHtml() {
-      if (!guided) return "";
-      if (!store.demoMode) {
-        return (
-          '<aside class="ct-demo-box ct-demo-box--off"><h3>Guided demo is off</h3>' +
-          "<p>Updates arrive continuously.</p>" +
-          '<button type="button" class="ct-text-btn" data-demo-on>Enable demo mode</button></aside>'
-        );
-      }
-      const paused = store.demoPaused;
-      const msg =
-        store.demoMessage ||
-        "You’re in a guided debate. It pauses after each update so you can see what changed — simulated peers and SI organization included.";
+    function coachBoxHtml() {
+      if (!store.coachOpen) return "";
+      const step = store.coachStep;
+      const msg = COACH_STEPS[step] || COACH_STEPS[0];
+      const last = step >= COACH_STEPS.length - 1;
       return (
-        '<aside class="ct-demo-box' +
-        (paused ? " is-paused" : "") +
-        '"><div class="ct-demo-box-top"><div>' +
-        '<p class="ct-demo-kicker">Interactive demo</p><h3>' +
-        escapeHtml(paused ? store.demoStepLabel || "Paused" : "Guided walkthrough") +
-        "</h3><p>" +
+        '<aside class="ct-demo-box ct-coach-box" role="status">' +
+        '<p class="ct-demo-kicker">Quick tour · ' +
+        (step + 1) +
+        "/" +
+        COACH_STEPS.length +
+        "</p><p>" +
         escapeHtml(msg) +
-        '</p></div><button type="button" class="ct-demo-play" data-demo-continue aria-label="Continue"' +
-        (paused ? "" : " disabled") +
-        '><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button></div>' +
-        '<div class="ct-demo-actions">' +
-        (paused
-          ? '<button type="button" class="ct-text-btn" data-demo-continue>Continue</button>'
-          : "") +
-        '<button type="button" class="ct-text-btn" data-demo-off>Disable demo mode</button>' +
-        '<button type="button" class="ct-text-btn" data-reset>Reset</button>' +
-        '</div><p class="ct-demo-note">UI-only pause · the server is not waiting</p></aside>'
+        '</p><div class="ct-demo-actions">' +
+        '<button type="button" class="ct-text-btn" data-coach-next>' +
+        (last ? "Done" : "Next") +
+        "</button>" +
+        '<button type="button" class="ct-text-btn" data-coach-skip>Skip</button>' +
+        "</div></aside>"
       );
     }
 
@@ -652,9 +610,7 @@
       const unfiled = unfiledPosts();
       const empty =
         !store.board.keys.length && !unfiled.length
-          ? guided
-            ? '<p class="ct-invite">Demo start — post a point below. The script will organize it and a simulated peer may reply.</p>'
-            : '<p class="ct-invite">No perspectives yet — be the first to add a point.</p>'
+          ? '<p class="ct-invite">No perspectives yet — be the first to add a point.</p>'
           : '<p class="ct-invite">' + escapeHtml(store.board.topic.invite) + "</p>";
       return (
         '<div class="ct-board-scroll" data-board-scroll>' +
@@ -672,9 +628,9 @@
 
     function aboutHtml() {
       return (
-        '<div class="ct-about" data-board-scroll><h2>About this demo</h2>' +
-        "<p>This is an <strong>interactive product demo</strong>, not a live hosted topic. Simulated peers are labeled. Demo pauses are <strong>UI-only</strong> — the server keeps going.</p>" +
-        demoBoxHtml() +
+        '<div class="ct-about" data-board-scroll><h2>About this debate</h2>' +
+        "<p>Standing debate on a durable board. SI organizes perspectives; it does not vote or pick winners. Humans alone supply preference.</p>" +
+        coachBoxHtml() +
         "</div>"
       );
     }
@@ -775,13 +731,11 @@
           (store.status ? " · " + escapeHtml(store.status) : "") +
           "</p>" +
           '<header class="ct-app-header"><div class="ct-app-brand"><span>Clevertree Chat</span>' +
-          (store.demoMode
-            ? '<span class="ct-badge-demo">Interactive demo</span>'
-            : '<span class="ct-badge-live">Live</span>') +
+          '<span class="ct-badge-live">Live</span>' +
           '</div><h1 class="ct-topic-title">' +
           escapeHtml(store.board.topic.title) +
           '</h1><div class="ct-app-meta">' +
-          '<a class="ct-rules-link" href="https://clevertree.chat/try/ui/design-brief.md" target="_blank" rel="noopener">House rules · SI-assisted (Super Intelligence, i.e. AI)</a>' +
+          '<a class="ct-rules-link" href="https://clevertree.chat/dev" target="_blank" rel="noopener">House rules · SI organizes (Super Intelligence, i.e. AI)</a>' +
           '<span class="ct-count-pill">' +
           n +
           " perspectives · " +
@@ -796,7 +750,7 @@
           '" data-main-tab="map">Map of links</button>' +
           '<button type="button" class="ct-tab' +
           (store.mainTab === "about" ? " is-active" : "") +
-          '" data-main-tab="about">About this demo</button></nav>' +
+          '" data-main-tab="about">About</button></nav>' +
           '<div class="ct-mobile-tabs">' +
           '<button type="button" class="ct-mobile-tab' +
           (store.mobileTab === "perspectives" ? " is-active" : "") +
@@ -812,7 +766,7 @@
           (store.mobileTab === "perspectives" ? " is-mobile-hidden-rail" : "") +
           '"><aside class="ct-rail"><h2>Recent activity</h2>' +
           activityHtml() +
-          demoBoxHtml() +
+          coachBoxHtml() +
           "</aside></div></div>" +
           composerHtml() +
           "</div>";
@@ -847,55 +801,19 @@
           action: "submit",
           body: body,
           chosen: chosen,
-          name: "You",
         });
-        pauseOrApply({
-          label: "Your point",
-          message: "Your point is live — even before organization.",
-          apply: function () {
-            applyView(filed.view, { highlightActivity: true });
-            pushActivity(store, "live", "Your point is live", true);
-          },
-        });
-        const drained = await call(el, { action: "drain" });
-        pauseOrApply({
-          label: "Organizing",
-          message: drained.batch_notice || drained.message || "Clevertree grouped points into perspectives.",
-          apply: function () {
-            applyView(drained.view, { highlightActivity: true });
-            pushActivity(
-              store,
-              "batch",
-              drained.batch_notice || drained.message || "Board updated",
-              true
-            );
-          },
-        });
+        if (filed.view) applyView(filed.view, { highlightActivity: true });
+        pushActivity(store, "live", "Your point is live", true);
         store.draft = "";
         store.draftKeys = [];
         store.composerOpen = false;
         store.status = "";
+        dismissCoach();
       } catch (err) {
         store.status = err.message || "Could not post.";
         store.liveState = "error";
       } finally {
         store.busy = false;
-        rerender();
-      }
-    }
-
-    async function resetDemo() {
-      store.status = "Resetting…";
-      rerender();
-      try {
-        const data = await call(el, { action: "replay" });
-        store.demoQueue = [];
-        store.demoPaused = false;
-        applyView(data.view);
-        store.status = "Demo reset.";
-        rerender();
-      } catch (err) {
-        store.status = err.message || "Reset failed.";
         rerender();
       }
     }
@@ -937,51 +855,27 @@
         }
         if (msg.type === "post.live" && msg.comment) {
           const mine = msg.comment.author_uuid === visitorId();
-          const injected = !!msg.comment.injected;
-          if (mine && store.busy) return; // HTTP submit path already handling
-          pauseOrApply({
-            label: injected ? "Another voice" : mine ? "Your point" : "New point",
-            message: injected
-              ? "A simulated participant added another perspective."
-              : mine
-                ? "Your point is live."
-                : "Someone added a point.",
-            apply: function () {
-              if (msg.view) applyView(msg.view);
-              pushActivity(
-                store,
-                "live",
-                injected
-                  ? "Simulated participant added a point"
-                  : mine
-                    ? "Your point is live"
-                    : "Participant contributed a point",
-                true
-              );
-            },
-          });
+          if (mine && store.busy) return;
+          if (msg.view) applyView(msg.view);
+          pushActivity(
+            store,
+            "live",
+            mine ? "Your point is live" : "Participant contributed a point",
+            true
+          );
+          rerender();
           return;
         }
         if (msg.type === "batch.notice") {
-          pauseOrApply({
-            label: "Organizing",
-            message: msg.notice || "Clevertree is grouping points into perspectives.",
-            apply: function () {
-              if (msg.view) applyView(msg.view);
-              pushActivity(store, "batch", msg.notice || "Organizing in background", true);
-            },
-          });
+          if (msg.view) applyView(msg.view);
+          pushActivity(store, "batch", msg.notice || "Organizing in background", true);
+          rerender();
           return;
         }
         if (msg.type === "board.snapshot" && msg.view) {
-          pauseOrApply({
-            label: "Board changed",
-            message: "The board updated — here’s what changed.",
-            apply: function () {
-              applyView(msg.view, { highlightActivity: true });
-              pushActivity(store, "batch", "Board updated", true);
-            },
-          });
+          applyView(msg.view, { highlightActivity: true });
+          pushActivity(store, "batch", "Board updated", true);
+          rerender();
         }
       });
     }
@@ -989,20 +883,12 @@
     el.addEventListener("click", function (e) {
       const t = e.target;
       if (!(t instanceof Element)) return;
-      if (t.closest("[data-demo-continue]")) {
-        continueDemo();
+      if (t.closest("[data-coach-skip]")) {
+        dismissCoach();
         return;
       }
-      if (t.closest("[data-demo-off]")) {
-        setDemoMode(false);
-        return;
-      }
-      if (t.closest("[data-demo-on]")) {
-        setDemoMode(true);
-        return;
-      }
-      if (t.closest("[data-reset]")) {
-        resetDemo();
+      if (t.closest("[data-coach-next]")) {
+        advanceCoach();
         return;
       }
       if (t.closest("[data-open-composer]")) {
