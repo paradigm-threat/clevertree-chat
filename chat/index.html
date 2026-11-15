@@ -49,6 +49,8 @@
         ·
         <a href="/chat/general">general</a>
         ·
+        <a href="https://clevertree.chat/w">Any website</a>
+        ·
         <a href="https://clevertree.chat/try">Marketing site</a>
       </p>
       <div id="demo-chooser" class="map" hidden>
@@ -66,6 +68,12 @@
           <span class="vs">·</span>
           <a href="/chat/general">general</a>
         </div>
+        <p class="topic" style="margin-top:1.25rem">Any website</p>
+        <div class="pair">
+          <a href="https://clevertree.chat/w">clevertree.chat/w/…</a>
+          <span class="vs">or</span>
+          <a href="/chat/w">/chat/w/…</a>
+        </div>
       </div>
       <div id="demo-mount" hidden></div>
     </main>
@@ -75,16 +83,64 @@
   </div>
   <script>
     (function () {
-      const parts = location.pathname.split("/").filter(Boolean);
-      const topic = parts[1];
-      const kicker = document.getElementById("host-kicker");
-      const title = document.getElementById("host-title");
-      const lead = document.getElementById("host-lead");
-      const blurb = document.getElementById("host-blurb");
-      const links = document.getElementById("host-links");
-      const chooser = document.getElementById("demo-chooser");
-      const mount = document.getElementById("demo-mount");
-      const copy = {
+      function unquote(s) {
+        try {
+          return decodeURIComponent(s);
+        } catch (e) {
+          return s;
+        }
+      }
+
+      function hrefAndScopeFromW(pathRemainder, queryUrl) {
+        var raw = (queryUrl || "").trim();
+        if (!raw) {
+          var rem = (pathRemainder || "").replace(/^\/+/, "").trim();
+          if (!rem) return { href: "", scope: "" };
+          raw = unquote(rem);
+        }
+        var lowered = raw.toLowerCase();
+        var href =
+          lowered.indexOf("http://") === 0 || lowered.indexOf("https://") === 0
+            ? raw
+            : "https://" + raw.replace(/^\/+/, "");
+        var a = document.createElement("a");
+        a.href = href;
+        var host = (a.hostname || "").toLowerCase().replace(/^www\./, "");
+        if (!host) return { href: "", scope: "" };
+        var scheme = (a.protocol || "https:").replace(":", "") || "https";
+        if (scheme !== "http" && scheme !== "https") scheme = "https";
+        var path = a.pathname || "/";
+        var port = a.port;
+        var netloc = host;
+        if (
+          port &&
+          !(
+            (scheme === "http" && port === "80") ||
+            (scheme === "https" && port === "443")
+          )
+        ) {
+          netloc = host + ":" + port;
+        }
+        var query = a.search || "";
+        href = scheme + "://" + netloc + path + query;
+        var pathOnly = path.replace(/\/+$/, "");
+        if (!pathOnly) {
+          if (href.slice(-1) !== "/") href += "/";
+          return { href: href, scope: "domain" };
+        }
+        return { href: href, scope: "path" };
+      }
+
+      var parts = location.pathname.split("/").filter(Boolean);
+      var params = new URLSearchParams(location.search);
+      var kicker = document.getElementById("host-kicker");
+      var title = document.getElementById("host-title");
+      var lead = document.getElementById("host-lead");
+      var blurb = document.getElementById("host-blurb");
+      var links = document.getElementById("host-links");
+      var chooser = document.getElementById("demo-chooser");
+      var mount = document.getElementById("demo-mount");
+      var copy = {
         "flock-cameras": {
           title: "Should cities use camera networks?",
           blurb: "Live durable board. Post a point; SI organizes perspectives in the background.",
@@ -106,12 +162,51 @@
           blurb: "Paradigm Threat backlog on the comments SoT — live readable board.",
         },
       };
+
+      // /chat/w/... or /chat?url=...
+      var websiteMode =
+        (parts[1] === "w") || !!(params.get("url") && !parts[1]);
+      if (websiteMode) {
+        var rem = parts[1] === "w" ? parts.slice(2).join("/") : "";
+        var parsed = hrefAndScopeFromW(rem, params.get("url") || "");
+        if (!parsed.href) {
+          chooser.hidden = false;
+          mount.hidden = true;
+          kicker.textContent = "Any website";
+          title.textContent = "Open a website debate";
+          lead.textContent = "Use /chat/w/example.com or pass ?url=";
+          blurb.textContent =
+            "Or open https://clevertree.chat/w — empty until the first comment.";
+          links.innerHTML =
+            '<a href="https://clevertree.chat/w">clevertree.chat/w</a> · <a href="/chat">All topics</a>';
+          return;
+        }
+        kicker.textContent = "Website debate";
+        title.textContent = parsed.href.replace(/^https?:\/\//, "").replace(/\/$/, "");
+        lead.textContent =
+          "Empty until the first point. Nothing is created in the chat repo until someone writes.";
+        blurb.textContent =
+          parsed.scope === "domain" ? "Whole-site scope." : "Path-level scope.";
+        chooser.hidden = true;
+        mount.hidden = false;
+        mount.setAttribute("data-clevertree-board", "");
+        mount.setAttribute("data-api", "chat");
+        mount.setAttribute("data-url", parsed.href);
+        mount.setAttribute("data-page-scope", parsed.scope);
+        mount.setAttribute("data-title", title.textContent);
+        document.title = title.textContent + " — Clevertree Chat";
+        links.innerHTML =
+          '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/w">Marketing /w</a>';
+        return;
+      }
+
+      var topic = parts[1];
       if (!topic) {
         chooser.hidden = false;
         mount.hidden = true;
         return;
       }
-      const meta = copy[topic] || {
+      var meta = copy[topic] || {
         title: topic,
         blurb: "Live durable board on the chat host.",
       };
@@ -126,7 +221,7 @@
       mount.setAttribute("data-topic", topic);
       document.title = meta.title + " — Clevertree Chat";
       links.innerHTML =
-        '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/try">Marketing site</a>';
+        '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/w">Any website</a> · <a href="https://clevertree.chat/try">Marketing site</a>';
     })();
   </script>
   <script src="/fronts/snippet/clevertree-board.js"></script>

@@ -14,6 +14,8 @@ import uuid as uuidlib
 from pathlib import Path
 from urllib.parse import urlparse
 
+from clevertree_chat import SERVICE_ID
+from clevertree_chat.associations import ASSOCIATIONS_FILE, dump_graph, ensure_page, load_graph
 from clevertree_chat.auth import Session
 from clevertree_chat.chat_hub import HUB, activity_from_view
 from clevertree_chat.pt_seed import REVIEW_TITLES, REVIEW_TOPICS
@@ -322,6 +324,7 @@ def dispatch(payload: dict, query: dict, cookie: str = "") -> tuple[int, dict]:
                 name=payload.get("name"),
                 session=session,
             )
+            _note_provisional_association(service, topic)
         _persist()
         _kick_drain()
         return 200, result
@@ -369,6 +372,37 @@ def _session(header: str, visitor: str):
     if not token:
         return None
     return Session(token=token, uuid=visitor, http_only=True)
+
+
+def _note_provisional_association(service: DebateService, topic: str) -> None:
+    """On first words for a URL room, record provisional page id in associations.json.
+
+    Batch later merges/links. Resolve/view never write this — only submit does.
+    """
+    meta = _pages.get(topic) or {}
+    norm = str(meta.get("normalized") or "").strip()
+    if not norm or not str(topic).startswith("u-"):
+        return
+    try:
+        root = service.debate.repo.path
+        graph = load_graph(root)
+        row = ensure_page(graph, norm, kind="topic")
+        row["topic"] = topic
+        if meta.get("url"):
+            row["url"] = meta["url"]
+        before = (root / ASSOCIATIONS_FILE).read_text() if (root / ASSOCIATIONS_FILE).is_file() else ""
+        after = dump_graph(graph)
+        if after == before:
+            return
+        service.debate.repo.commit_changes(
+            {ASSOCIATIONS_FILE: after},
+            [],
+            "note provisional url page",
+            SERVICE_ID,
+        )
+    except Exception:
+        # Association graph is best-effort; submit already succeeded.
+        pass
 
 
 def run_drain_once() -> dict | None:

@@ -5,7 +5,7 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | | |
 |--|--|
 | Process | `python3 scripts/chat_host.py` (default `:8790`) |
-| UI | `/chat`, `/chat/<topic>` |
+| UI | `/chat`, `/chat/<topic>`, `/chat/w/<host>[/path]` (website rooms; empty until first comment) |
 | HTTP API | `/api/chat` and `/api/debate` (same durable dispatch) |
 | WebSocket | `/api/chat/ws?topic=…&visitor=…` |
 | Events | `hello`, `post.live`, `batch.notice`, `board.snapshot` |

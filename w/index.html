@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Open a website debate — Clevertree Chat</title>
+  <meta name="description" content="Open a standing debate for any public website URL. Empty until someone writes the first point.">
+  <meta name="theme-color" content="#D4F3FB">
+  <link rel="canonical" href="https://clevertree.chat/w">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Clevertree Chat">
+  <meta property="og:title" content="Open a website debate — Clevertree Chat">
+  <meta property="og:description" content="Open a standing debate for any public website URL. Empty until someone writes the first point.">
+  <meta property="og:url" content="https://clevertree.chat/w">
+  <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://clevertree.chat/images/og-default.jpg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
+  <script>
+    try {
+      var t = localStorage.getItem("clevertree-theme");
+      if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fronts/snippet/clevertree-board.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header>
+      <a class="wordmark" href="/">
+        <img src="/icon-128x128.png" alt="" width="32" height="32">
+        Clevertree Chat
+      </a>
+      <div class="header-actions">
+        <button type="button" class="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+        </button>
+        <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
+          <span class="nav-toggle-bars" aria-hidden="true"></span>
+        </button>
+      </div>
+      <nav class="nav-links" id="site-nav" aria-label="Primary">
+        <a class="nav-try" href="/forest">Forest</a>
+        <a class="nav-try" href="/w" aria-current="page">Website</a>
+        <a class="nav-try" href="/extension">Extension</a>
+        <a class="nav-try" href="/dev">Dev</a>
+        <a class="nav-try" href="/try">See demo</a>
+      </nav>
+    </header>
+    <main id="main" class="try-page">
+      <p class="kicker">Any public URL</p>
+      <h1 id="w-title">Debate a website</h1>
+      <p class="lead-quiet" id="w-lead">Paste or share a link. The board stays empty until someone writes the first point — nothing is created in the chat repo until then.</p>
+
+      <form id="w-form" class="band" style="padding-top:1.25rem" hidden>
+        <label for="w-url" class="hint" style="display:block;margin-bottom:0.5rem">Website URL</label>
+        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center">
+          <input id="w-url" name="url" type="url" required placeholder="https://example.com/article" style="flex:1;min-width:14rem;padding:0.65rem 0.8rem;border:1px solid var(--line, #9bb8c4);border-radius:6px;background:var(--surface, #fff);color:inherit;font:inherit">
+          <button type="submit" class="button">Open debate</button>
+        </div>
+        <p class="hint" style="margin-top:0.85rem">
+          Share links look like
+          <code>/w/example.com</code>
+          (whole site) or
+          <code>/w/example.com/article/</code>
+          (that path). Extension optional —
+          <a href="/extension">install</a>
+          if you want the side panel on every tab.
+        </p>
+      </form>
+
+      <p id="w-meta" class="hint" hidden></p>
+      <div id="w-mount" hidden></div>
+    </main>
+    <footer>
+      <p>Developers! Help support this project. Also welcome anyone willing to use an LLM — which is everyone! <a href="/dev">Help build Cleverchat</a>.</p>
+    </footer>
+  </div>
+  <script>
+    (function () {
+      function unquote(s) {
+        try {
+          return decodeURIComponent(s);
+        } catch (e) {
+          return s;
+        }
+      }
+
+      function hrefAndScopeFromW(pathRemainder, queryUrl) {
+        var raw = (queryUrl || "").trim();
+        if (!raw) {
+          var rem = (pathRemainder || "").replace(/^\/+/, "").trim();
+          if (!rem) return { href: "", scope: "" };
+          raw = unquote(rem);
+        }
+        var lowered = raw.toLowerCase();
+        var href =
+          lowered.indexOf("http://") === 0 || lowered.indexOf("https://") === 0
+            ? raw
+            : "https://" + raw.replace(/^\/+/, "");
+        var a = document.createElement("a");
+        a.href = href;
+        var host = (a.hostname || "").toLowerCase().replace(/^www\./, "");
+        if (!host) return { href: "", scope: "" };
+        var scheme = (a.protocol || "https:").replace(":", "") || "https";
+        if (scheme !== "http" && scheme !== "https") scheme = "https";
+        var path = a.pathname || "/";
+        var port = a.port;
+        var netloc = host;
+        if (
+          port &&
+          !(
+            (scheme === "http" && port === "80") ||
+            (scheme === "https" && port === "443")
+          )
+        ) {
+          netloc = host + ":" + port;
+        }
+        var query = a.search || "";
+        href = scheme + "://" + netloc + path + query;
+        var pathOnly = path.replace(/\/+$/, "");
+        if (!pathOnly) {
+          if (href.slice(-1) !== "/") href += "/";
+          return { href: href, scope: "domain" };
+        }
+        return { href: href, scope: "path" };
+      }
+
+      function sharePath(href, scope) {
+        try {
+          var u = new URL(href);
+          var host = u.hostname.replace(/^www\./, "");
+          var path = u.pathname || "/";
+          if (scope === "domain" || path === "/" || path === "") {
+            return "/w/" + host;
+          }
+          var tail = path.replace(/^\/+/, "");
+          if (u.search) tail += u.search;
+          return "/w/" + host + "/" + tail;
+        } catch (e) {
+          return "/w?url=" + encodeURIComponent(href);
+        }
+      }
+
+      var parts = location.pathname.split("/").filter(Boolean);
+      // /w or /w/...
+      var remainder = parts.slice(1).join("/");
+      var params = new URLSearchParams(location.search);
+      var parsed = hrefAndScopeFromW(remainder, params.get("url") || "");
+      var form = document.getElementById("w-form");
+      var mount = document.getElementById("w-mount");
+      var meta = document.getElementById("w-meta");
+      var title = document.getElementById("w-title");
+      var lead = document.getElementById("w-lead");
+      var input = document.getElementById("w-url");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var v = (input.value || "").trim();
+        if (!v) return;
+        var next = hrefAndScopeFromW("", v);
+        if (!next.href) return;
+        location.href = sharePath(next.href, next.scope);
+      });
+
+      if (!parsed.href) {
+        form.hidden = false;
+        mount.hidden = true;
+        meta.hidden = true;
+        return;
+      }
+
+      // Canonicalize share URL when opened via ?url=
+      if (params.get("url") && !remainder) {
+        var want = sharePath(parsed.href, parsed.scope);
+        if (want !== location.pathname) {
+          history.replaceState(null, "", want);
+        }
+      }
+
+      form.hidden = true;
+      mount.hidden = false;
+      meta.hidden = false;
+      title.textContent = parsed.href.replace(/^https?:\/\//, "").replace(/\/$/, "") || "Website debate";
+      lead.textContent =
+        "Empty until the first point. SI organizes perspectives later — it does not vote or pick winners.";
+      meta.innerHTML =
+        'Debating <a href="' +
+        parsed.href.replace(/"/g, "&quot;") +
+        '" rel="noopener noreferrer">' +
+        parsed.href.replace(/</g, "&lt;") +
+        "</a>" +
+        (parsed.scope === "domain" ? " · whole site" : " · this path") +
+        ' · <a href="/w">Open another</a>';
+      document.title = title.textContent + " — Clevertree Chat";
+
+      mount.setAttribute("data-clevertree-board", "");
+      mount.setAttribute("data-api", "chat");
+      mount.setAttribute("data-api-base", "https://api.clevertree.chat");
+      mount.setAttribute("data-url", parsed.href);
+      mount.setAttribute("data-page-scope", parsed.scope);
+      mount.setAttribute("data-title", title.textContent);
+    })();
+  </script>
+  <script src="/js/site-theme.js"></script>
+  <script src="/js/site-nav.js"></script>
+  <script src="/fronts/snippet/clevertree-board.js"></script>
+</body>
+</html>

@@ -294,6 +294,44 @@ class HttpApiE2ETests(unittest.TestCase):
             except Exception as exc:
                 self.assertIn("400", str(exc))
 
+    def test_http_website_room_empty_until_submit(self):
+        """ /chat/w parity: resolve leaves SoT empty; first submit creates topic. """
+        slug = f"e2e-site-{int(time.time())}"
+        href = f"https://example.com/{slug}/"
+        resolved = self._post(
+            {"action": "resolve", "url": href, "page_scope": "path"}
+        )
+        topic = resolved["topic"]
+        visitor = resolved["visitor"]
+        self.assertTrue(topic.startswith("u-"))
+        self.assertFalse(resolved["exists"])
+        comments = Path(self._tmp.name)
+        topic_dirs = list(comments.glob(f"pages/*/topics/{topic}"))
+        self.assertEqual(topic_dirs, [])
+
+        # HTML board route serves chat shell for /chat/w/...
+        with request.urlopen(self.base + f"/chat/w/example.com/{slug}", timeout=15) as resp:
+            html = resp.read().decode()
+        self.assertIn("data-clevertree-board", html)
+        self.assertIn("/chat/w", html)  # script handles w mode
+
+        marker = f"website-first-{int(time.time())}"
+        filed = self._post(
+            {
+                "action": "submit",
+                "topic": topic,
+                "visitor": visitor,
+                "body": f"{marker} first words on this URL.",
+            }
+        )
+        self.assertIn("comment_id", filed)
+        self.assertTrue(
+            (comments / "pages" / "try" / "topics" / topic).is_dir()
+        )
+        assoc = comments / "associations.json"
+        self.assertTrue(assoc.is_file())
+        self.assertIn(resolved["normalized"], assoc.read_text())
+
 
 class ExtensionSurfaceTests(unittest.TestCase):
     def test_sidepanel_has_no_guided_theater(self):

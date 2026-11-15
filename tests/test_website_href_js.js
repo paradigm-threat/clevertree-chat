@@ -1,0 +1,83 @@
+/**
+ * Node checks mirroring clevertree_chat/website_href.py + board data-url surface.
+ * Run: node tests/test_website_href_js.js
+ */
+const fs = require("fs");
+const path = require("path");
+
+function assert(cond, msg) {
+  if (!cond) throw new Error(msg || "assert failed");
+}
+
+function hrefAndScopeFromW(pathRemainder, queryUrl) {
+  let raw = String(queryUrl || "").trim();
+  if (!raw) {
+    const rem = String(pathRemainder || "")
+      .replace(/^\/+/, "")
+      .trim();
+    if (!rem) return { href: "", scope: "" };
+    try {
+      raw = decodeURIComponent(rem);
+    } catch (e) {
+      raw = rem;
+    }
+  }
+  const lowered = raw.toLowerCase();
+  let href =
+    lowered.indexOf("http://") === 0 || lowered.indexOf("https://") === 0
+      ? raw
+      : "https://" + raw.replace(/^\/+/, "");
+  const u = new URL(href);
+  const host = (u.hostname || "").toLowerCase().replace(/^www\./, "");
+  assert(host, "host required");
+  let scheme = (u.protocol || "https:").replace(":", "") || "https";
+  if (scheme !== "http" && scheme !== "https") scheme = "https";
+  const pathname = u.pathname || "/";
+  let netloc = host;
+  if (
+    u.port &&
+    !(
+      (scheme === "http" && u.port === "80") ||
+      (scheme === "https" && u.port === "443")
+    )
+  ) {
+    netloc = host + ":" + u.port;
+  }
+  href = scheme + "://" + netloc + pathname + (u.search || "");
+  const pathOnly = pathname.replace(/\/+$/, "");
+  if (!pathOnly) {
+    if (!href.endsWith("/")) href += "/";
+    return { href, scope: "domain" };
+  }
+  return { href, scope: "path" };
+}
+
+const hostOnly = hrefAndScopeFromW("example.com");
+assert(hostOnly.href === "https://example.com/", "host href " + hostOnly.href);
+assert(hostOnly.scope === "domain", "host scope");
+
+const withPath = hrefAndScopeFromW("example.com/news/story");
+assert(withPath.href === "https://example.com/news/story", "path href");
+assert(withPath.scope === "path", "path scope");
+
+const encoded = hrefAndScopeFromW("https%3A%2F%2Fexample.com%2Fdocs%2F");
+assert(encoded.href === "https://example.com/docs/", "encoded " + encoded.href);
+assert(encoded.scope === "path", "encoded scope");
+
+const board = fs.readFileSync(
+  path.join(__dirname, "../fronts/snippet/clevertree-board.js"),
+  "utf8",
+);
+assert(board.includes("resolveUrlRoom"), "board resolveUrlRoom");
+assert(board.includes("data-url"), "board data-url");
+assert(board.includes("page_scope"), "board page_scope");
+assert(board.includes('credentials: fetchCreds'), "cross-origin creds helper");
+
+const wPage = fs.readFileSync(path.join(__dirname, "../w/index.html"), "utf8");
+assert(wPage.includes("data-api-base"), "w page api base");
+assert(wPage.includes("api.clevertree.chat"), "w page points at api host");
+
+const chatPage = fs.readFileSync(path.join(__dirname, "../chat/index.html"), "utf8");
+assert(chatPage.includes("websiteMode") || chatPage.includes('parts[1] === "w"'), "chat w mode");
+
+console.log("ok test_website_href_js.js");

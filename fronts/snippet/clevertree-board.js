@@ -1,7 +1,9 @@
 /**
  * Clevertree Debate board — live durable widget.
  * Mount: <div data-clevertree-board data-api="chat" data-topic="flock-cameras"></div>
+ * Or URL room: data-url="https://example.com" data-api-base="https://api.clevertree.chat"
  * Host: HTTP /api/chat + WS /api/chat/ws. First-use coach is skippable UI only.
+ * Comments SoT path is created only on first submit — resolve/view stay empty.
  */
 (function () {
   const VISITOR_KEY = "clevertree.visitor";
@@ -35,6 +37,11 @@
     return custom ? custom.replace(/\/$/, "") : "";
   }
 
+  function fetchCreds(el) {
+    // Cross-origin mounts (clevertree.chat → api) send visitor in the body.
+    return apiBase(el) ? "omit" : "same-origin";
+  }
+
   function apiPath(el) {
     const mode = el.getAttribute("data-api") || "chat";
     // live/debate/demo all hit the durable chat host path now
@@ -43,7 +50,13 @@
   }
 
   function topicOf(el) {
-    return (el.getAttribute("data-topic") || "flock-cameras").trim();
+    return (el.getAttribute("data-topic") || "").trim();
+  }
+
+  function pageTitleOf(el, topicId) {
+    const custom = (el.getAttribute("data-title") || "").trim();
+    if (custom) return custom;
+    return topicTitle(topicId);
   }
 
   function wsUrl(el) {
@@ -63,11 +76,39 @@
     return proto + "//" + location.host + path + q;
   }
 
+  async function resolveUrlRoom(el) {
+    const href = (el.getAttribute("data-url") || "").trim();
+    if (!href) return topicOf(el);
+    const response = await fetch(apiBase(el) + apiPath(el), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: fetchCreds(el),
+      body: JSON.stringify({
+        action: "resolve",
+        url: href,
+        visitor: visitorId(),
+        page_scope: (el.getAttribute("data-page-scope") || "").trim() || undefined,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not resolve page.");
+    if (data.visitor) {
+      try {
+        localStorage.setItem(VISITOR_KEY, data.visitor);
+      } catch (e) {}
+    }
+    if (data.topic) el.setAttribute("data-topic", data.topic);
+    if (data.title) el.setAttribute("data-title", data.title);
+    if (data.normalized) el.setAttribute("data-normalized", data.normalized);
+    if (data.url) el.setAttribute("data-url", data.url);
+    return data.topic || "";
+  }
+
   async function call(el, payload) {
     const response = await fetch(apiBase(el) + apiPath(el), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
+      credentials: fetchCreds(el),
       body: JSON.stringify({ visitor: visitorId(), topic: topicOf(el), ...payload }),
     });
     const data = await response.json();
@@ -82,7 +123,7 @@
       action: "view",
     });
     const response = await fetch(apiBase(el) + apiPath(el) + "?" + params.toString(), {
-      credentials: "same-origin",
+      credentials: fetchCreds(el),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "The debate could not be read.");
@@ -127,7 +168,8 @@
       topic: {
         id: topicId,
         title: title || humanizeKey(topicId) || "Standing debate",
-        invite: "Explore the main perspectives, then add your own point.",
+        invite:
+          "Nothing here yet — add the first point. The board stays empty until you write.",
       },
       keys: [],
       posts: [],
@@ -138,13 +180,15 @@
   function topicTitle(topicId) {
     if (topicId === "flock-cameras") return "Should cities use camera networks?";
     if (topicId === "thc-legalization") return "Should adult-use cannabis be legal?";
+    if (!topicId) return "Standing debate";
+    if (String(topicId).indexOf("u-") === 0) return "This page";
     return humanizeKey(topicId) || "Standing debate";
   }
 
   /** Map host build_view → board store. */
-  function viewToBoard(view, topicId) {
+  function viewToBoard(view, topicId, title) {
     if (!view || !view.exists) {
-      return emptyBoard(topicId, topicTitle(topicId));
+      return emptyBoard(topicId, title || topicTitle(topicId));
     }
     const sections = view.sections || {};
     const pairs = view.pairs || [];
@@ -277,7 +321,7 @@
     return {
       topic: {
         id: topicId,
-        title: topicTitle(topicId),
+        title: title || topicTitle(topicId),
         invite: "Explore the main perspectives, then add your own point.",
       },
       keys: keys,
@@ -304,10 +348,8 @@
     el._boardMounted = true;
     el.classList.add("clevertree-board");
 
-    const topicId = topicOf(el);
-
     const store = {
-      board: emptyBoard(topicId),
+      board: emptyBoard(topicOf(el), pageTitleOf(el, topicOf(el))),
       coachOpen: !coachSeen(),
       coachStep: 0,
       selectedKeyId: null,
@@ -344,7 +386,10 @@
 
     function applyView(view, opts) {
       const o = opts || {};
-      store.board = viewToBoard(view, topicId);
+      const tid = topicOf(el);
+      const pageMeta = (view && view.page) || {};
+      if (pageMeta.title) el.setAttribute("data-title", pageMeta.title);
+      store.board = viewToBoard(view, tid, pageTitleOf(el, tid));
       if (!store.selectedKeyId && store.board.keys[0]) {
         store.selectedKeyId = store.board.keys[0].id;
         store.expandedKeyId = store.board.keys[0].id;
@@ -456,7 +501,7 @@
       const msg = COACH_STEPS[step] || COACH_STEPS[0];
       const last = step >= COACH_STEPS.length - 1;
       return (
-        '<aside class="ct-demo-box ct-coach-box" role="status">' +
+        '<aside class="ct-demo-box ct-coach-box" role="region" aria-label="Quick tour">' +
         '<p class="ct-demo-kicker">Quick tour · ' +
         (step + 1) +
         "/" +
@@ -616,9 +661,9 @@
         '<div class="ct-board-scroll" data-board-scroll>' +
         empty +
         cards +
-        '<section class="ct-unfiled"><h3>Unfiled' +
+        '<section class="ct-unfiled"><h2 class="ct-unfiled-title">Unfiled' +
         (unfiled.length ? " · " + unfiled.length + " awaiting organization" : "") +
-        "</h3>" +
+        "</h2>" +
         (unfiled.length
           ? unfiled.map(postCardHtml).join("")
           : '<p class="ct-muted">Nothing waiting.</p>') +
@@ -966,12 +1011,42 @@
     });
 
     rerender();
-    refresh().catch(function (err) {
-      store.status = err.message || "Could not load debate.";
-      store.liveState = "error";
+
+    function startLive() {
+      if (!topicOf(el)) {
+        store.status = "Missing topic or URL.";
+        store.liveState = "error";
+        rerender();
+        return;
+      }
+      refresh()
+        .then(function () {
+          connectWs();
+        })
+        .catch(function (err) {
+          store.status = err.message || "Could not load debate.";
+          store.liveState = "error";
+          rerender();
+        });
+    }
+
+    if ((el.getAttribute("data-url") || "").trim()) {
+      store.liveText = "Opening…";
       rerender();
-    });
-    connectWs();
+      resolveUrlRoom(el)
+        .then(function () {
+          store.board = emptyBoard(topicOf(el), pageTitleOf(el, topicOf(el)));
+          rerender();
+          startLive();
+        })
+        .catch(function (err) {
+          store.status = err.message || "Could not open this URL.";
+          store.liveState = "error";
+          rerender();
+        });
+    } else {
+      startLive();
+    }
   }
 
   function boot() {

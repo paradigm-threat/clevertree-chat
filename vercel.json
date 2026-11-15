@@ -2,31 +2,65 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/trees", "destination": "/forest", "permanent": true },
-    { "source": "/trees/", "destination": "/forest", "permanent": true }
+    {
+      "source": "/trees",
+      "destination": "/forest",
+      "permanent": true
+    },
+    {
+      "source": "/trees/",
+      "destination": "/forest",
+      "permanent": true
+    }
   ],
   "rewrites": [
-    { "source": "/try/flock-cameras", "destination": "/try" },
-    { "source": "/try/thc-legalization", "destination": "/try" }
+    {
+      "source": "/try/flock-cameras",
+      "destination": "/try"
+    },
+    {
+      "source": "/try/thc-legalization",
+      "destination": "/try"
+    },
+    {
+      "source": "/w/:path+",
+      "destination": "/w"
+    }
   ],
   "headers": [
     {
       "source": "/robots.txt",
-      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
     },
     {
       "source": "/sitemap.xml",
-      "headers": [{ "key": "Content-Type", "value": "application/xml; charset=utf-8" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        }
+      ]
     },
     {
       "source": "/downloads/clevertree-chat-extension.zip",
       "headers": [
-        { "key": "Content-Type", "value": "application/zip" },
+        {
+          "key": "Content-Type",
+          "value": "application/zip"
+        },
         {
           "key": "Content-Disposition",
           "value": "attachment; filename=\"clevertree-chat-extension.zip\""
         },
-        { "key": "Cache-Control", "value": "public, max-age=300" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
       ]
     }
   ],

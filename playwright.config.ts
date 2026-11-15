@@ -8,6 +8,8 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const commentsDir =
   process.env.CLEVERTREE_COMMENTS_PATH ||
   fs.mkdtempSync(path.join(os.tmpdir(), "clevertree-e2e-"));
+// Expose to specs (SoT empty-until-write assertions).
+process.env.CLEVERTREE_COMMENTS_PATH = commentsDir;
 
 export default defineConfig({
   testDir: "tests/e2e",

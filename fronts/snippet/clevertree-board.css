@@ -1,21 +1,32 @@
 /* Clevertree Debate board — embeddable snippet (desktop + mobile container queries) */
 
 .clevertree-board {
+  /* Light theme — all surfaces use tokens so dark mode cannot leave light shells. */
   --ct-ink: #12261c;
-  --ct-ink-soft: #3d5347;
-  /* Darker muted for AA on paper (~4.5:1+) */
-  --ct-muted: #4a5f54;
+  --ct-ink-soft: #3a5248;
+  --ct-muted: #3a5248;
   --ct-paper: #f3f6f1;
   --ct-panel: #ffffff;
-  --ct-line: rgba(18, 38, 28, 0.12);
+  --ct-header: #f4f7f4;
+  --ct-surface: #eef3ef;
+  --ct-line: rgba(18, 38, 28, 0.16);
   --ct-green: #0b6b45;
   --ct-green-deep: #085536;
+  --ct-btn-bg: #0b6b45;
+  --ct-on-accent: #ffffff;
   --ct-mint: #e5f3eb;
   --ct-mint-deep: #d3ebd9;
   --ct-cream: #f7f4ec;
   --ct-warn: #8a5a18;
   --ct-warn-bg: #fff3e0;
-  --ct-sim: #2a4a6b;
+  --ct-sim: #1e3a55;
+  --ct-live-bg: #e8eef5;
+  --ct-live-fg: #1e3a55;
+  --ct-avatar: #d9e4dc;
+  --ct-chip-bg: #eef3ef;
+  --ct-error: #9b1c1c;
+  --ct-focus: #085536;
+  --ct-expand-ring: rgba(11, 107, 69, 0.35);
   --ct-radius: 0.85rem;
   --ct-radius-sm: 0.55rem;
   --ct-shadow: 0 10px 30px rgba(18, 38, 28, 0.06);
@@ -34,57 +45,72 @@
 .clevertree-board a:focus-visible,
 .clevertree-board button:focus-visible,
 .clevertree-board textarea:focus-visible,
+.clevertree-board summary:focus-visible,
 .clevertree-board [tabindex]:focus-visible {
-  outline: 2px solid var(--ct-green-deep);
+  outline: 2px solid var(--ct-focus);
   outline-offset: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme="light"]) .clevertree-board {
-    --ct-ink: #e8f2ea;
-    --ct-ink-soft: #b8d0c0;
-    --ct-muted: #9db5a8;
-    --ct-paper: #121c18;
-    --ct-panel: #1a2820;
-    --ct-line: rgba(232, 242, 234, 0.16);
-    --ct-green: #5ecf8a;
-    --ct-green-deep: #3db870;
-    --ct-mint: #1e3328;
-    --ct-mint-deep: #243c30;
-    --ct-cream: #182820;
-    --ct-warn: #f0d078;
-    --ct-warn-bg: #3a2a12;
-    --ct-sim: #8ab4d4;
-    --ct-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  }
-
-  html:not([data-theme="light"]) .clevertree-board .ct-status-line,
-  html:not([data-theme="light"]) .clevertree-board .ct-app-header {
-    background: var(--ct-panel);
-  }
-}
-
+/* Shared dark tokens — keep every surface on variables for AA contrast. */
+.clevertree-board.ct-theme-dark,
 html[data-theme="dark"] .clevertree-board {
   --ct-ink: #e8f2ea;
-  --ct-ink-soft: #b8d0c0;
-  --ct-muted: #9db5a8;
+  --ct-ink-soft: #c5d9cc;
+  --ct-muted: #b0c7ba;
   --ct-paper: #121c18;
   --ct-panel: #1a2820;
-  --ct-line: rgba(232, 242, 234, 0.16);
-  --ct-green: #5ecf8a;
-  --ct-green-deep: #3db870;
+  --ct-header: #15221b;
+  --ct-surface: #152019;
+  --ct-line: rgba(232, 242, 234, 0.2);
+  --ct-green: #7ed9a0;
+  --ct-green-deep: #9ae4b4;
+  --ct-btn-bg: #1a7a48;
+  --ct-on-accent: #ffffff;
   --ct-mint: #1e3328;
   --ct-mint-deep: #243c30;
   --ct-cream: #182820;
   --ct-warn: #f0d078;
   --ct-warn-bg: #3a2a12;
-  --ct-sim: #8ab4d4;
+  --ct-sim: #b8d4ea;
+  --ct-live-bg: #1e2a38;
+  --ct-live-fg: #b8d4ea;
+  --ct-avatar: #2a4034;
+  --ct-chip-bg: #243c30;
+  --ct-error: #f0a0a0;
+  --ct-focus: #7ed9a0;
+  --ct-expand-ring: rgba(126, 217, 160, 0.4);
   --ct-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-html[data-theme="dark"] .clevertree-board .ct-status-line,
-html[data-theme="dark"] .clevertree-board .ct-app-header {
-  background: var(--ct-panel);
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .clevertree-board {
+    --ct-ink: #e8f2ea;
+    --ct-ink-soft: #c5d9cc;
+    --ct-muted: #b0c7ba;
+    --ct-paper: #121c18;
+    --ct-panel: #1a2820;
+    --ct-header: #15221b;
+    --ct-surface: #152019;
+    --ct-line: rgba(232, 242, 234, 0.2);
+    --ct-green: #7ed9a0;
+    --ct-green-deep: #9ae4b4;
+    --ct-btn-bg: #1a7a48;
+    --ct-on-accent: #ffffff;
+    --ct-mint: #1e3328;
+    --ct-mint-deep: #243c30;
+    --ct-cream: #182820;
+    --ct-warn: #f0d078;
+    --ct-warn-bg: #3a2a12;
+    --ct-sim: #b8d4ea;
+    --ct-live-bg: #1e2a38;
+    --ct-live-fg: #b8d4ea;
+    --ct-avatar: #2a4034;
+    --ct-chip-bg: #243c30;
+    --ct-error: #f0a0a0;
+    --ct-focus: #7ed9a0;
+    --ct-expand-ring: rgba(126, 217, 160, 0.4);
+    --ct-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
 }
 
 .clevertree-board *,
@@ -110,7 +136,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   font-size: 0.82rem;
   color: var(--ct-muted);
   border-bottom: 1px solid var(--ct-line);
-  background: #fbfcfb;
+  background: var(--ct-header);
 }
 
 .clevertree-board .ct-status-line[data-live="open"] {
@@ -118,13 +144,13 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 }
 
 .clevertree-board .ct-status-line[data-live="error"] {
-  color: #a33;
+  color: var(--ct-error);
 }
 
 .ct-app-header {
   padding: 0.9rem 1rem 0.55rem;
   border-bottom: 1px solid var(--ct-line);
-  background: linear-gradient(180deg, #fbfcfb 0%, #fff 100%);
+  background: linear-gradient(180deg, var(--ct-header) 0%, var(--ct-panel) 100%);
 }
 
 .ct-app-brand {
@@ -159,8 +185,8 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 }
 
 .ct-badge-live {
-  background: #eef2f6;
-  color: var(--ct-sim);
+  background: var(--ct-live-bg);
+  color: var(--ct-live-fg);
 }
 
 .ct-topic-title {
@@ -198,7 +224,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   gap: 0.25rem;
   padding: 0.55rem 1rem 0;
   border-bottom: 1px solid var(--ct-line);
-  background: #fff;
+  background: var(--ct-panel);
 }
 
 .ct-tab {
@@ -229,7 +255,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 .ct-mobile-tab {
   appearance: none;
   border: 1px solid var(--ct-line);
-  background: #fff;
+  background: var(--ct-panel);
   color: var(--ct-ink);
   font: inherit;
   font-size: 0.88rem;
@@ -240,9 +266,9 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 }
 
 .ct-mobile-tab.is-active {
-  background: var(--ct-green);
-  border-color: var(--ct-green);
-  color: #fff;
+  background: var(--ct-btn-bg);
+  border-color: var(--ct-btn-bg);
+  color: var(--ct-on-accent);
 }
 
 .ct-app-body {
@@ -302,9 +328,9 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 }
 
 .ct-pcard.is-expanded {
-  background: #fff;
-  border-color: rgba(11, 107, 69, 0.35);
-  box-shadow: 0 0 0 1px rgba(11, 107, 69, 0.12);
+  background: var(--ct-panel);
+  border-color: var(--ct-expand-ring);
+  box-shadow: 0 0 0 1px var(--ct-expand-ring);
 }
 
 .ct-pcard-toggle {
@@ -388,7 +414,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 .ct-counter-chip,
 .ct-counter-link {
   appearance: none;
-  border: 1px solid rgba(11, 107, 69, 0.25);
+  border: 1px solid var(--ct-expand-ring);
   background: var(--ct-mint);
   color: var(--ct-green-deep);
   border-radius: 999px;
@@ -410,7 +436,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   border: 1px solid var(--ct-line);
   border-radius: var(--ct-radius-sm);
   padding: 0.55rem 0.65rem;
-  background: #fff;
+  background: var(--ct-panel);
 }
 
 .ct-post-meta {
@@ -425,7 +451,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   width: 1.35rem;
   height: 1.35rem;
   border-radius: 999px;
-  background: #d9e4dc;
+  background: var(--ct-avatar);
   color: var(--ct-ink);
   display: inline-flex;
   align-items: center;
@@ -446,7 +472,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   font-size: 0.68rem;
   padding: 0.12rem 0.4rem;
   border-radius: 999px;
-  background: #eef3ef;
+  background: var(--ct-chip-bg);
   border: 1px solid var(--ct-line);
 }
 
@@ -473,7 +499,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 }
 
 .ct-contest {
-  background: #fff;
+  background: var(--ct-panel);
   border: 1px solid var(--ct-line);
   color: var(--ct-muted);
 }
@@ -486,13 +512,13 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 
 .ct-unfiled {
   margin-top: 0.65rem;
-  border: 1px dashed rgba(18, 38, 28, 0.22);
+  border: 1px dashed var(--ct-line);
   border-radius: var(--ct-radius);
   padding: 0.7rem 0.8rem;
-  background: #fafcf9;
+  background: var(--ct-surface);
 }
 
-.ct-unfiled h3 {
+.ct-unfiled .ct-unfiled-title {
   margin: 0 0 0.4rem;
   font-size: 0.9rem;
 }
@@ -502,7 +528,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 /* Rail */
 .ct-rail {
   padding: 0.85rem 1rem 1rem;
-  background: #fbfcfb;
+  background: var(--ct-header);
   height: 100%;
 }
 
@@ -534,7 +560,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   margin-top: 0.35rem;
   border-radius: 999px;
   background: var(--ct-mint-deep);
-  border: 1px solid rgba(11, 107, 69, 0.35);
+  border: 1px solid var(--ct-expand-ring);
 }
 
 .ct-act--live .ct-act-dot { background: var(--ct-green); }
@@ -558,17 +584,17 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 .ct-demo-box {
   border-radius: var(--ct-radius);
   background: var(--ct-mint);
-  border: 1px solid rgba(11, 107, 69, 0.18);
+  border: 1px solid var(--ct-expand-ring);
   padding: 0.8rem 0.85rem;
 }
 
 .ct-demo-box.is-paused {
-  background: #dff0e6;
-  border-color: rgba(11, 107, 69, 0.35);
+  background: var(--ct-mint);
+  border-color: var(--ct-expand-ring);
 }
 
 .ct-demo-box--off {
-  background: #f3f4f3;
+  background: var(--ct-surface);
   border-color: var(--ct-line);
 }
 
@@ -605,8 +631,8 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   height: 2.6rem;
   border-radius: 999px;
   border: 0;
-  background: var(--ct-green);
-  color: #fff;
+  background: var(--ct-btn-bg);
+  color: var(--ct-on-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -658,7 +684,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 .ct-composer-dock {
   padding: 0.75rem 1rem 1rem;
   border-top: 1px solid var(--ct-line);
-  background: #fff;
+  background: var(--ct-panel);
 }
 
 .ct-composer-launch {
@@ -666,8 +692,8 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   appearance: none;
   border: 0;
   border-radius: 999px;
-  background: var(--ct-green);
-  color: #fff;
+  background: var(--ct-btn-bg);
+  color: var(--ct-on-accent);
   font: inherit;
   font-weight: 650;
   padding: 0.9rem 1rem;
@@ -677,7 +703,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 .ct-composer {
   border-top: 1px solid var(--ct-line);
   padding: 0.75rem 1rem 1rem;
-  background: #fff;
+  background: var(--ct-panel);
 }
 
 .ct-composer--wide-only {
@@ -712,7 +738,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   padding: 0.65rem 0.75rem;
   border-radius: var(--ct-radius-sm);
   border: 1px solid var(--ct-line);
-  background: #fff;
+  background: var(--ct-panel);
 }
 
 .ct-composer-tools {
@@ -727,7 +753,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 .ct-post-btn {
   appearance: none;
   border: 1px solid var(--ct-line);
-  background: #fff;
+  background: var(--ct-panel);
   border-radius: 0.5rem;
   padding: 0.45rem 0.7rem;
   font: inherit;
@@ -746,11 +772,18 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 
 .ct-post-btn {
   margin-left: auto;
-  background: var(--ct-green);
-  border-color: var(--ct-green);
-  color: #fff;
+  background: var(--ct-btn-bg);
+  border-color: var(--ct-btn-bg);
+  color: var(--ct-on-accent);
   font-weight: 650;
   padding: 0.5rem 1rem;
+}
+
+.ct-unfiled-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ct-ink);
 }
 
 .ct-key-picker {
@@ -765,7 +798,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   padding: 0.45rem;
   border: 1px solid var(--ct-line);
   border-radius: 0.45rem;
-  background: #fafcf9;
+  background: var(--ct-surface);
 }
 
 .ct-key-opt {
@@ -816,7 +849,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   border: 1px solid var(--ct-line);
   border-radius: var(--ct-radius);
   padding: 0.85rem;
-  background: #fff;
+  background: var(--ct-panel);
 }
 
 .ct-focus-side h2 {
@@ -855,7 +888,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 .ct-canvas-svg {
   width: 100%;
   height: auto;
-  background: #f7faf7;
+  background: var(--ct-surface);
   border-radius: var(--ct-radius);
   border: 1px solid var(--ct-line);
 }
@@ -866,7 +899,7 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
 }
 
 .ct-node circle {
-  fill: #fff;
+  fill: var(--ct-panel);
   stroke: var(--ct-green);
   stroke-width: 2;
   cursor: pointer;
@@ -909,14 +942,14 @@ html[data-theme="dark"] .clevertree-board .ct-app-header {
   border-radius: var(--ct-radius);
   padding: 0.75rem;
   margin-bottom: 0.55rem;
-  background: #fff;
+  background: var(--ct-panel);
 }
 .ct-board-label { color: var(--ct-muted); font-size: 0.82rem; }
 .ct-activity-mobile {
   display: block;
   width: 100%;
   border: 1px dashed var(--ct-line);
-  background: #fafcf9;
+  background: var(--ct-surface);
   border-radius: var(--ct-radius);
   padding: 0.55rem 0.7rem;
   text-align: left;

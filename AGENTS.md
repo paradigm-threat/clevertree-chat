@@ -30,6 +30,7 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 - **Realtime AI host** on `api.clevertree.chat`: durable `/api/chat` (+ `/api/debate` alias) → comments checkout; WS fan-out; always-on heuristic drain
 - **IRC bridge** (when enabled): PRIVMSG ↔ submit; WS mirrors the same events
 - Live boards `/chat`, `/chat/flock-cameras`, `/chat/thc-legalization`, PT review `/chat/5g` / `geoengineering` / `general` (seeded or full SoT via `CLEVERTREE_COMMENTS_PATH`)
+- Website rooms without the extension: `clevertree.chat/w/<host>` or `/w/<host>/<path>` (also `api…/chat/w/…`); SoT subpath created only on first comment
 - Heuristic batch (file keys, `other`, pairs, positions, questions) — no GPU yet
 - Extension → `api.clevertree.chat` only; domain-level page scope; first-use skippable coach
 - ~5.4k Paradigm Threat posts refiled on the comments branch
@@ -42,7 +43,7 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 3. **Internet investigations** — batch cites and fetches live counters (today: URL recorded, **page not fetched**). Prove egress from Intake/Spot vs Vercel.
 4. **Anti-bot / anti-spam access** — measure what blocks plain HTTP, headless browsers, and APIs before wiring fetch into the curator. No fetch path exists yet.
 5. **Human loop** — low-confidence → `questions.md` already; deliver asks on IRC and fold answers into `rules.md` / KB.
-6. **Spam court + URL associations** — apply `spam_court` / `associations` in drain (helpers landed; batch wiring next).
+6. **Spam court + URL associations** — `associations.json` provisional page noted on first URL-room submit; spam court + batch merge/link still next.
 
 ## Locked product rules (don’t undo)
 
@@ -55,8 +56,12 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 ## Tests
 
 ```bash
-python3 -m unittest discover -s tests -v
+npm run test:unit
+npm run test:e2e
+npm run test:e2e:a11y   # axe WCAG AA contrast on board (light + dark)
 ```
+
+PR CI (GitHub Actions + GitLab CI): unit, durable E2E, and ADA contrast gates.
 
 ## Related
 
