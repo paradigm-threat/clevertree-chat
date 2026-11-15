@@ -9,7 +9,7 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | HTTP API | `/api/chat` and `/api/debate` (same durable dispatch) |
 | WebSocket | `/api/chat/ws?topic=…&visitor=…` |
 | Events | `hello`, `post.live`, `batch.notice`, `board.snapshot` |
-| SoT | Local comments checkout (`CLEVERTREE_COMMENTS_PATH`) → optional GitHub push |
+| SoT | PVC `clevertree-chat-data` at `/app/var/clevertree-live` (`CLEVERTREE_COMMENTS_PATH`) → optional GitHub push |
 
 ## Behavior
 

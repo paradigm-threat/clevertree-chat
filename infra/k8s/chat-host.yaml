@@ -1,5 +1,20 @@
 # Clevertree Chat host on Intake (hostNetwork :8790)
 # Apply after ConfigMap clevertree-chat-code (tree.tar.gz) exists.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clevertree-chat-data
+  namespace: myproblem
+  labels:
+    app: clevertree-chat
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ssd
+  resources:
+    requests:
+      storage: 5Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,8 +47,11 @@ spec:
             - |
               set -euo pipefail
               tar -xzf /code/tree.tar.gz -C /app
+              # PVC keeps comments/auth across rollouts (code tarball must not replace it).
+              mkdir -p /app/var/clevertree-live/comments /app/var/clevertree-live/auth
               pip install --no-cache-dir -q -r /app/requirements.txt
               export CLEVERTREE_COMMENTS_PATH=/app/var/clevertree-live/comments
+              export CLEVERTREE_AUTH_PATH=/app/var/clevertree-live/auth
               export CLEVERTREE_GIT_FALLBACK=1
               export CLEVERTREE_IRC_ENABLE="${CLEVERTREE_IRC_ENABLE:-1}"
               export CLEVERTREE_IRC_HOST="${CLEVERTREE_IRC_HOST:-flashbackrepository.org}"
@@ -82,10 +100,15 @@ spec:
             - name: code
               mountPath: /code
               readOnly: true
+            - name: data
+              mountPath: /app/var/clevertree-live
       volumes:
         - name: code
           configMap:
             name: clevertree-chat-code
+        - name: data
+          persistentVolumeClaim:
+            claimName: clevertree-chat-data
 ---
 apiVersion: v1
 kind: Service

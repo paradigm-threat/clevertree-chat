@@ -8,7 +8,8 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 mkdir -p "$STAGE/api" "$STAGE/clevertree_chat/demos" "$STAGE/scripts" "$STAGE/chat" \
-  "$STAGE/fronts/snippet" "$STAGE/fixtures/pt-review" "$STAGE/var/clevertree-live" "$STAGE/infra"
+  "$STAGE/fronts/snippet" "$STAGE/fixtures/pt-review" "$STAGE/infra"
+# Do not pack var/clevertree-live — Intake mounts a PVC there for durable SoT.
 
 # Full library surface for DebateService + dulwich git fallback
 cp "$ROOT/clevertree_chat/"*.py "$STAGE/clevertree_chat/"

@@ -38,7 +38,7 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 
 ## Near-future goals (priority)
 
-1. **Full SoT mount on Intake** — point host at the full comments checkout (not fixture seed only); GitHub sync when desired.
+1. **Full SoT mount on Intake** — PVC keeps live comments across rollouts; next: mount full comments checkout (not fixture seed only) + GitHub sync when desired.
 2. **Real batch SI pass** — wake Spot GPU when needed (`CLEVERTREE_SPOT_WAKE`); run a true curator once end-to-end (file + summarize + ask humans on low confidence).
 3. **Internet investigations** — batch cites and fetches live counters (today: URL recorded, **page not fetched**). Prove egress from Intake/Spot vs Vercel.
 4. **Anti-bot / anti-spam access** — measure what blocks plain HTTP, headless browsers, and APIs before wiring fetch into the curator. No fetch path exists yet.
