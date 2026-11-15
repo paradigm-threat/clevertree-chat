@@ -164,6 +164,8 @@ def _collect_questions(root: Path, topics: list[str]) -> list[dict[str, str]]:
             i = segs.index("topics")
             if i + 1 < len(segs):
                 topic = segs[i + 1]
+        elif len(segs) >= 2 and segs[0] == "pages":
+            topic = segs[1]
         asks.append({"topic": topic, "path": parts, "question": bullets[0][:280]})
     return asks[:20]
 
