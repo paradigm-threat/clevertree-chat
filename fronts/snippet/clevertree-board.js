@@ -1053,6 +1053,10 @@
     document.querySelectorAll("[data-clevertree-board]").forEach(mount);
   }
 
+  if (typeof window !== "undefined") {
+    window.ClevertreeBoard = { mount: mount, boot: boot };
+  }
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
   } else {
