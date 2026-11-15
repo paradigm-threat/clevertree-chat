@@ -25,6 +25,10 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_COMMENTS_PATH` | Comments checkout (created if missing) |
 | `CLEVERTREE_AUTH_PATH` | Auth tree (default under `var/clevertree-live/auth`) |
 | `CLEVERTREE_GITHUB_TOKEN` + `CLEVERTREE_COMMENTS_SYNC=1` | Pull/push via GitHub API (optional) |
+| `CLEVERTREE_PUBLISH_REMOTES` | Space/comma-separated remotes for post-drain `git push` of `comments` (e.g. `git://iad1.relaygateway.net:9418/clevertree-chat-comments.git`) |
+| `CLEVERTREE_FETCH=1` | Fetch suggested-counter URLs during batch hooks |
+| `CLEVERTREE_SPOT_WAKE=1` | Request Spot GPU wake (needs `RACKSPACE_SPOT_TOKEN` for a real API call) |
+| `CLEVERTREE_SEED_FIXTURES=0` | Skip fixture seed (Intake full SoT) |
 | `CLEVERTREE_USE_SIBLING=1` | Dev: use `../clevertree-chat-comments` |
 | `CLEVERTREE_GIT_FALLBACK=1` | Force dulwich when `git` is absent |
 | `CLEVERTREE_IRC_ENABLE=1` | Start Ergo IRC bridge (see [irc-backbone.md](irc-backbone.md)) |

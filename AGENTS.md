@@ -27,23 +27,23 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 
 ## What works today
 
-- **Realtime AI host** on `api.clevertree.chat`: durable `/api/chat` (+ `/api/debate` alias) → comments checkout; WS fan-out; always-on heuristic drain
-- **IRC bridge** (when enabled): PRIVMSG ↔ submit; WS mirrors the same events
-- Live boards `/chat`, `/chat/flock-cameras`, `/chat/thc-legalization`, PT review `/chat/5g` / `geoengineering` / `general` (seeded or full SoT via `CLEVERTREE_COMMENTS_PATH`)
+- **Realtime AI host** on `api.clevertree.chat`: durable `/api/chat` (+ `/api/debate` alias) → PVC SoT; WS fan-out; always-on heuristic drain + `batch_hooks`
+- **IRC bridge** (when enabled): PRIVMSG ↔ submit; `SI ask` / `!answer` fold into `owner-answers.md` + `rules.md`
+- Live boards `/chat`, `/chat/flock-cameras`, `/chat/thc-legalization`, PT review `/chat/5g` / `geoengineering` / `general` (full SoT via PVC + `.clevertree-full-sot`)
 - Website rooms without the extension: `clevertree.chat/w/<host>` or `/w/<host>/<path>` (also `api…/chat/w/…`); SoT subpath created only on first comment
-- Heuristic batch (file keys, `other`, pairs, positions, questions) — no GPU yet
-- Extension → `api.clevertree.chat` only; domain-level page scope; first-use skippable coach
+- Heuristic batch (file keys, `other`, pairs, positions, questions) + associations / spam-state / optional live fetch (`CLEVERTREE_FETCH=1`)
+- Spot GPU wake gated by `CLEVERTREE_SPOT_WAKE` + token (off in prod)
+- Mesh persistence: catalog `clevertree-chat-comments` `publish_branch: comments` → iad1; host `CLEVERTREE_PUBLISH_REMOTES`
+- Extension → `api.clevertree.chat` only; domain-level page scope; first-use skippable coach; zip at `/extension` (Chrome Web Store listing optional — see [`docs/chrome-web-store.md`](docs/chrome-web-store.md))
 - ~5.4k Paradigm Threat posts refiled on the comments branch
-- Association graph + spam court **clock helpers** in library (batch application still GPU/human loop)
 
 ## Near-future goals (priority)
 
-1. **Full SoT mount on Intake** — PVC + `.clevertree-full-sot` / `bootstrap_comments_checkout.sh`; optional GitHub token sync on empty PVC.
-2. **Real batch SI pass** — heuristic drain + `batch_hooks` on Intake; Spot GPU wake gated by `CLEVERTREE_SPOT_WAKE` + `RACKSPACE_SPOT_TOKEN` (off in prod until token mounted).
-3. **Internet investigations** — `clevertree_chat/fetch.py` + `CLEVERTREE_FETCH=1` cites/fetches suggested-counter URLs (soft-fail on blocks).
-4. **Anti-bot / anti-spam access** — `probe_egress` records block/captcha signals; expand coverage as fetch hits more hosts.
-5. **Human loop** — `questions.md` → IRC `SI ask`; owners reply `!answer` / `si answer:` → fold into `owner-answers.md` + `rules.md`.
-6. **Spam court + URL associations** — drain hooks refresh `associations.json` (www fold) and write `spam-state.json` from court clocks.
+1. **Chrome Web Store** — human dashboard upload + review ([`docs/chrome-web-store.md`](docs/chrome-web-store.md)).
+2. **GitLab forge mirror** for `clevertree-chat-comments` (catalog currently points at GitHub).
+3. **History `.relay.yaml` inject** if iad1 ever re-clones from forge (tip already has policy; seed used bundle).
+4. **Broader fetch coverage** — more hosts + anti-bot probes beyond the starter egress sample.
+5. **Spot token mount** — turn on `CLEVERTREE_SPOT_WAKE` only when a comments GPU pass is ready.
 
 ## Locked product rules (don’t undo)
 

@@ -77,6 +77,8 @@ spec:
               value: "1"
             - name: CLEVERTREE_SPOT_WAKE
               value: "0"
+            - name: CLEVERTREE_PUBLISH_REMOTES
+              value: "git://iad1.relaygateway.net:9418/clevertree-chat-comments.git"
             - name: CLEVERTREE_IRC_ENABLE
               value: "1"
             - name: CLEVERTREE_IRC_HOST

@@ -148,6 +148,22 @@ def _persist() -> None:
         return
     with _lock:
         _store.save(_service.debate, _service.auth)
+    _publish_mesh()
+
+
+def _publish_mesh() -> None:
+    """Best-effort push of the comments tip to catalog remotes (iad1 / forge)."""
+    raw = os.environ.get("CLEVERTREE_PUBLISH_REMOTES", "").strip()
+    if not raw or _service is None:
+        return
+    remotes = [r for r in raw.replace(",", " ").split() if r]
+    if not remotes:
+        return
+    try:
+        _service.debate.publish(remotes)
+    except Exception:
+        # Mesh publish must never fail the live submit/drain path.
+        pass
 
 
 def identify(visitor: str = "") -> dict:
