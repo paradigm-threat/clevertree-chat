@@ -175,9 +175,11 @@
     root.setAttribute("aria-label", "Horizon forest of overlapping trees");
 
     const mobile = options.mobile != null ? !!options.mobile : isMobileForestViewport();
-    const nearFloor = options.nearFloor != null ? options.nearFloor : 2;
-    const hillRise = options.hillRise != null ? options.hillRise : (mobile ? 48 : 32);
-    const scaleMul = options.scaleMul != null ? options.scaleMul : (mobile ? 0.82 : 1);
+    // Seat trunks on the painted ridge (~25–32% from bottom in landscape art,
+    // ~48–57% in portrait). far uses most of hillRise; near stays near the floor.
+    const nearFloor = options.nearFloor != null ? options.nearFloor : (mobile ? 10 : 4);
+    const hillRise = options.hillRise != null ? options.hillRise : (mobile ? 48 : 28);
+    const scaleMul = options.scaleMul != null ? options.scaleMul : (mobile ? 0.78 : 0.92);
     const night = typeof global.prefersDarkScheme === "function"
       ? global.prefersDarkScheme()
       : false;

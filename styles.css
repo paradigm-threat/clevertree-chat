@@ -650,6 +650,13 @@ footer {
   overflow-x: clip;
   /* Sky → warm sunset wash → soft hill green into cream under the band */
   background: linear-gradient(180deg, #3f8fd0 0%, #7eb6e6 16%, #f0b57a 40%, #c8e6a8 55%, var(--cream) 76%);
+  /*
+    Shared band geometry for art + stand (must stay in sync).
+    Landscape art is ~16:9 (1600×900 / 1024×576). Cap height so the box
+    never gets taller than the art’s aspect — then cover crops sides only,
+    and the hill ridge stays at a stable % of the band.
+  */
+  --trees-band-h: min(58vh, 38rem, calc(100vw * 900 / 1600));
 }
 
 .trees-bg {
@@ -658,15 +665,15 @@ footer {
   right: 0;
   top: 0;
   z-index: 0;
-  /* Tall enough that near-tree trunks (~75–82% of band) stay above the fade */
-  height: min(58vh, 38rem);
+  width: 100%;
+  height: var(--trees-band-h);
   overflow: hidden;
   pointer-events: none;
   background-color: #1f5c32;
   background-image: url("/images/forest-horizon.jpg");
   background-image: url("/images/forest-horizon.webp");
-  /* Cover keeps art aspect (round moon); center-top keeps sky/moon in frame */
-  background-position: center top;
+  /* Cover + center: with aspect-capped height, vertical ridge mapping stays stable */
+  background-position: center center;
   background-size: cover;
   background-repeat: no-repeat;
   /* Keep opaque through near trunks; soft fade only at the very bottom */
@@ -688,13 +695,12 @@ footer {
 
 .trees-copy {
   /*
-    Clear the fixed forest band (.trees-bg / #forest stay viewport-anchored).
-    Title stays above trees via .trees-wrap z-index; lower prose sits on cream
-    so the fixed stand never reads through or over the copy.
+    Clear the fixed forest band (.trees-bg / #forest share --trees-band-h).
+    Title stays above trees via .trees-wrap z-index.
   */
   position: relative;
   z-index: 1;
-  padding-top: max(12rem, calc(min(58vh, 38rem) - 4.75rem));
+  padding-top: max(12rem, calc(var(--trees-band-h) - 4.75rem));
   max-width: 40rem;
 }
 
@@ -793,18 +799,18 @@ footer {
 
 .forest-horizon {
   /*
-    Fixed with .trees-bg: stand stays in the viewport while the page scrolls.
+    Same fixed rect as .trees-bg so trunks seat on the painted ridge at every
+    viewport — not a shorter/offset band that floats trees in the sky.
     z-index 1 under .trees-wrap (2) so title/prose stay above the trees.
-    Flush width (no -10% bleed).
   */
   position: fixed;
   left: 0;
   right: 0;
-  top: max(4vh, 2.5rem);
+  top: 0;
   z-index: 1;
   width: 100%;
   margin: 0;
-  height: min(44vh, 28rem);
+  height: var(--trees-band-h);
   overflow: hidden;
   pointer-events: none;
 }
@@ -841,32 +847,23 @@ footer {
   filter: none;
 }
 
-/* Narrow viewports: portrait hills art, taller band, tree bleed past edges */
+/* Narrow viewports: portrait hills art (576×1024), shared band with stand */
 @media (max-width: 460px) {
   .trees-body {
     background: linear-gradient(180deg, #3f8fd0 0%, #7eb6e6 14%, #f0b57a 38%, #c8e6a8 58%, var(--cream) 78%);
+    /* Portrait art aspect; cap so band doesn’t eat the whole phone */
+    --trees-band-h: min(70vh, 40rem, calc(100vw * 1024 / 576));
   }
 
   .trees-bg {
-    height: min(70vh, 40rem);
     background-image: url("/images/forest-horizon-mobile.jpg");
     background-image: url("/images/forest-horizon-mobile.webp");
-    background-position: center top;
+    background-position: center center;
     background-size: cover;
   }
 
   .trees-copy {
-    padding-top: max(14rem, calc(min(70vh, 40rem) - 4.75rem));
-  }
-
-  .forest-horizon {
-    /* Flush to viewport — no -10% bleed (page skew fix) */
-    left: 0;
-    right: 0;
-    width: 100%;
-    top: max(5vh, 2.75rem);
-    height: min(55vh, 34rem);
-    overflow: hidden;
+    padding-top: max(14rem, calc(var(--trees-band-h) - 4.75rem));
   }
 }
 
