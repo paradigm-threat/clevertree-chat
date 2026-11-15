@@ -1,69 +1,77 @@
 import { expect, test } from "@playwright/test";
-import steps from "../../fronts/snippet/demo-steps/thc-legalization.json";
 
-const visitorBodies = steps.steps
-  .filter((s) => (s.name || "").toLowerCase() === "maya")
-  .map((s) => s.body);
-
-test.describe("containable chat + WebSocket peer inject", () => {
-  test("visitor posts via composer; peer arrives without composer fill", async ({ page }) => {
-    await page.goto("/chat/thc-legalization?autoplay=0");
-    const root = page.locator("[data-clevertree-chat]");
-    await expect(root).toBeVisible();
-    await expect(root.locator('[data-role="live"]')).toHaveAttribute("data-state", "open", {
-      timeout: 15_000,
+/**
+ * Durable board E2E against local chat_host (see playwright.config.ts webServer).
+ * No scripted Continue / peer inject — coach is skippable UI only.
+ */
+test.describe("durable chat board", () => {
+  test("board loads live; no Continue; post appears in activity", async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem("clevertree.coachSeen", "1");
+      } catch (_) {}
     });
+    await page.goto("/chat/flock-cameras");
+    const root = page.locator("[data-clevertree-board]");
+    await expect(root).toBeVisible({ timeout: 15_000 });
 
-    await root.locator('[data-act="reset"]').click();
-    await expect(root.locator('[data-role="status"]')).toContainText(/reset/i);
+    await expect(page.locator("#btn-continue")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Continue$/i })).toHaveCount(0);
 
-    const name = root.locator('[data-role="name"]');
-    const post = root.locator('[data-role="post"]');
-    await name.fill("Ari");
-    await post.fill(visitorBodies[0]);
-    await root.locator('[data-role="composer"] button[type="submit"]').click();
-    await expect(root).toHaveAttribute("data-busy", "true");
-    await expect(root).not.toHaveAttribute("data-busy", "true", { timeout: 30_000 });
+    const live = root.locator("[data-live]");
+    await expect(live.first()).toBeVisible({ timeout: 15_000 });
 
-    await expect(root.locator('.ct-activity-row[data-mine="true"]')).toHaveCount(1, {
-      timeout: 10_000,
-    });
-    await expect(root.locator('[data-section="personal-freedom"]')).toBeVisible({
-      timeout: 15_000,
-    });
+    const dock = root.locator("[data-open-composer]");
+    const wide = root.locator("textarea#ct-body-wide");
+    if (!(await wide.isVisible().catch(() => false)) && (await dock.count())) {
+      await dock.first().click();
+    }
+    const body = root.locator("[data-draft-body]").first();
+    await expect(body).toBeVisible({ timeout: 15_000 });
+    const marker = `e2e flock ${Date.now()}`;
+    await body.fill(`${marker} — privacy claim about camera networks.`);
 
-    // Jordan is injected by the server — composer must stay empty while peer appears
-    await expect(post).toHaveValue("");
-    await expect(
-      root.locator('.ct-activity-row[data-mine="false"][data-kind="post"]')
-    ).toBeVisible({ timeout: 20_000 });
-    await expect(root.locator('[data-section="public-health-harm"]')).toBeVisible({
-      timeout: 20_000,
-    });
-
-    const peerChip = root.locator(
-      '.ct-activity-row[data-mine="false"][data-kind="post"] .ct-chip'
+    const submitPromise = page.waitForResponse(
+      (res) =>
+        res.url().includes("/api/chat") &&
+        res.request().method() === "POST" &&
+        res.status() === 200,
+      { timeout: 30_000 },
     );
-    await expect(peerChip.first()).not.toHaveText("You");
-    await expect(root.locator('.ct-activity-row[data-mine="true"] .ct-chip').first()).toHaveText(
-      "You"
-    );
+    await root.locator("[data-composer] button[type='submit']").first().click();
+    await submitPromise;
+
+    await expect(root.getByText(marker, { exact: false })).toBeVisible({
+      timeout: 30_000,
+    });
   });
 
-  test("Play runs visitor beats only through the composer", async ({ page }) => {
-    await page.goto("/chat/thc-legalization?autoplay=0");
-    const root = page.locator("[data-clevertree-chat]");
-    await root.locator('[data-act="play"]').click();
-    await expect(root.locator('[data-role="status"]')).toContainText(/finished|keep posting/i, {
-      timeout: 180_000,
-    });
-    for (const key of steps.final.keys) {
-      await expect(root.locator(`[data-section="${key}"]`)).toBeVisible();
+  test("coach skip persists for subsequent loads", async ({ page }) => {
+    // Fresh context → coachSeen unset → coach visible
+    await page.goto("/chat/thc-legalization");
+    const root = page.locator("[data-clevertree-board]");
+    await expect(root).toBeVisible({ timeout: 15_000 });
+    const skip = root.locator("[data-coach-skip]");
+    await expect(skip.first()).toBeVisible({ timeout: 10_000 });
+    await skip.first().click();
+    await expect(root.locator("[data-coach-skip]")).toHaveCount(0);
+    await expect
+      .poll(async () => page.evaluate(() => localStorage.getItem("clevertree.coachSeen")))
+      .toBe("1");
+
+    await page.reload();
+    await expect(root).toBeVisible({ timeout: 15_000 });
+    await expect(root.locator("[data-coach-skip]")).toHaveCount(0);
+  });
+
+  test("scripted demo actions are rejected by API", async ({ request }) => {
+    for (const action of ["replay", "advance", "play"]) {
+      const res = await request.post("/api/chat", {
+        data: { action },
+      });
+      expect(res.status()).toBe(400);
+      const body = await res.json();
+      expect(String(body.error || "")).toMatch(/scripted/i);
     }
-    await expect(root.locator('[data-suggestion="federal-ban"]')).toBeVisible();
-    await expect(root.locator('.ct-activity-row[data-mine="true"]')).toHaveCount(4);
-    await expect(
-      root.locator('.ct-activity-row[data-mine="false"][data-kind="post"]')
-    ).toHaveCount(3);
   });
 });

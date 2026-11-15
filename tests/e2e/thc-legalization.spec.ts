@@ -1,7 +1,6 @@
 import { test } from "@playwright/test";
 
-// Guided multi-person demo moved to the Intake chat host.
-// See tests/e2e/chat-websocket.spec.ts
-test.describe.skip("legacy vercel /try thc demo", () => {
-  test("replaced by chat-websocket.spec.ts", async () => {});
+// Legacy guided /try demo retired. Durable coverage lives in chat-websocket.spec.ts
+test.describe.skip("legacy vercel guided thc demo", () => {
+  test("replaced by durable chat-websocket.spec.ts", async () => {});
 });
