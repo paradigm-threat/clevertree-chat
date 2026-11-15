@@ -12,7 +12,7 @@ This file merges the product redesign proposal with the debate-visualization lib
 
 ## Product proposition
 
-Clevertree is a standing debate, not a reply thread. A visitor contributes a natural-language point; Clevertree organizes original posts into existing or new **perspectives** (keys), makes counterarguments legible through flexible multi-links, and maintains a readable map for everyone watching. SI (Super Intelligence, i.e. AI) curates in batches according to human-authored rules; it does not declare a winner.
+Clevertree is a standing debate, not a reply thread. A visitor contributes a natural-language point; Clevertree organizes original posts into existing or new **perspectives** (keys), makes counterarguments legible through flexible multi-links, and maintains a readable map for everyone watching. SI (Super Intelligence, i.e. AI) curates in batches according to human-authored rules: it organizes the map fairly and does not vote, take sides, or declare a winner — humans alone supply preference.
 
 **Core promise:** *Many people can speak. Their contributions accumulate into a small number of understandable arguments. Those arguments can challenge one another without becoming a tangled reply thread.*
 
