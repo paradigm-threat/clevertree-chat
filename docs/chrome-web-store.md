@@ -15,7 +15,7 @@ Unpacked zip download already ships from [clevertree.chat/extension](https://cle
 |-------|------|
 | **Name** | Clevertree Chat |
 | **Summary** | Debate the site you’re on. One room per domain. Empty until you write. |
-| **Description** | Opens a side panel Debate board for the active tab’s whole site. Visitor and topic IDs come from api.clevertree.chat; posts are durable and organized by batch SI. No private standing exceptions. Prefer clevertree.chat/w/… if you do not want an extension. |
+| **Description** | Opens a side panel Debate board for the active tab’s whole site. Visitor and topic IDs come from api.clevertree.chat; posts are queued for batch SI, which alone permanently files accepted comments. No private standing exceptions. Prefer clevertree.chat/w/… if you do not want an extension. |
 | **Category** | Social / Productivity |
 | **Language** | English |
 

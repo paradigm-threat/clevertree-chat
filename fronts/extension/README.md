@@ -6,8 +6,8 @@ MV3 Chromium side panel. Durable Debate board on `api.clevertree.chat`.
 
 - Opens a **side panel** when you click the toolbar icon.
 - Asks **https://api.clevertree.chat** to mint the visitor UUID (`action=identify`) and map the **whole site** (domain-level `page_scope`) to a topic (`action=resolve`). IDs are not generated in the extension.
-- Posts go through durable `/api/chat`; batch SI drains in the background. Live updates use `/api/chat/ws` (and IRC when the host bridge is on).
-- Board stays **empty until you write**.
+- Posts go through `/api/chat` into the **intake queue** (policy: [`docs/intake-queue.md`](../../docs/intake-queue.md)); batch SI alone permanently files into the comments SoT. Live updates use `/api/chat/ws` (and IRC when the host bridge is on).
+- Board stays **empty until you write**; new posts show as provisional until batch accepts.
 - Short skippable first-use coach (`clevertree.coachSeen`).
 - Toolbar links open live flock / THC boards (not scripted demos).
 

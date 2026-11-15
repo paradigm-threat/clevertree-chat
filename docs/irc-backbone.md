@@ -1,6 +1,6 @@
 # IRC backbone (Ergo ↔ Cleverchat)
 
-Realtime updates flow through **Flashback Ergo IRC**. The Cleverchat host runs a thin bridge that mirrors IRC into the durable comments SoT and fans the same events to WebSocket clients.
+Realtime updates flow through **Flashback Ergo IRC**. The Cleverchat host runs a thin bridge that mirrors IRC into the **intake queue** (same path as web) and fans events to WebSocket clients. Permanent SoT filing is batch-only — see [`intake-queue.md`](intake-queue.md).
 
 | | |
 |--|--|
@@ -12,9 +12,10 @@ Realtime updates flow through **Flashback Ergo IRC**. The Cleverchat host runs a
 ## Sync rules
 
 - One IRC channel per debate page/topic: `#pt-general` ↔ topic `general`.
-- Human `PRIVMSG` → durable `submit` (visitor UUID5 from nick).
-- Board/API `submit` → `PRIVMSG` (echo skipped when the bridge originated the post).
-- WebSocket `post.live` / `batch.notice` still come from the host hub after submit/drain — same events, not a second bus.
+- Human `PRIVMSG` → **enqueue** (visitor UUID5 from nick) — not a bypass into the comments SoT.
+- Board/API enqueue → `PRIVMSG` (may mark pending batch; echo skipped when the bridge originated the post).
+- Owner answers: `!answer …` or `si answer:` → fold into `owner-answers.md` / `rules.md` (rules path, not comment spam).
+- WebSocket `post.live` / `batch.notice` still come from the host hub — same events, not a second bus.
 
 ## Environment
 
@@ -29,8 +30,8 @@ Realtime updates flow through **Flashback Ergo IRC**. The Cleverchat host runs a
 
 ## Auto channel create
 
-On first submit for a topic (or IRC message in that channel), the bridge `JOIN`s `#<prefix>-<topic>`. Ergo creates the channel when the first client joins.
+On first enqueue for a topic (or IRC message in that channel), the bridge `JOIN`s `#<prefix>-<topic>`. Ergo creates the channel when the first client joins.
 
 ## Related
 
-- [chat-host.md](chat-host.md) · [infra.md](infra.md) · PT `docs/CHAT_REQUEST_RESPONSE.md`
+- [chat-host.md](chat-host.md) · [intake-queue.md](intake-queue.md) · [infra.md](infra.md) · PT `docs/CHAT_REQUEST_RESPONSE.md`

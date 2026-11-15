@@ -17,9 +17,9 @@ Related: [`infra.md`](infra.md) · [`person-space.md`](person-space.md) · [`cas
 ## Live path (thin)
 
 1. The browser extension, marketing `/w/…` share link, or HTML snippet **normalizes** the tab URL ([`fronts/extension/normalize-url.js`](../fronts/extension/normalize-url.js), [`website_href.py`](../clevertree_chat/website_href.py)): public suffix first, `www` dropped, tracking params removed, meaningful query keys such as `id` / `p` / `story` kept, path lowercased with a trailing slash.
-2. Loading the page does **not** create a topic or comments-repo subpath. The board stays empty until a person types (existing Clevertree Chat rule).
-3. The first human words create the debate under a **provisional page id** derived from that normalized path.
-4. Debate files live on the comments SoT (`pages/<page>/…`). Nothing is written back into the host site. `page.json` may pin a **canonical** page id and flag a stale thesis ([`infra.md`](infra.md)).
+2. Loading the page does **not** create a topic or comments-repo subpath. The board stays empty until a person types.
+3. The first human words **enqueue** under a **provisional page id** derived from that normalized path ([`intake-queue.md`](intake-queue.md)). SoT `pages/<page>/…` appears when the batch **accepts** the first post for that page (not on raw live submit after cutover).
+4. Nothing is written back into the host site. `page.json` may pin a **canonical** page id and flag a stale thesis ([`infra.md`](infra.md)).
 
 ---
 

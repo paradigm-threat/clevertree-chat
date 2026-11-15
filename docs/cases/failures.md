@@ -12,7 +12,7 @@ Borders, elections, and crime are reasons inside `national-security`. Children f
 
 ## Choice is not the final slot
 
-On submit a person may choose a category that already exists. The post is filed there, and that is only the default. They cannot type a new key. If they choose nothing, the post stays in `uncategorized` until the batch. A live suggestion does not file the post. The batch may move the post, including one placed by hand, or also attach the same body to another existing key. When a key moves, the old name stays in `key-history.json` so the old URL resolves. A non-argument is stored. If it names no argument, it stays uncategorized.
+On submit a person may choose a category that already exists — that choice is a **queue recommendation**, not a permanent file. They cannot type a new key. If they choose nothing, the queued post carries no chosen slot until the batch. A live suggestion does not permanently file the post. After batch accept, the batch may move the post, including one recommended by hand, or also attach the same body to another existing key. When a key moves, the old name stays in `key-history.json` so the old URL resolves. A non-argument is stored under `other` when filed (or rejected at intake if it is abuse).
 
 ## Rename plus history
 

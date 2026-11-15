@@ -1,16 +1,20 @@
 # Spam policy (Relay default)
 
-Spam is ascertained by the **batch SI**, not by a public vote that auto-deletes. Once a post is flagged, there is a fixed window to contest it, then a hide-from-view step, then a later hard removal. Anyone who can see the flag may support or protest — not only the author. Repos may tighten the definition and the clocks in `rules.md`. Softening or rewriting what counts as spam still goes through the normal rules process (admin / community agreement / person-space house rules). A pile of protests does **not** rewrite the SI’s standing rules by itself; the batch may still **weigh** those posts when it decides this case and later ones.
+Spam is ascertained by the **batch SI**, not by a public vote that auto-deletes.
 
-Related: [`default-rules.md`](default-rules.md) · [`policy.md`](policy.md) · [`cases/batch-decisions.md`](cases/batch-decisions.md) · [`person-space.md`](person-space.md).
+**Pre-SoT (intake):** when consuming the ephemeral queue ([`intake-queue.md`](intake-queue.md)), the batch may **reject** clear spam/abuse so **no comment body enters the comments SoT**.
 
-**Library:** clock helpers live in [`clevertree_chat/spam_court.py`](../clevertree_chat/spam_court.py) (`lifecycle_state`, `SpamClocks`). Batch drain does not yet write flags automatically — GPU SI / human loop applies them.
+**Post-SoT (filed):** once a post is flagged, there is a fixed window to contest it, then a hide-from-view step, then a later hard removal. Anyone who can see the flag may support or protest — not only the author. Repos may tighten the definition and the clocks in `rules.md`. Softening or rewriting what counts as spam still goes through the normal rules process. A pile of protests does **not** rewrite standing rules by itself.
+
+Related: [`intake-queue.md`](intake-queue.md) · [`default-rules.md`](default-rules.md) · [`policy.md`](policy.md) · [`cases/batch-decisions.md`](cases/batch-decisions.md) · [`person-space.md`](person-space.md).
+
+**Library:** clock helpers live in [`clevertree_chat/spam_court.py`](../clevertree_chat/spam_court.py) (`lifecycle_state`, `SpamClocks`).
 
 ---
 
 ## One-sentence rule
 
-> **Batch flags spam; anyone may contest within X; unanswered flags hide from view after X; after a further Y the post is removed; repos may tighten; only a rules change changes standing policy.**
+> **Prefer reject-at-intake so spam never hits git; for filed posts, batch flags → contest within X → hide → remove after Y; repos may tighten; only a rules change changes standing policy.**
 
 ---
 

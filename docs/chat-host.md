@@ -1,21 +1,22 @@
 # Clevertree Chat host (realtime AI server)
 
-The always-on **realtime AI server** runs on the chat host: lightweight preview/submit, WebSocket fan-out, and an always-on heuristic batch drain. It does **not** boot a GPU.
+The always-on **realtime AI server** runs on the chat host: lightweight preview/submit (gatherer), WebSocket fan-out, and batch drain. It does **not** boot a GPU. Policy: [`intake-queue.md`](intake-queue.md).
 
 | | |
 |--|--|
 | Process | `python3 scripts/chat_host.py` (default `:8790`) |
-| UI | `/chat`, `/chat/<topic>`, `/chat/w/<host>[/path]` (website rooms; empty until first comment) |
-| HTTP API | `/api/chat` and `/api/debate` (same durable dispatch) |
+| UI | `/chat`, `/chat/<topic>`, `/chat/w/<host>[/path]` (website rooms; empty until first comment / first batch accept) |
+| HTTP API | `/api/chat` and `/api/debate` (same dispatch) |
 | WebSocket | `/api/chat/ws?topic=…&visitor=…` |
-| Events | `hello`, `post.live`, `batch.notice`, `board.snapshot` |
-| SoT | PVC `clevertree-chat-data` at `/app/var/clevertree-live` (`CLEVERTREE_COMMENTS_PATH`) → optional GitHub push |
+| Events | `hello`, `post.live` (provisional), `batch.notice`, `board.snapshot` |
+| SoT | PVC comments checkout (`CLEVERTREE_COMMENTS_PATH`) — **batch sole writer** after queue cutover |
+| Queue | PVC `var/clevertree-live/queue/` (ephemeral; not git; cutover pending) |
 
 ## Behavior
 
 - Visitor posts through the board composer; IDs from `identify` / `resolve`.
-- Submit files a starting slot onto the comments tree immediately.
-- Background drain worker runs heuristic SI organization; clients are not the curator.
+- **Policy:** submit **enqueues** body + recommended categorization; board shows provisional pending-batch rows. Batch drain alone permanently files into the comments SoT. *(Until cutover, live still writes SoT — see intake-queue status.)*
+- Background drain runs SI organization; clients are not the curator.
 - No scripted peers (Jordan/Maya). First-use coach is UI-only and skippable.
 
 ## Environment

@@ -115,6 +115,9 @@ def probe_egress(urls: list[str] | None = None) -> dict[str, Any]:
         "https://example.com/",
         "https://api.github.com/zen",
         "https://www.congress.gov/",
+        "https://www.rfc-editor.org/rfc/rfc2616.txt",
+        "https://httpbin.org/get",
+        "https://en.wikipedia.org/wiki/Main_Page",
     ]
     rows = [fetch_url(u).as_dict() for u in targets]
     return {

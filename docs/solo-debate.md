@@ -2,7 +2,7 @@
 
 A second person is optional. The first comment is enough for a debate with the SI.
 
-The visitor states a position in their own words. The live path does not file that under a key of its own. With no chosen existing category, the post stays uncategorized until the batch. The batch may place it in one existing argument, in several, or in none. A new argument appears only when the post fits none of the keys already there. On each slot it does join:
+The visitor states a position in their own words. The live path **enqueues** that text (with optional recommended keys); it does not permanently file under a key of its own ([`intake-queue.md`](intake-queue.md)). With no chosen existing category, the queued post has no chosen slot until the batch. The batch may place an accepted post in one existing argument, in several, or in none. A new argument appears only when the post fits none of the keys already there. On each slot it does join:
 
 - rewrites `position.md` as a short, emotionless restatement
 - writes `questions.md` with the questions that would flesh the argument out

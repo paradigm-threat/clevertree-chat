@@ -13,10 +13,11 @@ We say **SI** (Super Intelligence, i.e. AI) for the software that files, summari
 - The SI re-represents every opinion without emotion. It does not scold. A dangerous or antisocial claim is restated accurately, in the claim's own shape, without an added verdict.
 - Keys are up to the SI. Topics and subtopics may be renamed when the name should change. Old names stay in the index so links follow.
 - Do not mint a key just to catch every sentence. Mint one when a post does not fit the keys that already exist. A posted line such as `Never open a new topic` stops that.
-- File every post as soon as it appears. Do not wait for disagreement before opening a key.
+- Queue every claim as soon as it appears. Permanent filing into the comments SoT happens only when the batch accepts the queued post. Do not wait for disagreement before opening a key once filing.
 - Agreement under a page thesis still gets distinct sub-axis keys from distinct claim shapes. Do not collapse consensus into `other`.
 - The page path is the topic. Never mint a key whose slug equals the page id (no `5g` key under page `5g`).
-- A non-argument (`lol`, join noise, username-only) is stored under `other`. Prefer `other` over leaving `uncategorized` for a post that is not an argument. Live submit may still hold a post in `uncategorized` until the batch; the batch moves non-arguments to `other`.
+- A non-argument (`lol`, join noise, username-only) is stored under `other` when filed. Prefer `other` over leaving `uncategorized` for a post that is not an argument. Live enqueue may carry a recommended slot; the batch decides the final key (including `other`).
+- Clear spam / abuse may be **rejected at intake** so no comment body enters the SoT; filed posts still use the flag→contest→hide→remove clocks in [`spam.md`](spam.md).
 - Unwritten counters stay suggestions, not directories, until someone writes them.
 - Questions are allowed. A question that names an axis joins that category. A question that fits an existing key does not open a new one. A posted line such as `Do not ask questions` stops a question from opening a key.
 - A visitor who has not named themselves gets a generated name from the topic and what they wrote. Generated names stay professional, safe for work, funny when that still fits, and simple. They come from an allowlist. A name the visitor set is left alone. A generated name may be revised when their writing changes. The visible name is not stored in the private auth repo.
