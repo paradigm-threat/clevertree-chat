@@ -655,15 +655,15 @@
       const unfiled = unfiledPosts();
       const empty =
         !store.board.keys.length && !unfiled.length
-          ? '<p class="ct-invite">No perspectives yet — be the first to add a point.</p>'
-          : '<p class="ct-invite">' + escapeHtml(store.board.topic.invite) + "</p>";
+          ? '<p class="ct-invite ct-invite--empty">No perspectives yet — be the first to add a point.</p>'
+          : "";
       return (
         '<div class="ct-board-scroll" data-board-scroll>' +
         empty +
         cards +
-        '<section class="ct-unfiled"><h2 class="ct-unfiled-title">Unfiled' +
+        '<section class="ct-unfiled"><h3 class="ct-unfiled-title">Unfiled' +
         (unfiled.length ? " · " + unfiled.length + " awaiting organization" : "") +
-        "</h2>" +
+        "</h3>" +
         (unfiled.length
           ? unfiled.map(postCardHtml).join("")
           : '<p class="ct-muted">Nothing waiting.</p>') +
@@ -777,9 +777,9 @@
           "</p>" +
           '<header class="ct-app-header"><div class="ct-app-brand"><span>Clevertree Chat</span>' +
           '<span class="ct-badge-live">Live</span>' +
-          '</div><h1 class="ct-topic-title">' +
+          '</div><h2 class="ct-topic-title">' +
           escapeHtml(store.board.topic.title) +
-          '</h1><div class="ct-app-meta">' +
+          '</h2><div class="ct-app-meta">' +
           '<a class="ct-rules-link" href="https://clevertree.chat/dev" target="_blank" rel="noopener">House rules · SI organizes (Super Intelligence, i.e. AI)</a>' +
           '<span class="ct-count-pill">' +
           n +

@@ -311,8 +311,8 @@ html[data-theme="dark"] .clevertree-board {
   line-height: 1.4;
 }
 
-.ct-invite::before {
-  content: "Explore the arguments";
+.ct-invite--empty::before {
+  content: "Start the debate";
   display: block;
   font-weight: 700;
   margin-bottom: 0.2rem;

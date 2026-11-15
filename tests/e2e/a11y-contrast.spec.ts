@@ -19,13 +19,16 @@ async function expectNoSeriousContrast(page: Page, label: string) {
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
 
-  const contrast = results.violations.filter((v) => v.id === "color-contrast");
-  const serious = results.violations.filter(
-    (v) => v.impact === "serious" || v.impact === "critical" || v.id === "color-contrast",
+  const blocking = results.violations.filter(
+    (v) =>
+      v.id === "color-contrast" ||
+      v.id === "heading-order" ||
+      v.impact === "serious" ||
+      v.impact === "critical",
   );
 
-  if (serious.length) {
-    const detail = serious
+  if (blocking.length) {
+    const detail = blocking
       .map((v) => {
         const nodes = (v.nodes || [])
           .slice(0, 6)
@@ -34,9 +37,8 @@ async function expectNoSeriousContrast(page: Page, label: string) {
         return `${v.id} (${v.impact}): ${v.help}\n${nodes}`;
       })
       .join("\n\n");
-    expect(serious, `${label}\n${detail}`).toEqual([]);
+    expect(blocking, `${label}\n${detail}`).toEqual([]);
   }
-  expect(contrast, label).toEqual([]);
 }
 
 test.describe("board a11y contrast", () => {
