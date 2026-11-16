@@ -3,6 +3,8 @@
 **Public brief:** [clevertree.chat/dev](https://clevertree.chat/dev)  
 **Repo:** [GitHub](https://github.com/paradigm-threat/clevertree-chat) · [GitLab](https://gitlab.com/clevertree/clevertree-chat) · **Product:** [clevertree.chat](https://clevertree.chat) · **API / demos:** [api.clevertree.chat](https://api.clevertree.chat)
 
+**Brand spelling:** **Clevertree** — never **CleverTree**. Keep the internal `t` lowercase in copy, titles, docs, and agent text.
+
 Standing debate, not a reply thread. People post original points; the **batch SI** (Super Intelligence, i.e. AI) files them under **perspectives (keys)**, pairs counters, and writes short positions from posted `rules.md` (or Relay defaults). **SI curates and organizes only** — it does not vote, pick winners, or take sides; humans alone supply preference. Cleverchat is an **independent product** — MyProblem and others may mount it; it does not depend on them.
 
 ## One-sentence rule
@@ -70,4 +72,4 @@ PR CI (GitHub Actions + GitLab CI): unit, durable E2E, and ADA contrast gates.
 - MyProblem mount notes: sibling `myproblem` → `docs/clevertree-chat.md`
 - Deeper docs: [`README.md`](README.md) · [`docs/chat-host.md`](docs/chat-host.md) · [`docs/infra.md`](docs/infra.md) · [`docs/intake-queue.md`](docs/intake-queue.md) · [`docs/url-pages-and-associations.md`](docs/url-pages-and-associations.md)
 
-*Last updated: 2026-11-15*
+*Last updated: 2026-11-16*
