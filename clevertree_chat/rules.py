@@ -26,12 +26,17 @@ class Rules:
         "professional, safe for work, funny when it fits, simple"
     )
     summary_prefix: str | None = None
+    # Ephemeral IRC/WS cache is always on; durable transcript in comments SoT:
+    chat_store: str = "full"  # full | never | summaries
 
     def allows_rename(self) -> bool:
         return self.keys != "never"
 
     def allows_new_key(self) -> bool:
         return self.mint != "never"
+
+    def allows_chat_transcript(self) -> bool:
+        return self.chat_store == "full"
 
 
 def default_rules() -> Rules:
@@ -61,6 +66,22 @@ We say SI (Super Intelligence, i.e. AI) for the software that files, summarizes,
 - Questions are allowed. A question that names an axis joins that category. A question that fits an existing key does not open a new one.
 - A visitor who has not named themselves gets a generated name from the topic and what they wrote. Keep generated names professional, safe for work, funny when that still fits, and simple.
 - Spam is ascertained by the batch SI. Clear abuse may be rejected at intake so no comment body enters the SoT. After a flag on a filed post, anyone who sees it may support or protest within 48 hours. If the flag still stands when that window ends, the post is removed from view. After a further 7 days, it is removed entirely. A repo may tighten those clocks or the spam definition in rules.md. Contests inform the batch; they do not rewrite standing rules by themselves.
+
+### Problem pages (MyProblem-style tickets)
+
+When the page is a problem ticket, category keys are solution approaches.
+
+- Tip resolution starts unsolved. Only the batch SI may set tip resolution to solved or back to unsolved. The live path never flips resolution.
+- Humans may claim a fix in chat; that is a proposal, not a status change.
+- If the ticket raiser insists it is solved, or it can reasonably be argued that it is solved, that is good enough to mark solved. Otherwise leave unsolved and note what remains.
+- The tip records who raised the problem. Defaults give the raiser's insistence substantial weight on resolution; a posted rules.md may tighten or loosen that. Product code must not hard-code the weight.
+- When marking solved, drop the ticket's live slug so the public permalink dies. Uuid stays for private API and device transfer only.
+
+### Chat transcripts (IRC / WS)
+
+- Every room keeps an ephemeral server-side recent log for live replay and batch intake. That cache may vanish.
+- The batch may store minimized day transcripts under `pages/<page>/chat/` using short ids from `users/index.json`, unless rules say otherwise.
+- Default `chat_store: full`. A posted `chat_store: never` means read logs for curation only — do not write transcripts. `chat_store: summaries` reserves summary-only storage (optional later).
 """
 
 
@@ -108,4 +129,15 @@ def parse_rules(text: str | None) -> Rules:
         rules.mint = "never"
     if re.search(r"do not ask questions|questions are not allowed|no questions", lower):
         rules.questions_allowed = False
+    store_line = re.search(
+        r"^chat_store:\s*(full|never|summaries)\s*$",
+        text,
+        re.IGNORECASE | re.MULTILINE,
+    )
+    if store_line:
+        rules.chat_store = store_line.group(1).strip().lower()
+    elif re.search(r"do not store chat|never store chat|no chat transcripts", lower):
+        rules.chat_store = "never"
+    elif re.search(r"chat summaries only|store chat summaries only", lower):
+        rules.chat_store = "summaries"
     return rules

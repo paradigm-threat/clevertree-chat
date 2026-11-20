@@ -23,6 +23,16 @@ class IrcMappingTests(unittest.TestCase):
         self.assertEqual(topic_for_channel("pt", "#pt-geoengineering"), "geoengineering")
         self.assertIsNone(topic_for_channel("pt", "#flashback"))
 
+    def test_craft_collection_channel(self):
+        self.assertEqual(
+            channel_for_topic("pt", "ga-savannah-cat-rescue"),
+            "#ga-savannah-cat-rescue",
+        )
+        self.assertEqual(
+            topic_for_channel("pt", "#ga-savannah-cat-rescue"),
+            "ga-savannah-cat-rescue",
+        )
+
 
 class LiveDispatchTests(unittest.TestCase):
     def setUp(self):

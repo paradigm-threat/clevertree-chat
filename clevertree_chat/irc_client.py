@@ -180,11 +180,23 @@ def _split_irc(line: str) -> tuple[str, str, str]:
     return prefix, rest0[:space2], rest0[space2 + 1 :]
 
 
+# Craft / collection rooms: explicit channel names (repo + collection), not #pt-<topic>.
+# e.g. Georgia tip repo + savannah-cat-rescue → #ga-savannah-cat-rescue
+CRAFT_CHANNELS: dict[str, str] = {
+    "ga-savannah-cat-rescue": "#ga-savannah-cat-rescue",
+}
+
+
 def channel_for_topic(prefix: str, topic: str) -> str:
-    """Map a Cleverchat topic slug to #prefix-topic (lobby #prefix for empty)."""
-    p = "".join(ch for ch in (prefix or "pt").lower() if ch.isalnum())[:8] or "pt"
+    """Map a Cleverchat topic slug to IRC channel.
+
+    Classic rooms: #prefix-topic. Craft collections: CRAFT_CHANNELS override.
+    """
     t = (topic or "").strip().lower().replace("/", "-")
     t = "".join(ch for ch in t if ch.isalnum() or ch in "-_")[:48]
+    if t in CRAFT_CHANNELS:
+        return CRAFT_CHANNELS[t]
+    p = "".join(ch for ch in (prefix or "pt").lower() if ch.isalnum())[:8] or "pt"
     if not t or t in {"lobby", "home"}:
         return f"#{p}"
     return f"#{p}-{t}"
@@ -192,8 +204,12 @@ def channel_for_topic(prefix: str, topic: str) -> str:
 
 def topic_for_channel(prefix: str, channel: str) -> str | None:
     """Inverse of channel_for_topic. Returns None if channel is not ours."""
+    ch_norm = normalize_channel(channel)
+    for topic, craft_ch in CRAFT_CHANNELS.items():
+        if normalize_channel(craft_ch) == ch_norm:
+            return topic
     p = "".join(ch for ch in (prefix or "pt").lower() if ch.isalnum())[:8] or "pt"
-    ch = normalize_channel(channel).lstrip("#")
+    ch = ch_norm.lstrip("#")
     if ch == p:
         return "general"
     head = p + "-"

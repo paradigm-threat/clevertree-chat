@@ -76,10 +76,16 @@ def auth_path() -> Path:
     return path
 
 
+# Craft IRC rooms (per tip-repo / collection) — not URL debate pages.
+CRAFT_TOPICS = frozenset({"ga-savannah-cat-rescue"})
+
+
 def page_for_topic(topic: str) -> str:
     """PT review rooms use page==topic; product/extension topics live under try."""
     t = (topic or "").strip()
     if t in REVIEW_TOPICS:
+        return t
+    if t in CRAFT_TOPICS:
         return t
     svc = _service
     if svc is not None:
@@ -374,6 +380,23 @@ def dispatch(payload: dict, query: dict, cookie: str = "") -> tuple[int, dict]:
         _persist()
         return 200, result
 
+    if action == "chat_history":
+        from clevertree_chat import irc_log_cache
+
+        limit = payload.get("limit") or query.get("limit")
+        try:
+            lim = int(limit) if limit is not None else None
+        except (TypeError, ValueError):
+            lim = None
+        return 200, {
+            "topic": topic,
+            "chat_history": irc_log_cache.recent(topic, limit=lim),
+        }
+
+    if action == "drain_irc_logs":
+        results = drain_irc_log_jobs(limit=int(payload.get("limit") or 20))
+        return 200, {"results": results, "count": len(results)}
+
     view = view_topic(
         topic, visitor, str(query.get("subtopic") or payload.get("subtopic") or "")
     )
@@ -459,6 +482,7 @@ def start_drain_worker(interval_s: float = 2.0) -> None:
 
     def loop() -> None:
         last_topics: set[str] = set()
+        ticks = 0
         while not _drain_stop.is_set():
             try:
                 service = open_service()
@@ -491,6 +515,16 @@ def start_drain_worker(interval_s: float = 2.0) -> None:
                                 {"type": "board.snapshot", "topic": topic, "view": view},
                             )
                             last_topics.add(topic)
+                # IRC log rotate/enqueue often; accept into SoT on a slower tick
+                ticks += 1
+                try:
+                    from clevertree_chat import irc_log_cache
+
+                    irc_log_cache.rotate_if_needed()
+                    if ticks % 15 == 0:  # ~30s at 2s interval
+                        drain_irc_log_jobs(limit=10)
+                except Exception:
+                    pass
             except Exception:
                 pass
             _drain_stop.wait(interval_s)
@@ -535,13 +569,32 @@ def _dirty_topics(service: DebateService) -> list[str]:
     return sorted(set(found))
 
 
-def fanout_submit(topic: str, visitor: str, body: dict) -> None:
+def fanout_submit(
+    topic: str,
+    visitor: str,
+    body: dict,
+    *,
+    source: str = "web",
+    nick: str = "",
+) -> None:
     """Broadcast post.live after a successful submit; mirror to IRC when bridged."""
     view = body.get("view") or view_topic(topic, visitor)
     filed = str(body.get("comment_id") or body.get("id") or "")
     starting = body.get("starting") or "uncategorized"
     text = body.get("body") or ""
     author = (view.get("visitor") or {}).get("name") or "Visitor"
+    try:
+        from clevertree_chat import irc_log_cache
+
+        irc_log_cache.append_line(
+            topic,
+            body=str(text),
+            visitor=str(visitor or ""),
+            source=source,
+            nick=nick or str(author),
+        )
+    except Exception:
+        pass
     HUB.broadcast(
         topic,
         {
@@ -561,6 +614,14 @@ def fanout_submit(topic: str, visitor: str, body: dict) -> None:
             },
             "view": view,
             "activity": activity_from_view(view, visitor),
+            "chat_line": {
+                "ts": None,
+                "topic": topic,
+                "visitor": visitor,
+                "nick": nick or str(author),
+                "body": text,
+                "source": source,
+            },
         },
     )
     try:
@@ -571,3 +632,33 @@ def fanout_submit(topic: str, visitor: str, body: dict) -> None:
             bridge.announce_submit(topic, str(text), str(author))
     except Exception:
         pass
+
+
+def drain_irc_log_jobs(*, limit: int = 20) -> list[dict]:
+    """Rotate aged segments and accept pending irc_log jobs into comments SoT."""
+    from clevertree_chat import chat_transcript, irc_log_cache
+
+    irc_log_cache.rotate_if_needed()
+    service = open_service()
+    results = []
+    for job in irc_log_cache.list_pending_jobs()[:limit]:
+        try:
+            result = chat_transcript.accept_irc_log_job(
+                service.debate,
+                job,
+                rules=service.debate.rules(),
+            )
+            job_path = job.get("_job_path")
+            if job_path:
+                status = "accepted" if result.get("ok") else "failed"
+                if result.get("reason") == "chat_store:never":
+                    status = "skipped"
+                irc_log_cache.mark_job(job_path, status, result=result)
+            results.append({"job": job.get("id"), **result})
+            _persist()
+        except Exception as exc:
+            job_path = job.get("_job_path")
+            if job_path:
+                irc_log_cache.mark_job(job_path, "failed", error=str(exc))
+            results.append({"job": job.get("id"), "ok": False, "reason": str(exc)})
+    return results

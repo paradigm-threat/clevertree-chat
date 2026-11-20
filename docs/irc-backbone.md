@@ -11,11 +11,15 @@ Realtime updates flow through **Flashback Ergo IRC**. The Cleverchat host runs a
 
 ## Sync rules
 
-- One IRC channel per debate page/topic: `#pt-general` ↔ topic `general`.
+- Classic debate pages: one IRC channel per page/topic — `#pt-general` ↔ topic `general`.
+- **Craft rooms (MyProblem social monitor):** per tip/region **collection** (like Bunny upload-source). Channel encodes repo + collection, e.g. Savannah Cat Rescue → `#ga-savannah-cat-rescue` / WS `topic=ga-savannah-cat-rescue`. Shared across many Nextdoor groups in that collection; not one channel per group or per topic tag.
+- Origin refs in craft traffic use markdown-like tags `[[nd:{group}/{post}]]` / `[[ndg:{group}]]` (per-repo forum-platforms rules). UI shows a link icon; raw tag is for the wire. See MyProblem [`content/channels/EXTERNAL_ID.md`](../../myproblem/content/channels/EXTERNAL_ID.md) · collection [`content/collections/savannah-cat-rescue.md`](../../myproblem/content/collections/savannah-cat-rescue.md).
 - Human `PRIVMSG` → **enqueue** (visitor UUID5 from nick) — not a bypass into the comments SoT.
-- Board/API enqueue → `PRIVMSG` (may mark pending batch; echo skipped when the bridge originated the post).
+- Board/API enqueue → `PRIVMSG` (may mark pending batch; echo skipped when the bridge originated the post). Extensions should use **HTTPS/WSS** to the chat host (`/api/chat`, `/api/chat/ws`), not raw Ergo TLS.
 - Owner answers: `!answer …` or `si answer:` → fold into `owner-answers.md` / `rules.md` (rules path, not comment spam).
 - WebSocket `post.live` / `batch.notice` still come from the host hub — same events, not a second bus.
+- **Ephemeral channel logs:** every room (debate + craft) appends wire lines to a server cache (`var/clevertree-live/irc-logs/<topic>/`) plus an in-memory ring (~500 lines / ~48h). WS `hello` / `chat.history` replay that ring. Cache may vanish; that is fine after batch enqueue.
+- **Durable transcripts:** rotated segments enqueue as `kind: irc_log` jobs under `var/clevertree-live/queue/irc_log/`. Phase 1 Cursor / Phase 2 Spot may store minimized day JSONL at `pages/<page>/chat/YYYY-MM-DD.jsonl` using short ids from `users/index.json`, unless `rules.md` sets `chat_store: never` (or `summaries`). See [`intake-queue.md`](intake-queue.md).
 
 ## Environment
 

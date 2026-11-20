@@ -8,14 +8,14 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | UI | `/chat`, `/chat/<topic>`, `/chat/w/<host>[/path]` (website rooms; empty until first comment / first batch accept) |
 | HTTP API | `/api/chat` and `/api/debate` (same dispatch) |
 | WebSocket | `/api/chat/ws?topic=…&visitor=…` |
-| Events | `hello`, `post.live` (provisional), `batch.notice`, `board.snapshot` |
+| Events | `hello` (+ `chat_history`), `chat.history`, `post.live` (provisional), `batch.notice`, `board.snapshot`; inbound `chat.send` / `ping` |
 | SoT | PVC comments checkout (`CLEVERTREE_COMMENTS_PATH`) — **batch sole writer** after queue cutover |
 | Queue | PVC `var/clevertree-live/queue/` (ephemeral; not git; cutover pending) |
 
 ## Behavior
 
 - Visitor posts through the board composer; IDs from `identify` / `resolve`.
-- **Policy:** submit **enqueues** body + recommended categorization; board shows provisional pending-batch rows. Batch drain alone permanently files into the comments SoT. *(Until cutover, live still writes SoT — see intake-queue status.)*
+- **Policy:** submit **enqueues** body + recommended categorization; board shows provisional pending-batch rows. Batch drain alone permanently files into the comments SoT (Phase 1: Cursor — [`batch-phases.md`](batch-phases.md)). *(Transitional: live may still write SoT — debt, not end state; see intake-queue status.)*
 - Background drain runs SI organization; clients are not the curator.
 - No scripted peers (Jordan/Maya). First-use coach is UI-only and skippable.
 

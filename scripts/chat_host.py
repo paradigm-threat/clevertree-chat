@@ -138,7 +138,10 @@ class ChatHandler(SimpleHTTPRequestHandler):
 
         HUB.subscribe(topic, send_raw)
         try:
+            from clevertree_chat import irc_log_cache
+
             view = live.view_topic(topic, visitor)
+            history = irc_log_cache.recent(topic)
             send_raw(
                 json.dumps(
                     {
@@ -146,6 +149,16 @@ class ChatHandler(SimpleHTTPRequestHandler):
                         "topic": topic,
                         "view": view,
                         "activity": activity_from_view(view, visitor),
+                        "chat_history": history,
+                    }
+                )
+            )
+            send_raw(
+                json.dumps(
+                    {
+                        "type": "chat.history",
+                        "topic": topic,
+                        "lines": history,
                     }
                 )
             )
@@ -172,8 +185,55 @@ class ChatHandler(SimpleHTTPRequestHandler):
                             msg = json.loads(payload.decode("utf-8"))
                         except Exception:
                             continue
-                        if msg.get("type") == "ping":
+                        mtype = msg.get("type")
+                        if mtype == "ping":
                             send_raw(json.dumps({"type": "pong"}))
+                        elif mtype in {"chat.send", "chat.post"}:
+                            body = str(msg.get("body") or "").strip()
+                            if not body:
+                                continue
+                            vid = str(msg.get("visitor") or visitor or "").strip()
+                            try:
+                                code, result = live.dispatch(
+                                    {
+                                        "action": "submit",
+                                        "topic": topic,
+                                        "visitor": vid,
+                                        "body": body,
+                                        "name": msg.get("name"),
+                                    },
+                                    {},
+                                    "",
+                                )
+                                if code == 200:
+                                    live.fanout_submit(
+                                        topic,
+                                        vid,
+                                        result if isinstance(result, dict) else {},
+                                        source="ws",
+                                        nick=str(msg.get("name") or ""),
+                                    )
+                                else:
+                                    send_raw(
+                                        json.dumps(
+                                            {
+                                                "type": "chat.error",
+                                                "topic": topic,
+                                                "error": (result or {}).get("error")
+                                                or f"submit {code}",
+                                            }
+                                        )
+                                    )
+                            except Exception as exc:
+                                send_raw(
+                                    json.dumps(
+                                        {
+                                            "type": "chat.error",
+                                            "topic": topic,
+                                            "error": str(exc),
+                                        }
+                                    )
+                                )
         except Exception:
             pass
         finally:

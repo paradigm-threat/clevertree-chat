@@ -114,6 +114,7 @@ class IrcBridge:
                     "geoengineering",
                     "flock-cameras",
                     "thc-legalization",
+                    "ga-savannah-cat-rescue",
                 ):
                     self.ensure_channel(topic)
                 lobby = channel_for_topic(self.prefix, "")
@@ -227,8 +228,14 @@ class IrcBridge:
         )
         if code != 200:
             raise RuntimeError(result.get("error") or f"submit {code}")
-        live.fanout_submit(topic, visitor, result if isinstance(result, dict) else {})
-        # fanout_submit already broadcasts; ensure channel joined
+        live.fanout_submit(
+            topic,
+            visitor,
+            result if isinstance(result, dict) else {},
+            source="irc",
+            nick=nick,
+        )
+        # fanout_submit already broadcasts + logs; ensure channel joined
         self.ensure_channel(topic)
 
 

@@ -2,6 +2,8 @@
 
 Canonical product policy: **IRC and web comments are queued; only the batch SI permanently stores accepted posts in the comments SoT.** The live lightweight AI gathers queued bodies and recommended categorization. Spam and inappropriate posts that fail batch intake never enter git.
 
+**Phases:** [`batch-phases.md`](batch-phases.md) · Relay SoT [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md). Phase 1 batch agent = **Cursor** on the shared multi-site queue; Phase 2 = Spot. Live path must not be the end-state SoT writer.
+
 Related: [`infra.md`](infra.md) · [`chat-host.md`](chat-host.md) · [`irc-backbone.md`](irc-backbone.md) · [`spam.md`](spam.md) · [`AGENTS.md`](../AGENTS.md).
 
 ## One-sentence rule
@@ -50,6 +52,25 @@ Per-page or global append-only records (JSON/JSONL), not git:
 | `enqueued_at` | UTC timestamp |
 | `status` | `pending` \| `accepted` \| `rejected` |
 
+### IRC / WS log batches (`kind: irc_log`)
+
+Separate from claim enqueue. Live host rotates ephemeral segments and drops a job beside the queue:
+
+```json
+{
+  "site": "clevertree",
+  "kind": "irc_log",
+  "topic": "ga-savannah-cat-rescue",
+  "channel": "#ga-savannah-cat-rescue",
+  "payload_ref": "intake://irc-logs/ga-savannah-cat-rescue/seg-….jsonl",
+  "enqueued_at": "…",
+  "rules_ref": "comments:rules.md",
+  "status": "pending"
+}
+```
+
+Batch reads the segment, registers unseen visitors into `users/index.json`, and — when `chat_store` allows — appends minimized lines to `pages/<page>/chat/YYYY-MM-DD.jsonl` (`{"t","u","b"}` with short id `u`). `chat_store: never` skips transcript write; cache/job still consumed. Helpers: `clevertree_chat.irc_log_cache`, `clevertree_chat.chat_transcript`.
+
 ## Board / IRC UX
 
 - Board merges **SoT sections** with **provisional** queue rows (pending-batch badge).
@@ -71,12 +92,12 @@ Per-page or global append-only records (JSON/JSONL), not git:
 
 ## Implementation backlog (ordered)
 
-1. **Queue store** — `var/clevertree-live/queue/` schema + helpers; no git.
+1. **Queue store** — `var/clevertree-live/queue/` schema + helpers; no git. *(Partial: `queue/irc_log/` + `irc-logs/` cache landed; claim enqueue still pending.)*
 2. **Live submit rewrite** — [`live_runtime.py`](../clevertree_chat/live_runtime.py) / [`service.py`](../clevertree_chat/service.py): enqueue + provisional view; stop live `commit_changes` for new comments.
 3. **View merge** — `view` / `board.snapshot` merge SoT + pending queue.
-4. **IRC** — [`irc_bridge.py`](../clevertree_chat/irc_bridge.py): PRIVMSG → enqueue; pending mirror.
-5. **Batch consume** — drain reads queue first; accept → file/pair/position; reject → drop; then hooks on filed content.
+4. **IRC** — [`irc_bridge.py`](../clevertree_chat/irc_bridge.py): PRIVMSG → enqueue; pending mirror. *(Ephemeral log cache + `irc_log` jobs live; claim path still transitional submit.)*
+5. **Batch consume** — drain reads queue first; accept → file/pair/position; reject → drop; then hooks on filed content. *(IRC transcripts: `drain_irc_logs` / `chat_transcript.accept_irc_log_job`.)*
 6. **Tests** — submit creates no SoT comment files; accept writes SoT; reject leaves SoT clean; E2E provisional → filed.
 7. **Ops / UI** — PVC layout; coach copy “Pending batch review”; migrate off live-into-git (existing SoT history stays).
 
-*Status: policy locked in docs; code cutover not yet shipped (live still writes SoT today).*
+*Status: policy locked; **Phase 1 target** = enqueue + Cursor drain (sole SoT writer). Transitional: live may still write SoT until cutover — treat that as historical debt, not the end state ([`batch-phases.md`](batch-phases.md)).*
