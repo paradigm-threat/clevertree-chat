@@ -302,7 +302,40 @@ def view_topic(topic: str, visitor: str = "", focus: str = "") -> dict:
     return view
 
 
-def dispatch(payload: dict, query: dict, cookie: str = "") -> tuple[int, dict]:
+def _idempotency_path() -> Path:
+    env = (os.environ.get("CLEVERTREE_LIVE_ROOT") or "").strip()
+    root = Path(env) if env else (ROOT / "var" / "clevertree-live")
+    root.mkdir(parents=True, exist_ok=True)
+    return root / "submit-idempotency.json"
+
+
+def _load_idempotency() -> dict:
+    path = _idempotency_path()
+    if not path.is_file():
+        return {}
+    try:
+        import json
+
+        data = json.loads(path.read_text(encoding="utf-8") or "{}")
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_idempotency(data: dict) -> None:
+    import json
+
+    path = _idempotency_path()
+    keys = list(data.keys())
+    if len(keys) > 2000:
+        for old in keys[: len(keys) - 2000]:
+            data.pop(old, None)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def dispatch(
+    payload: dict, query: dict, cookie: str = "", headers: dict | None = None
+) -> tuple[int, dict]:
     action = payload.get("action") or query.get("action") or "view"
     visitor = str(payload.get("visitor") or query.get("visitor") or "")
     topic = str(payload.get("topic") or query.get("topic") or "").strip()
@@ -339,6 +372,27 @@ def dispatch(payload: dict, query: dict, cookie: str = "") -> tuple[int, dict]:
         chosen = payload.get("chosen")
         if chosen is not None:
             chosen = str(chosen).strip() or None
+        hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
+        raw_idem = (hdrs.get("idempotency-key") or "").strip() or str(
+            payload.get("client_post_id") or ""
+        ).strip()
+        idem = raw_idem[:128] if raw_idem else ""
+        if idem:
+            with _lock:
+                prior = _load_idempotency().get(idem)
+            if isinstance(prior, dict) and prior.get("topic") == topic:
+                # Rebuild a fresh view for the same logical post; do not re-file.
+                view = view_topic(
+                    topic,
+                    visitor,
+                    str(query.get("subtopic") or payload.get("subtopic") or ""),
+                )
+                replay = {
+                    **{k: v for k, v in prior.items() if k != "view"},
+                    "view": view,
+                    "idempotent_replay": True,
+                }
+                return 200, replay
         with _lock:
             result = service.submit_for_page(
                 page,
@@ -350,6 +404,17 @@ def dispatch(payload: dict, query: dict, cookie: str = "") -> tuple[int, dict]:
                 session=session,
             )
             _note_provisional_association(service, topic)
+            if idem:
+                slim = {
+                    k: v
+                    for k, v in result.items()
+                    if k != "view"
+                }
+                slim["topic"] = topic
+                slim["body"] = str(payload.get("body") or "")
+                store = _load_idempotency()
+                store[idem] = slim
+                _save_idempotency(store)
         _persist()
         _kick_drain()
         return 200, result

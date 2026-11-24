@@ -64,13 +64,23 @@ class ChatHandler(SimpleHTTPRequestHandler):
         origin = self.headers.get("Origin") or "*"
         self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Credentials", "true")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Idempotency-Key",
+        )
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
     def _api(self, parsed, payload: dict):
         query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
         try:
-            code, body = live.dispatch(payload, query, self.headers.get("Cookie") or "")
+            code, body = live.dispatch(
+                payload,
+                query,
+                self.headers.get("Cookie") or "",
+                headers={
+                    "Idempotency-Key": self.headers.get("Idempotency-Key") or "",
+                },
+            )
             if isinstance(body, dict) and "view" in body:
                 body["activity"] = activity_from_view(
                     body["view"], str(payload.get("visitor") or query.get("visitor") or "")
@@ -82,7 +92,12 @@ class ChatHandler(SimpleHTTPRequestHandler):
             action = payload.get("action") or query.get("action") or "view"
             topic = str(payload.get("topic") or query.get("topic") or "")
             visitor = str(payload.get("visitor") or query.get("visitor") or "")
-            if action == "submit" and code == 200 and topic:
+            if (
+                action == "submit"
+                and code == 200
+                and topic
+                and not (isinstance(body, dict) and body.get("idempotent_replay"))
+            ):
                 live.fanout_submit(topic, visitor, body if isinstance(body, dict) else {})
             if action == "drain" and code == 200 and topic:
                 HUB.broadcast(

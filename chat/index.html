@@ -189,11 +189,12 @@
           parsed.scope === "domain" ? "Whole-site scope." : "Path-level scope.";
         chooser.hidden = true;
         mount.hidden = false;
-        mount.setAttribute("data-clevertree-board", "");
-        mount.setAttribute("data-api", "chat");
-        mount.setAttribute("data-url", parsed.href);
-        mount.setAttribute("data-page-scope", parsed.scope);
-        mount.setAttribute("data-title", title.textContent);
+      mount.setAttribute("data-clevertree-board", "");
+      mount.setAttribute("data-api", "chat");
+      mount.setAttribute("data-api-base", "https://api.clevertree.chat");
+      mount.setAttribute("data-url", parsed.href);
+      mount.setAttribute("data-page-scope", parsed.scope);
+      mount.setAttribute("data-title", title.textContent);
         document.title = title.textContent + " — Clevertree Chat";
         links.innerHTML =
           '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/w">Marketing /w</a>';
@@ -218,12 +219,15 @@
       mount.hidden = false;
       mount.setAttribute("data-clevertree-board", "");
       mount.setAttribute("data-api", "chat");
+      mount.setAttribute("data-api-base", "https://api.clevertree.chat");
       mount.setAttribute("data-topic", topic);
       document.title = meta.title + " — Clevertree Chat";
       links.innerHTML =
         '<a href="/chat">All topics</a> · <a href="https://clevertree.chat/w">Any website</a> · <a href="https://clevertree.chat/try">Marketing site</a>';
     })();
   </script>
+  <script src="/fronts/snippet/clevertree-outbox.js"></script>
   <script src="/fronts/snippet/clevertree-board.js"></script>
+  <script src="/js/site-pwa.js"></script>
 </body>
 </html>

@@ -26,10 +26,13 @@ class DurableSubmitDrainTests(unittest.TestCase):
         live.stop_drain_worker()
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
+        self._live = tempfile.TemporaryDirectory()
+        self.addCleanup(self._live.cleanup)
         self._env = mock.patch.dict(
             "os.environ",
             {
                 "CLEVERTREE_COMMENTS_PATH": self._tmp.name,
+                "CLEVERTREE_LIVE_ROOT": self._live.name,
                 "CLEVERTREE_SEED_FIXTURES": "0",
                 "CLEVERTREE_IRC_ENABLE": "0",
             },
@@ -89,6 +92,81 @@ class DurableSubmitDrainTests(unittest.TestCase):
             any("invasion-of-privacy" in (a.get("keys") or []) for a in act),
             f"expected filed key in activity, got {act[:2]}",
         )
+
+    def test_submit_idempotency_key_replays_without_refile(self):
+        code, ident = live.dispatch({"action": "identify"}, {})
+        visitor = ident["visitor"]
+        live.dispatch(
+            {
+                "action": "resolve",
+                "url": "https://api.clevertree.chat/chat/flock-cameras",
+                "visitor": visitor,
+            },
+            {},
+        )
+        body = "Camera nets chill speech even when footage stays unused."
+        key = "client-post-regression-1"
+        code, first = live.dispatch(
+            {
+                "action": "submit",
+                "topic": "flock-cameras",
+                "visitor": visitor,
+                "body": body,
+                "client_post_id": key,
+            },
+            {},
+            headers={"Idempotency-Key": key},
+        )
+        self.assertEqual(code, 200)
+        self.assertIn("comment_id", first)
+        first_id = first["comment_id"]
+
+        code, replay = live.dispatch(
+            {
+                "action": "submit",
+                "topic": "flock-cameras",
+                "visitor": visitor,
+                "body": body + " (retry)",
+                "client_post_id": key,
+            },
+            {},
+            headers={"Idempotency-Key": key},
+        )
+        self.assertEqual(code, 200)
+        self.assertTrue(replay.get("idempotent_replay"))
+        self.assertEqual(replay.get("comment_id"), first_id)
+
+        # Header-only key (no body client_post_id) still replays.
+        code, header_only = live.dispatch(
+            {
+                "action": "submit",
+                "topic": "flock-cameras",
+                "visitor": visitor,
+                "body": "also ignored",
+            },
+            {},
+            headers={"Idempotency-Key": key},
+        )
+        self.assertEqual(code, 200)
+        self.assertTrue(header_only.get("idempotent_replay"))
+        self.assertEqual(header_only.get("comment_id"), first_id)
+
+        # Distinct key files a separate post on the same topic.
+        code, second = live.dispatch(
+            {
+                "action": "submit",
+                "topic": "flock-cameras",
+                "visitor": visitor,
+                "body": "A second original claim about camera nets.",
+                "client_post_id": key + "-b",
+            },
+            {},
+            headers={"Idempotency-Key": key + "-b"},
+        )
+        self.assertEqual(code, 200)
+        self.assertFalse(second.get("idempotent_replay"))
+        self.assertIn("comment_id", second)
+        self.assertNotEqual(second.get("comment_id"), first_id)
 
     def test_background_drain_worker_notices(self):
         code, ident = live.dispatch({"action": "identify"}, {})

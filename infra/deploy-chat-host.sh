@@ -24,6 +24,7 @@ cp "$ROOT/scripts/chat_host.py" "$ROOT/scripts/seed_live_comments_from_fixtures.
 chmod +x "$STAGE/scripts/bootstrap_comments_checkout.sh"
 cp "$ROOT/chat/index.html" "$STAGE/chat/"
 cp "$ROOT/fronts/snippet/clevertree-board.js" "$ROOT/fronts/snippet/clevertree-board.css" \
+  "$ROOT/fronts/snippet/clevertree-outbox.js" \
   "$ROOT/fronts/snippet/embed.html" "$STAGE/fronts/snippet/"
 cp "$ROOT/fixtures/pt-review/"*.json "$STAGE/fixtures/pt-review/"
 cp "$ROOT/styles.css" "$ROOT/icon-128x128.png" "$ROOT/favicon.ico" "$ROOT/requirements.txt" "$STAGE/"

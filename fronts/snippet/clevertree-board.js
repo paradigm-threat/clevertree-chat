@@ -367,6 +367,7 @@
       liveText: "Connecting…",
       status: "",
       busy: false,
+      outboxPending: [],
     };
 
     const COACH_STEPS = [
@@ -763,6 +764,7 @@
           escapeHtml(store.liveText) +
           (store.status ? " · " + escapeHtml(store.status) : "") +
           "</p>" +
+          pendingPostsHtml() +
           focusHtml() +
           composerHtml() +
           "</div>";
@@ -786,6 +788,7 @@
           " perspectives · " +
           pts +
           " total points</span></div></header>" +
+          pendingPostsHtml() +
           '<nav class="ct-tabs" aria-label="Board sections">' +
           '<button type="button" class="ct-tab' +
           (store.mainTab === "board" ? " is-active" : "") +
@@ -836,19 +839,109 @@
       return view;
     }
 
+    function pendingPostsHtml() {
+      const pending = store.outboxPending || [];
+      if (!pending.length) return "";
+      const items = pending
+        .map(function (p) {
+          const st =
+            p.status === "failed"
+              ? escapeHtml(p.lastError || "Failed")
+              : p.status === "syncing"
+                ? "Uploading…"
+                : "On device · waiting for network";
+          return (
+            '<li class="ct-outbox-item" data-outbox-id="' +
+            escapeHtml(p.clientPostId) +
+            '"><p class="ct-post-body">' +
+            escapeHtml(p.body) +
+            '</p><p class="ct-muted">' +
+            st +
+            (p.status === "failed"
+              ? ' <button type="button" class="ct-linkish" data-retry-outbox="' +
+                escapeHtml(p.clientPostId) +
+                '">Retry</button>'
+              : "") +
+            ' <button type="button" class="ct-linkish" data-discard-outbox="' +
+            escapeHtml(p.clientPostId) +
+            '">Discard</button></p></li>'
+          );
+        })
+        .join("");
+      return (
+        '<div class="ct-outbox" role="status"><p class="ct-outbox-head"><strong>' +
+        pending.length +
+        " post" +
+        (pending.length === 1 ? "" : "s") +
+        " saved on this device</strong></p>" +
+        '<p class="ct-muted">Uploads when the host is reachable. Clearing site data drops this queue.</p>' +
+        '<ul class="ct-outbox-list">' +
+        items +
+        "</ul></div>"
+      );
+    }
+
+    async function refreshOutboxUi() {
+      const box = globalThis.ClevertreeOutbox;
+      if (!box) {
+        store.outboxPending = [];
+        return;
+      }
+      try {
+        const all = await box.listPending();
+        const topic = topicOf(el);
+        store.outboxPending = all.filter(function (p) {
+          return !topic || p.topic === topic;
+        });
+      } catch (e) {
+        store.outboxPending = [];
+      }
+    }
+
     async function submitPost(body, draftKeys) {
       store.busy = true;
-      store.status = "Posting…";
+      store.status = "Saving on device…";
       rerender();
       try {
         const chosen = draftKeys[0] || "";
-        const filed = await call(el, {
-          action: "submit",
-          body: body,
-          chosen: chosen,
-        });
-        if (filed.view) applyView(filed.view, { highlightActivity: true });
-        pushActivity(store, "live", "Your point is live", true);
+        const box = globalThis.ClevertreeOutbox;
+        if (!box) {
+          const filed = await call(el, {
+            action: "submit",
+            body: body,
+            chosen: chosen,
+          });
+          if (filed.view) applyView(filed.view, { highlightActivity: true });
+          pushActivity(store, "live", "Your point is live", true);
+        } else {
+          await box.enqueue({
+            topic: topicOf(el),
+            visitorId: visitorId(),
+            body: body,
+            chosen: chosen,
+            apiBase: apiBase(el),
+            apiPath: apiPath(el),
+          });
+          await refreshOutboxUi();
+          pushActivity(
+            store,
+            "live",
+            navigator.onLine
+              ? "Queued — syncing when the host accepts it"
+              : "Queued on this device — will sync when you are online",
+            true,
+          );
+          void box.flush().then(async function (summary) {
+            await refreshOutboxUi();
+            if (summary && summary.synced > 0) {
+              try {
+                await refresh();
+                pushActivity(store, "live", "Synced from this device", true);
+              } catch (e) {}
+            }
+            rerender();
+          });
+        }
         store.draft = "";
         store.draftKeys = [];
         store.composerOpen = false;
@@ -985,6 +1078,27 @@
         rerender();
         const boardEl = el.querySelector("[data-board-scroll]");
         if (boardEl) boardEl.scrollTop = store.savedScroll;
+        return;
+      }
+      const retryBtn = t.closest("[data-retry-outbox]");
+      if (retryBtn && globalThis.ClevertreeOutbox) {
+        const id = retryBtn.getAttribute("data-retry-outbox");
+        void globalThis.ClevertreeOutbox.retry(id).then(async function () {
+          await refreshOutboxUi();
+          try {
+            await refresh();
+          } catch (err) {}
+          rerender();
+        });
+        return;
+      }
+      const discardBtn = t.closest("[data-discard-outbox]");
+      if (discardBtn && globalThis.ClevertreeOutbox) {
+        const id = discardBtn.getAttribute("data-discard-outbox");
+        void globalThis.ClevertreeOutbox.discard(id).then(async function () {
+          await refreshOutboxUi();
+          rerender();
+        });
       }
     });
 
@@ -1028,6 +1142,18 @@
           store.liveState = "error";
           rerender();
         });
+    }
+
+    if (globalThis.ClevertreeOutbox) {
+      globalThis.ClevertreeOutbox.armWake();
+      globalThis.ClevertreeOutbox.subscribe(function () {
+        void refreshOutboxUi().then(function () {
+          rerender();
+        });
+      });
+      void refreshOutboxUi().then(function () {
+        rerender();
+      });
     }
 
     if ((el.getAttribute("data-url") || "").trim()) {

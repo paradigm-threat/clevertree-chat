@@ -79,5 +79,30 @@ assert(wPage.includes("api.clevertree.chat"), "w page points at api host");
 
 const chatPage = fs.readFileSync(path.join(__dirname, "../chat/index.html"), "utf8");
 assert(chatPage.includes("websiteMode") || chatPage.includes('parts[1] === "w"'), "chat w mode");
+assert(chatPage.includes("data-api-base"), "chat page data-api-base for same-origin API");
+assert(chatPage.includes("clevertree-outbox.js"), "chat page loads outbox");
+
+const manifest = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "../site.webmanifest"), "utf8"),
+);
+assert(manifest.start_url === "/chat/", "PWA start_url must be /chat/ not /try");
+assert(manifest.display === "standalone", "PWA display standalone");
+
+const sw = fs.readFileSync(path.join(__dirname, "../sw.js"), "utf8");
+assert(sw.includes('"/chat/"'), "SW precaches /chat/");
+assert(sw.includes("clevertree-outbox.js"), "SW precaches outbox");
+assert(sw.includes("site.webmanifest"), "SW precaches manifest");
+
+const outbox = fs.readFileSync(
+  path.join(__dirname, "../fronts/snippet/clevertree-outbox.js"),
+  "utf8",
+);
+assert(outbox.includes('"Idempotency-Key"'), "outbox sends Idempotency-Key");
+assert(outbox.includes("client_post_id"), "outbox body includes client_post_id");
+assert(outbox.includes("discard"), "outbox exposes discard");
+
+const tryPage = fs.readFileSync(path.join(__dirname, "../try/index.html"), "utf8");
+assert(tryPage.includes('href="/chat/'), "try page links to same-origin /chat/");
+assert(!/href=["']https:\/\/api\.clevertree\.chat\/chat\//.test(tryPage), "try must not deep-link api host chat");
 
 console.log("ok test_website_href_js.js");

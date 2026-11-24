@@ -1,21 +1,6 @@
-# Mirror GitHub PR gates for the GitLab remote (auto-deploy source).
-stages:
-  - test
-
-unit:
-  stage: test
-  image: python:3.12-bookworm
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq nodejs npm >/dev/null
-    - npm ci
-  script:
-    - npm run test:unit
-
-e2e_a11y:
-  stage: test
-  image: mcr.microsoft.com/playwright:v1.49.0-jammy
-  variables:
-    CI: "true"
-  script:
-    - npm ci
-    - npx playwright test tests/e2e/chat-websocket.spec.ts tests/e2e/website-url-room.spec.ts tests/e2e/a11y-contrast.spec.ts
+# GitHub Actions (.github/workflows/ci.yml) is the primary CI gate.
+# GitLab CI disabled — quota / moving off GitLab runners. Re-enable by restoring
+# the previous unit + e2e_a11y jobs if needed.
+workflow:
+  rules:
+    - when: never

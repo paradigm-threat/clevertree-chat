@@ -23,6 +23,10 @@
       "destination": "/try"
     },
     {
+      "source": "/chat/:path+",
+      "destination": "/chat"
+    },
+    {
       "source": "/w/:path+",
       "destination": "/w"
     }

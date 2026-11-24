@@ -1,10 +1,13 @@
 {
+  "id": "/",
   "name": "Clevertree Chat",
   "short_name": "Cleverchat",
+  "description": "Standing debate boards. Queue posts offline; sync when you reconnect.",
   "theme_color": "#1F4D3A",
   "background_color": "#F4F1EA",
   "display": "standalone",
-  "start_url": "/",
+  "start_url": "/chat/",
+  "scope": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
