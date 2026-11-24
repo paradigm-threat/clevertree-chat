@@ -147,6 +147,35 @@
         </div>
       </section>
 
+      <section class="band" id="features" aria-labelledby="features-heading">
+        <h2 id="features-heading">Now / Next</h2>
+        <p>Aligned with the shared Relay batch phases. A Clevertree <strong>tip</strong> is a topic / forum room. Rooms may bind to another product’s tip UUID (e.g. a MyProblem ticket) or an external-id translation — no forced new id. Why the SI stays ephemeral → <a href="#si-different">Why is this SI different?</a></p>
+        <h3>Now</h3>
+        <p>Debate map live: addressable arguments, paired keys, demo walkthroughs. SI organizes; it does not vote. Browser extension + try demo.</p>
+        <h3>Next</h3>
+        <p>Queue-before-SoT + Cursor/Spot batch on the shared multi-site queue. Tip-UUID rooms across MyProblem / QuizGate / Clevertree in production. Standing comments SoT pages with orphan-room hygiene (no mass delete of real topics).</p>
+      </section>
+
+      <section class="band" id="si-different" aria-labelledby="si-different-heading">
+        <h2 id="si-different-heading">Why is this SI different from other SIs?</h2>
+        <p>Clevertree Chat uses the same Relay pattern as MyProblem and QuizGate: batch <strong>SI (Super Intelligence, i.e. AI)</strong> on temporary hardware — not a permanent cloud brain you only audit through a retention policy. Typical cloud AIs stay attached to always-on services; leftover retention is what you hope a vendor honored. Here leftover retention is the exception the rules chose to keep.</p>
+        <h3>Ephemeral batch hardware</h3>
+        <p>Jobs run on interruptible Rackspace Spot GPUs (and similar temporary capacity). When the batch finishes — however long or detailed — the worker is decommissioned and scratch is destroyed, including inputs from apps, APIs, and other servers. Capacity exists only while the job runs, so thorough organization stays cheap.</p>
+        <h3>Reconstructed SI, rules as memory</h3>
+        <p>Each batch rebuilds the SI from programmed instructions: repo rule sets, and sometimes per-page or per-ticket rules. It has no durable private memory of prior runs beyond those instructions and what the standing debate map already publishes. When the batch ends, that instance is gone.</p>
+        <h3>Retain only by decision</h3>
+        <p>A raw enqueue does not become standing debate state until the batch accepts it under those rules. Only then does the allowed filing land in the map. Everything else dies with the job.</p>
+        <h3>Why this is harder to hack than a policy-bound cloud SI</h3>
+        <p>An always-on cloud stack can publish any retention policy and still leave caches, temp disks, logs, and replicas that outlive the promise — and those layers can be breached later. Here the attack surface for raw batch inputs is mostly the live job. When the Spot worker dies, the scratch dies with it; there is no long-lived “AI server” holding last week’s posts “just in case.” Absence of durable scratch is the control — not a policy you have to trust was never broken or bypassed. Low Spot cost is why that design stays practical.</p>
+        <p>On Clevertree Chat that means SI organizes the map so a unique perspective can be heard; it does not vote, pick winners, or take sides. People alone supply preference. More on the manifesto: <a href="/forest">Forest</a>.</p>
+      </section>
+
+      <section class="band" id="daily-loop" aria-labelledby="daily-loop-heading">
+        <h2 id="daily-loop-heading">Daily loop: organize today, patch tomorrow</h2>
+        <p>Each day we review what the standing map and batch queue need, assess the product, and ship site or host updates—often the next day. A small A-team plus LLM agents works at the development cadence of a major organization. The edge is visibility: private, accurate signals from tips and batch outcomes (not identity dossiers) so we can respond in near–real time. Same Clevertree method as <a href="https://quizgate.app/#daily-loop">QuizGate</a>, <a href="https://myproblem.app/how-we-run#daily-ops">MyProblem</a>, and <a href="https://clevertree.net/">Clevertree</a>.</p>
+        <p>North star: much of this loop becomes automated so a detailed user report can drive triage and a fix without a developer in the middle. SI still curates only—no votes, no winners. Builders: see <a href="/dev">/dev</a>.</p>
+      </section>
+
       <section class="band closing">
         <h2>Make your opinion finally heard.</h2>
         <p>A post joins the one-liner it actually makes. When it is a different argument, it opens a new one. The page does not pick a winner — and neither does SI. It curates and organizes so the debate stays fair and legible; people alone supply preference. It takes no sides.</p>
@@ -154,7 +183,7 @@
       </section>
     </main>
         <footer>
-      <p>Developers! Help support this project. Also welcome anyone willing to use an LLM — which is everyone! <a href="/dev">Help build Cleverchat</a>.</p>
+      <p><a href="/#si-different">We say SI (Super Intelligence, i.e. AI).</a> Developers! Help support this project. Also welcome anyone willing to use an LLM — which is everyone! <a href="/dev">Help build Cleverchat</a>.</p>
     </footer>
   </div>
   <script src="/js/grow-hill-tree.js"></script>
