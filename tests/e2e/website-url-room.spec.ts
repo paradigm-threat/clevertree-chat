@@ -73,7 +73,10 @@ test.describe("website URL room", () => {
     await root.locator("[data-composer] button[type='submit']").first().click();
     await submitPromise;
 
-    await expect(root.getByText(marker, { exact: false })).toBeVisible({
+    // Prefer the filed board article (outbox may briefly mirror the same body).
+    await expect(
+      root.locator("[data-activity], article, .ct-post").getByText(marker, { exact: false }).first(),
+    ).toBeVisible({
       timeout: 30_000,
     });
 

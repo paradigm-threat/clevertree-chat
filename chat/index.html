@@ -140,6 +140,18 @@
       var links = document.getElementById("host-links");
       var chooser = document.getElementById("demo-chooser");
       var mount = document.getElementById("demo-mount");
+      // Marketing host needs the API origin; api host + local e2e stay same-origin.
+      function applyApiBase(el) {
+        var h = location.hostname;
+        if (
+          h === "api.clevertree.chat" ||
+          h === "127.0.0.1" ||
+          h === "localhost"
+        ) {
+          return;
+        }
+        el.setAttribute("data-api-base", "https://api.clevertree.chat");
+      }
       var copy = {
         "flock-cameras": {
           title: "Should cities use camera networks?",
@@ -191,7 +203,7 @@
         mount.hidden = false;
       mount.setAttribute("data-clevertree-board", "");
       mount.setAttribute("data-api", "chat");
-      mount.setAttribute("data-api-base", "https://api.clevertree.chat");
+      applyApiBase(mount);
       mount.setAttribute("data-url", parsed.href);
       mount.setAttribute("data-page-scope", parsed.scope);
       mount.setAttribute("data-title", title.textContent);
@@ -219,7 +231,7 @@
       mount.hidden = false;
       mount.setAttribute("data-clevertree-board", "");
       mount.setAttribute("data-api", "chat");
-      mount.setAttribute("data-api-base", "https://api.clevertree.chat");
+      applyApiBase(mount);
       mount.setAttribute("data-topic", topic);
       document.title = meta.title + " — Clevertree Chat";
       links.innerHTML =

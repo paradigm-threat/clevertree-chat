@@ -79,7 +79,8 @@ assert(wPage.includes("api.clevertree.chat"), "w page points at api host");
 
 const chatPage = fs.readFileSync(path.join(__dirname, "../chat/index.html"), "utf8");
 assert(chatPage.includes("websiteMode") || chatPage.includes('parts[1] === "w"'), "chat w mode");
-assert(chatPage.includes("data-api-base"), "chat page data-api-base for same-origin API");
+assert(chatPage.includes("applyApiBase"), "chat page detects API/local host for same-origin");
+assert(chatPage.includes("api.clevertree.chat"), "chat page can point marketing UI at API host");
 assert(chatPage.includes("clevertree-outbox.js"), "chat page loads outbox");
 
 const manifest = JSON.parse(
