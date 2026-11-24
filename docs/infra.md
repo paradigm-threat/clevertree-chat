@@ -1,6 +1,6 @@
 # Infrastructure
 
-The front of the product is the **live gatherer**. While someone writes, it may show a suggested existing category. Submit **enqueues** the body (plus recommendations) on an ephemeral PVC queue — it does not permanently file into the comments SoT. The author does not wait on the batch, and the live path does not boot a GPU. Policy: [`intake-queue.md`](intake-queue.md).
+The front of the product is the **live gatherer**. While someone writes, it may show a suggested existing category. Submit **enqueues** the body (plus recommendations) on an ephemeral PVC queue — it does not permanently file into the comments SoT. The author does not wait on the batch, and the live path does not boot a GPU. Policy: [`intake-queue.md`](intake-queue.md) · phases: [`batch-phases.md`](batch-phases.md). Phase 1: **Cursor** drains the shared queue and is the SoT writer; Phase 2: Spot.
 
 **Chat host (realtime AI server):** containable UI, `/api/chat`, WebSocket fan-out, and batch drain on Intake (`scripts/chat_host.py`, see [`chat-host.md`](chat-host.md)). Optional **IRC bridge** — [`irc-backbone.md`](irc-backbone.md). Public hostname **`https://api.clevertree.chat`**.
 

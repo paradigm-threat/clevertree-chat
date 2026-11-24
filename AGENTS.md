@@ -11,7 +11,8 @@ Standing debate, not a reply thread. People post original points; the **batch SI
 
 > **Queue every claim as soon as it appears; permanent filing only after batch accepts — cite the live web; don’t invent standing exceptions.**
 
-Policy detail: [`docs/intake-queue.md`](docs/intake-queue.md).
+Policy detail: [`docs/intake-queue.md`](docs/intake-queue.md).  
+**Batch phases:** [`docs/batch-phases.md`](docs/batch-phases.md) · Relay SoT [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md) — same SI procedure as MyProblem/QuizGate (drain → commit queue → merge); Phase 1 Cursor / Phase 2 Spot.
 
 ## Where things live
 
@@ -32,7 +33,7 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 
 ## What works today
 
-- **Realtime AI host** on `api.clevertree.chat`: `/api/chat` (+ `/api/debate` alias) → PVC SoT; WS fan-out; heuristic drain + `batch_hooks` *(live still writes SoT until queue cutover)*
+- **Realtime AI host** on `api.clevertree.chat`: `/api/chat` (+ `/api/debate` alias) → PVC; WS fan-out; heuristic drain + `batch_hooks` *(transitional live SoT writes — Phase 1 end state is enqueue + Cursor drain)*
 - **IRC bridge**: PRIVMSG ↔ submit; `SI ask` / `!answer` fold into `owner-answers.md` + `rules.md`
 - Live boards + PT review rooms; full SoT via PVC + `.clevertree-full-sot`
 - Website rooms: `clevertree.chat/w/…` — SoT subpath only on first comment *(will become first batch accept)*
@@ -42,10 +43,11 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 
 ## Near-future goals (priority)
 
-1. **Queue-before-SoT cutover** — implement [`docs/intake-queue.md`](docs/intake-queue.md) backlog (live enqueue only; batch sole SoT writer).
-2. **Chrome Web Store** — human dashboard upload + review.
-3. **Spot token mount** — `CLEVERTREE_SPOT_WAKE` only when a comments GPU pass is ready.
-4. **History `.relay.yaml` inject** — only if fleet ever needs a full history rewrite for hook compliance (tip already has policy).
+1. **Queue-before-SoT cutover** — implement [`docs/intake-queue.md`](docs/intake-queue.md) (live enqueue only; Cursor/Spot sole SoT writer on shared queue).
+2. **Align job schema** with MyProblem/QuizGate shared batch queue ([`docs/batch-phases.md`](docs/batch-phases.md)).
+3. **Chrome Web Store** — human dashboard upload + review.
+4. **Spot token mount** — `CLEVERTREE_SPOT_WAKE` only for product Phase 2 comments GPU pass.
+5. **History `.relay.yaml` inject** — only if fleet ever needs a full history rewrite for hook compliance (tip already has policy).
 
 ## Locked product rules (don’t undo)
 

@@ -1,6 +1,8 @@
-# Phase 1
+# Phase 1 (engine confidence)
 
-Phase 1 does not deploy. It does not boot a Spot cloudspace, attach a domain, or call a cloud model. The filing engine in this repo is the tested stand-in: it chooses keys, writes the comments branch, and leaves a tree a later pass can extend.
+Product **Phase 1** for Relay batch is Cursor-as-batch on the shared queue — see [`batch-phases.md`](batch-phases.md). This file is the **local filing-engine** confidence loop (fixtures + unittest), not Spot deploy.
+
+Phase 1 does not boot a Spot cloudspace or call a cloud model for go-live. The filing engine in this repo is the tested stand-in: it chooses keys, writes the comments branch, and leaves a tree Cursor / a later Spot pass can extend.
 
 The confidence bar is a clean git tree on a fresh topic, not only on the Flock cameras seed. A watcher can see the distinct one-liners and which ones answer each other. The name does not have to be the perfect name. Launch waits on that confidence. The model can keep learning after launch. Phase 1 exists so that learning is not a cleanup of a mess.
 
