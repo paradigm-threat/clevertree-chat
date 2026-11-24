@@ -25,7 +25,8 @@ Policy detail: [`docs/intake-queue.md`](docs/intake-queue.md).
 | Batch rules (defaults) | [`docs/default-rules.md`](docs/default-rules.md), [`clevertree_chat/rules.py`](clevertree_chat/rules.py) |
 | Batch decision cases | [`docs/cases/batch-decisions.md`](docs/cases/batch-decisions.md) |
 | PT backlog refile | [`scripts/refile_pt_batch.py`](scripts/refile_pt_batch.py) |
-| Browser extension | [`fronts/extension/`](fronts/extension/) → [clevertree.chat/extension](https://clevertree.chat/extension) |
+| Browser extension (debate board) | [`fronts/extension/`](fronts/extension/) → [clevertree.chat/extension](https://clevertree.chat/extension) |
+| Relay / Networker social gather | Sibling **MyProblem** [`extensions/capture`](../myproblem/extensions/capture) → [myproblem.app/extension](https://myproblem.app/extension) |
 
 Deploy chat host: `bash infra/deploy-chat-host.sh` (kubeconfig `~/.kube/myproblem-intake.yaml`).
 
