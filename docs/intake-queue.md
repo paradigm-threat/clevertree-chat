@@ -71,6 +71,24 @@ Separate from claim enqueue. Live host rotates ephemeral segments and drops a jo
 
 Batch reads the segment, registers unseen visitors into `users/index.json`, and — when `chat_store` allows — appends minimized lines to `pages/<page>/chat/YYYY-MM-DD.jsonl` (`{"t","u","b"}` with short id `u`). `chat_store: never` skips transcript write; cache/job still consumed. Helpers: `clevertree_chat.irc_log_cache`, `clevertree_chat.chat_transcript`.
 
+### Channel media ASR (`kind: channel_asr`)
+
+MyProblem speak/video posts include `[[mp:media kind=… url=… channel=…]]`. On submit / IRC fanout the host enqueues:
+
+```json
+{
+  "site": "myproblem",
+  "kind": "channel_asr",
+  "topic": "mp-general",
+  "media_kind": "audio",
+  "url": "https://…/chat-public/…",
+  "enqueued_at": "…",
+  "status": "pending"
+}
+```
+
+Queue path: `var/clevertree-live/queue/channel_asr/`. Drain (`action=drain_channel_asr` or host tick) downloads the URL, calls Groq Whisper when `GROQ_API_KEY` is set, and posts an SI transcript line into the channel — **no tip mint**. Helpers: `clevertree_chat.channel_media`, `clevertree_chat.channel_asr`.
+
 ## Board / IRC UX
 
 - Board merges **SoT sections** with **provisional** queue rows (pending-batch badge).
@@ -86,7 +104,7 @@ Batch reads the segment, registers unseen visitors into `users/index.json`, and 
 
 ## Non-goals (this policy doc)
 
-- Does not require GPU; heuristic drain may act as the batch processor until a Spot GPU pass exists — same sole-writer rule.
+- Does not require GPU; heuristic drain may act as the batch processor until provider-backed Phase 2 automation exists — same sole-writer rule.
 - Does not put the queue on iad1/GitHub.
 - Chrome Web Store / marketing copy stay high-level (“organized by batch SI”).
 

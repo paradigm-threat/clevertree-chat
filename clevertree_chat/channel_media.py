@@ -1,0 +1,98 @@
+"""Parse MyProblem public-room media markers for ASR / VL enqueue.
+
+Markers look like:
+  [[mp:media kind=audio url=https://…/chat-public/….webm channel=#mp-general]]
+
+Also accepts bare Bunny `chat-public/` URLs when no marker is present.
+"""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+from urllib.parse import urlparse
+
+MARKER_RE = re.compile(r"\[\[mp:media\s+([^\]]+)\]\]", re.IGNORECASE)
+ATTR_RE = re.compile(r"(\w+)=([^\s\]]+)")
+URL_RE = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
+BUNNY_HINT = re.compile(r"b-cdn\.net|bunnycdn|chat-public/", re.IGNORECASE)
+AUDIO_EXT = {".webm", ".wav", ".mp3", ".m4a", ".ogg", ".opus", ".flac", ".aac"}
+VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm"}  # webm may be audio-only; kind wins
+
+
+def _attrs(blob: str) -> dict[str, str]:
+    return {m.group(1).lower(): m.group(2).strip() for m in ATTR_RE.finditer(blob or "")}
+
+
+def _guess_kind(url: str, explicit: str = "") -> str:
+    kind = (explicit or "").strip().lower()
+    if kind in {"audio", "video", "file"}:
+        return kind
+    path = urlparse(url).path.lower()
+    for ext in AUDIO_EXT:
+        if path.endswith(ext) and ext != ".webm":
+            return "audio"
+    if path.endswith(".webm"):
+        return "audio"  # speak notes are webm; video markers set kind=video
+    for ext in VIDEO_EXT:
+        if path.endswith(ext):
+            return "video"
+    return "file"
+
+
+def parse_media_markers(body: str) -> list[dict[str, Any]]:
+    """Return media dicts from [[mp:media …]] markers (deduped by url)."""
+    text = body or ""
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for match in MARKER_RE.finditer(text):
+        attrs = _attrs(match.group(1))
+        url = (attrs.get("url") or "").strip().rstrip(".,);]")
+        if not url or not url.startswith("http"):
+            continue
+        if url in seen:
+            continue
+        seen.add(url)
+        kind = _guess_kind(url, attrs.get("kind") or "")
+        channel = (attrs.get("channel") or "").strip()
+        out.append(
+            {
+                "kind": kind,
+                "url": url,
+                "channel": channel,
+                "raw": match.group(0),
+                "source": "marker",
+            }
+        )
+    return out
+
+
+def extract_bunny_urls(body: str) -> list[str]:
+    urls = URL_RE.findall(body or "")
+    return list(dict.fromkeys(u.rstrip(".,);]") for u in urls if BUNNY_HINT.search(u)))
+
+
+def extract_channel_media(body: str) -> list[dict[str, Any]]:
+    """Markers first; then bare Bunny chat-public URLs not already covered."""
+    items = parse_media_markers(body)
+    seen = {i["url"] for i in items}
+    for url in extract_bunny_urls(body):
+        if url in seen:
+            continue
+        seen.add(url)
+        items.append(
+            {
+                "kind": _guess_kind(url),
+                "url": url,
+                "channel": "",
+                "raw": url,
+                "source": "url",
+            }
+        )
+    return items
+
+
+def asr_eligible(item: dict[str, Any]) -> bool:
+    """Audio (and audio-bearing video notes) are ASR candidates; plain files are not."""
+    kind = str(item.get("kind") or "")
+    return kind in {"audio", "video"}

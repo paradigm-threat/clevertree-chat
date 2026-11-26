@@ -77,7 +77,7 @@ def auth_path() -> Path:
 
 
 # Craft IRC rooms (per tip-repo / collection) — not URL debate pages.
-CRAFT_TOPICS = frozenset({"ga-savannah-cat-rescue"})
+CRAFT_TOPICS = frozenset({"ga-savannah-cat-rescue", "mp-general"})
 
 
 def page_for_topic(topic: str) -> str:
@@ -462,6 +462,10 @@ def dispatch(
         results = drain_irc_log_jobs(limit=int(payload.get("limit") or 20))
         return 200, {"results": results, "count": len(results)}
 
+    if action == "drain_channel_asr":
+        results = drain_channel_asr_jobs(limit=int(payload.get("limit") or 5))
+        return 200, {"results": results, "count": len(results)}
+
     view = view_topic(
         topic, visitor, str(query.get("subtopic") or payload.get("subtopic") or "")
     )
@@ -590,6 +594,12 @@ def start_drain_worker(interval_s: float = 2.0) -> None:
                         drain_irc_log_jobs(limit=10)
                 except Exception:
                     pass
+                # Channel media ASR (Groq when GROQ_API_KEY set)
+                try:
+                    if ticks % 5 == 0:  # ~10s
+                        drain_channel_asr_jobs(limit=3)
+                except Exception:
+                    pass
             except Exception:
                 pass
             _drain_stop.wait(interval_s)
@@ -654,6 +664,19 @@ def fanout_submit(
         irc_log_cache.append_line(
             topic,
             body=str(text),
+            visitor=str(visitor or ""),
+            source=source,
+            nick=nick or str(author),
+        )
+    except Exception:
+        pass
+    # Channel media → ASR queue (no tip mint). Drain posts transcript when keys exist.
+    try:
+        from clevertree_chat import channel_asr
+
+        channel_asr.enqueue_from_body(
+            topic,
+            str(text),
             visitor=str(visitor or ""),
             source=source,
             nick=nick or str(author),
@@ -727,3 +750,13 @@ def drain_irc_log_jobs(*, limit: int = 20) -> list[dict]:
                 irc_log_cache.mark_job(job_path, "failed", error=str(exc))
             results.append({"job": job.get("id"), "ok": False, "reason": str(exc)})
     return results
+
+
+def drain_channel_asr_jobs(*, limit: int = 5) -> list[dict]:
+    """Drain pending [[mp:media]] ASR jobs; reply in-channel (no tip mint)."""
+    from clevertree_chat import channel_asr
+
+    return channel_asr.process_pending(
+        limit=limit,
+        reply=channel_asr.default_channel_reply,
+    )
