@@ -69,22 +69,39 @@ def _context_lines(topic: str, *, limit: int = 40) -> list[str]:
 
 
 def _build_messages(topic: str, focus: str) -> list[dict[str, str]]:
+    from clevertree_chat.abuse_cues import scan_lines
+
     lines = _context_lines(topic, limit=40)
     transcript_bits = [ln for ln in lines if "SI transcript (" in ln][-5:]
     chat_bits = [ln for ln in lines if "SI transcript (" not in ln][-35:]
     context = "\n".join(chat_bits[-30:] + transcript_bits)
     if len(context) > 6000:
         context = context[-6000:]
-    focus_line = focus.strip() if focus else "(summarize the recent channel; note open questions / missing counters)"
+    cue_hits = scan_lines(chat_bits[-40:], limit=8)
+    cue_block = "(none)"
+    if cue_hits:
+        cue_block = "\n".join(
+            f"- {','.join(h['cues'])}: {h['line']}" for h in cue_hits
+        )
+    focus_line = focus.strip() if focus else (
+        "(organize recent channel: topics/axes, open counters, abuse/fraud risk, "
+        "and one SI ask)"
+    )
     system = (
         "You are Clevertree SI for a public IRC channel. Curate only — no votes, "
-        "no winners, no sides. Reply in under 120 words. Cover: short summary, "
-        "open axes/counters if any, what is missing, and at most one SI ask. "
-        "Do not invent standing exceptions. Ignore spam/emoji noise."
+        "no winners, no sides. Prefer fairness and organization over persuasion.\n"
+        "Reply in under 160 words using these exact headings:\n"
+        "Topics: (short axis labels for distinct claims; use 'other' for non-arguments)\n"
+        "Hurdles: (missing counters, unclear claims, low-confidence spots)\n"
+        "Abuse: (none | spam | scam/fraud | harassment — one line why; do not invent)\n"
+        "Ask: (at most one SI ask for the owner/channel)\n"
+        "Ignore emoji-only noise. Do not invent standing exceptions or private rules. "
+        "CPU abuse cues below are hints only — confirm from the lines."
     )
     user = (
         f"Channel topic: {topic}\n"
         f"Investigate focus: {focus_line}\n\n"
+        f"CPU abuse cues (hint):\n{cue_block}\n\n"
         f"Recent channel lines (oldest→newest):\n{context or '(empty)'}\n"
     )
     return [
@@ -206,7 +223,7 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
         result = complete_text(
             messages,
             temperature=0.2,
-            max_tokens=600,
+            max_tokens=900,
             response_json=False,
         )
         text = (result.text or "").strip()

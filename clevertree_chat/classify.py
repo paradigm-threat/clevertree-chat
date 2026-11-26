@@ -292,6 +292,14 @@ def mint_key(text: str) -> str:
 
 def classify(topic: str, text: str) -> str:
     """A reading of the post. The live path does not file under this by itself."""
+    # Obvious spam/scam/harassment → other (not a new perspective key).
+    try:
+        from clevertree_chat.abuse_cues import scan_line
+
+        if scan_line(text):
+            return OTHER_KEY
+    except Exception:
+        pass
     topic_key = assert_short_key(slugify(topic))
     legal = legality_key(text)
     if legal:

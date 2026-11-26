@@ -213,7 +213,13 @@ def complete_groq(
     choices = data.get("choices") or []
     if not choices:
         raise ProviderError("groq_empty_choices", status=status, provider="groq")
-    text = str((choices[0].get("message") or {}).get("content") or "").strip()
+    message = choices[0].get("message") or {}
+    text = str(message.get("content") or "").strip()
+    # gpt-oss class: completion budget can be spent on `reasoning` with empty content.
+    if not text:
+        text = str(message.get("reasoning") or "").strip()
+        if text and len(text) > 1200:
+            text = text[:1197] + "…"
     if not text:
         raise ProviderError("groq_empty_content", status=status, provider="groq")
     return TextCompletion(text=text, provider="groq", model=use_model, failover=False)
