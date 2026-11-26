@@ -369,6 +369,55 @@ def dispatch(
         return 200, result
 
     if action == "submit":
+        # Manual !investigate — Free-tier text SI; never a debate claim.
+        raw_body = str(payload.get("body") or "").strip()
+        try:
+            from clevertree_chat import investigate
+            from clevertree_chat.channel_asr import default_channel_reply
+
+            focus = investigate.parse_command(raw_body)
+            if focus is not None:
+                nick = str(payload.get("name") or "").strip()
+                try:
+                    from clevertree_chat import irc_log_cache
+
+                    irc_log_cache.append_line(
+                        topic,
+                        body=raw_body,
+                        visitor=visitor,
+                        source="web",
+                        nick=nick,
+                    )
+                except Exception:
+                    pass
+                inv = investigate.request_investigate(
+                    topic,
+                    focus=focus,
+                    nick=nick,
+                    visitor=visitor,
+                    source="web",
+                    reply=default_channel_reply,
+                )
+                if inv.get("ok"):
+                    try:
+                        drain_investigate_jobs(limit=1)
+                    except Exception:
+                        pass
+                return 200, {
+                    "ok": True,
+                    "investigate": True,
+                    "queued": bool(inv.get("ok")),
+                    "reason": inv.get("reason") or "",
+                    "message": inv.get("message") or "",
+                    "job_id": inv.get("job_id"),
+                    "view": view_topic(
+                        topic,
+                        visitor,
+                        str(query.get("subtopic") or payload.get("subtopic") or ""),
+                    ),
+                }
+        except Exception:
+            pass
         chosen = payload.get("chosen")
         if chosen is not None:
             chosen = str(chosen).strip() or None
@@ -465,6 +514,15 @@ def dispatch(
     if action == "drain_channel_asr":
         results = drain_channel_asr_jobs(limit=int(payload.get("limit") or 5))
         return 200, {"results": results, "count": len(results)}
+
+    if action == "drain_investigate":
+        results = drain_investigate_jobs(limit=int(payload.get("limit") or 3))
+        return 200, {"results": results, "count": len(results)}
+
+    if action == "quota_status":
+        from clevertree_chat import quota
+
+        return 200, quota.status()
 
     if action == "provider_status":
         from clevertree_chat.providers import provider_status
@@ -637,6 +695,12 @@ def start_drain_worker(interval_s: float = 2.0) -> None:
                         drain_channel_asr_jobs(limit=3)
                 except Exception:
                     pass
+                # Manual !investigate text SI (Groq→Bedrock)
+                try:
+                    if ticks % 5 == 0:
+                        drain_investigate_jobs(limit=2)
+                except Exception:
+                    pass
             except Exception:
                 pass
             _drain_stop.wait(interval_s)
@@ -794,6 +858,16 @@ def drain_channel_asr_jobs(*, limit: int = 5) -> list[dict]:
     from clevertree_chat import channel_asr
 
     return channel_asr.process_pending(
+        limit=limit,
+        reply=channel_asr.default_channel_reply,
+    )
+
+
+def drain_investigate_jobs(*, limit: int = 3) -> list[dict]:
+    """Drain pending !investigate jobs; reply in-channel (no tip mint / no debate dirty)."""
+    from clevertree_chat import channel_asr, investigate
+
+    return investigate.process_pending(
         limit=limit,
         reply=channel_asr.default_channel_reply,
     )

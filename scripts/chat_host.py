@@ -203,8 +203,10 @@ class ChatHandler(SimpleHTTPRequestHandler):
                         mtype = msg.get("type")
                         if mtype == "ping":
                             send_raw(json.dumps({"type": "pong"}))
-                        elif mtype in {"chat.send", "chat.post"}:
-                            body = str(msg.get("body") or "").strip()
+                        elif mtype in {"chat.send", "chat.post", "privmsg"}:
+                            body = str(
+                                msg.get("body") or msg.get("text") or ""
+                            ).strip()
                             if not body:
                                 continue
                             vid = str(msg.get("visitor") or visitor or "").strip()
@@ -215,19 +217,26 @@ class ChatHandler(SimpleHTTPRequestHandler):
                                         "topic": topic,
                                         "visitor": vid,
                                         "body": body,
-                                        "name": msg.get("name"),
+                                        "name": msg.get("name") or msg.get("nick"),
                                     },
                                     {},
                                     "",
                                 )
                                 if code == 200:
-                                    live.fanout_submit(
-                                        topic,
-                                        vid,
-                                        result if isinstance(result, dict) else {},
-                                        source="ws",
-                                        nick=str(msg.get("name") or ""),
-                                    )
+                                    res = result if isinstance(result, dict) else {}
+                                    # !investigate is handled in dispatch; no debate fanout.
+                                    if not res.get("investigate"):
+                                        live.fanout_submit(
+                                            topic,
+                                            vid,
+                                            res,
+                                            source="ws",
+                                            nick=str(
+                                                msg.get("name")
+                                                or msg.get("nick")
+                                                or ""
+                                            ),
+                                        )
                                 else:
                                     send_raw(
                                         json.dumps(

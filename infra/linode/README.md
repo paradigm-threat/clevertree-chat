@@ -19,6 +19,8 @@ Optional env:
 | `CLEVERTREE_CHAT_REMOTE` | `/opt/clevertree-chat` |
 | `CLEVERTREE_ASR_DRY_RUN` | `1` when `GROQ_API_KEY` unset |
 | `GROQ_API_KEY` | Paste on pub1 for Whisper + text SI (never commit) |
+| `CLEVERTREE_INVESTIGATE*` / `CLEVERTREE_ASR_SOFT_*` | Optional Free-tier soft budgets (see `docs/chat-host.md`) |
+| `GROQ_TEXT_MODEL` | Default `openai/gpt-oss-20b` |
 | `CLEVERTREE_PROVIDER_FAILOVER` | Text SI Groq→Bedrock on 429 (default on) |
 | `AWS_*` / `CLEVERTREE_BEDROCK_*` | Optional Bedrock failover for **text only** — ASR stays Groq |
 

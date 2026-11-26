@@ -168,7 +168,7 @@ def _transcribe_groq(path: Path) -> dict[str, str]:
     api_key = (os.environ.get("GROQ_API_KEY") or "").strip()
     if not api_key:
         raise RuntimeError("missing_GROQ_API_KEY")
-    model = (os.environ.get("GROQ_WHISPER_MODEL") or "whisper-large-v3").strip()
+    model = (os.environ.get("GROQ_WHISPER_MODEL") or "whisper-large-v3-turbo").strip()
     boundary = f"----clevertree{uuidlib.uuid4().hex}"
     filename = path.name
     file_bytes = path.read_bytes()
@@ -241,6 +241,27 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
         # Leave pending for a later drain when keys exist.
         return {"ok": False, "reason": "awaiting_GROQ_API_KEY", "pending": True}
 
+    # Soft Free-tier gate (ahead of Groq 20 RPM / 2K RPD hard caps).
+    if api_key and not dry:
+        try:
+            from clevertree_chat import quota
+
+            soft = quota.check_asr()
+            if not soft.get("ok"):
+                log.info(
+                    "channel_asr %s soft-capped (%s) — left pending",
+                    job.get("id"),
+                    soft.get("reason"),
+                )
+                return {
+                    "ok": False,
+                    "id": job.get("id"),
+                    "reason": soft.get("reason") or "asr_soft_cap",
+                    "pending": True,
+                }
+        except Exception:
+            pass
+
     mark_job(job_path, "leased")
     tmp: Path | None = None
     try:
@@ -256,6 +277,12 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
             text = result["text"]
             model = result["model"]
             status = "done"
+            try:
+                from clevertree_chat import quota
+
+                quota.consume_asr()
+            except Exception:
+                pass
 
         reply_body = _format_reply(job, text, model)
         if reply is not None:

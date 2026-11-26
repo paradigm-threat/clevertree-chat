@@ -34,7 +34,8 @@ def get_bridge() -> "IrcBridge | None":
 
 class IrcBridge:
     def __init__(self) -> None:
-        self.host = os.environ.get("CLEVERTREE_IRC_HOST", "flashbackrepository.org").strip()
+        # Linode Ergo hub (mesh1/mesh2 proxy the same network). Override if needed.
+        self.host = os.environ.get("CLEVERTREE_IRC_HOST", "pub1.relaygateway.net").strip()
         self.port = int(os.environ.get("CLEVERTREE_IRC_PORT", "6697") or "6697")
         self.tls = os.environ.get("CLEVERTREE_IRC_TLS", "1").strip().lower() not in {
             "0",
@@ -43,6 +44,14 @@ class IrcBridge:
         }
         self.nick = (os.environ.get("CLEVERTREE_IRC_NICK") or "clevertree-si").strip()[:24]
         self.prefix = (os.environ.get("CLEVERTREE_IRC_PREFIX") or "pt").strip() or "pt"
+        # Nicks that must never re-trigger AI / bridge actions (own + future AI).
+        raw_bots = os.environ.get(
+            "CLEVERTREE_IRC_BOT_NICKS",
+            "clevertree-si,clevertree-ai,clevertree,relay-bot",
+        )
+        self._bot_nicks = {
+            n.strip().lower() for n in raw_bots.split(",") if n.strip()
+        } | {self.nick.lower()}
         self._client: IrcClient | None = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
@@ -107,15 +116,8 @@ class IrcBridge:
                 client.connect(timeout=25.0)
                 backoff = 2.0
                 log.info("IRC connected %s:%s as %s", self.host, self.port, client.nick)
-                # Seed PT review + starter channels
-                for topic in (
-                    "general",
-                    "5g",
-                    "geoengineering",
-                    "flock-cameras",
-                    "thc-legalization",
-                    "ga-savannah-cat-rescue",
-                ):
+                # Default PT channel (consolidated) + MyProblem demo craft rooms.
+                for topic in ("general", "mp-general", "ga-savannah-cat-rescue"):
                     self.ensure_channel(topic)
                 lobby = channel_for_topic(self.prefix, "")
                 client.join(lobby)
@@ -138,7 +140,12 @@ class IrcBridge:
         if not text or not target.startswith("#"):
             return
         client = self._client
-        if client and nick.lower() == client.nick.lower():
+        nick_l = nick.lower()
+        if client and nick_l == client.nick.lower():
+            return
+        # Never act on bridge / AI bot traffic (incl. nick collision suffixes stripped loosely)
+        base_nick = nick_l.split("_")[0] if nick_l else ""
+        if nick_l in self._bot_nicks or base_nick in self._bot_nicks:
             return
         # Skip CTCP
         if text.startswith("\x01"):
@@ -158,6 +165,13 @@ class IrcBridge:
                 except Exception as exc:
                     log.warning("IRC answer fold failed: %s", exc)
             return
+        # Manual text SI — Free-tier gated; never a debate claim
+        if lower == "!investigate" or lower.startswith("!investigate "):
+            try:
+                self._request_investigate(topic, text, nick)
+            except Exception as exc:
+                log.warning("IRC investigate failed: %s", exc)
+            return
         # Other !commands stay out of the debate map
         if text.startswith("!"):
             return
@@ -172,6 +186,42 @@ class IrcBridge:
         except Exception as exc:
             log.warning("IRC→submit failed: %s", exc)
             self._echo_ids.discard(fp)
+
+    def _request_investigate(self, topic: str, text: str, nick: str) -> None:
+        from clevertree_chat import investigate
+        from clevertree_chat.channel_asr import default_channel_reply
+
+        focus = investigate.parse_command(text)
+        if focus is None:
+            return
+        # Echo the command into the ring so humans see who asked (not a debate claim).
+        try:
+            from clevertree_chat import irc_log_cache
+
+            irc_log_cache.append_line(
+                topic,
+                body=text.strip(),
+                visitor="",
+                source="irc",
+                nick=nick,
+            )
+        except Exception:
+            pass
+        result = investigate.request_investigate(
+            topic,
+            focus=focus,
+            nick=nick,
+            source="irc",
+            reply=default_channel_reply,
+        )
+        if result.get("ok"):
+            # Kick an immediate drain so the reply isn't stuck on the 10s tick.
+            try:
+                from clevertree_chat.live_runtime import drain_investigate_jobs
+
+                drain_investigate_jobs(limit=1)
+            except Exception as exc:
+                log.warning("investigate drain kick failed: %s", exc)
 
     def _fold_owner_answer(self, topic: str, answer: str, nick: str) -> None:
         """Append human answer into owner-answers.md and a rules.md note."""

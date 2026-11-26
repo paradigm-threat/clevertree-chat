@@ -36,8 +36,12 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_IRC_*` | Host/port/TLS/nick/prefix for the bridge |
 | `CLEVERTREE_CHANNEL_ASR` | Default `1` — enqueue ASR jobs from `[[mp:media]]` / Bunny URLs on submit |
 | `GROQ_API_KEY` | Groq key for Whisper ASR **and** text SI; omit → ASR jobs stay pending; paste on pub1 (do not commit) |
-| `GROQ_WHISPER_MODEL` | Default `whisper-large-v3` |
-| `GROQ_TEXT_MODEL` / `GROQ_SI_MODEL` | Default `llama-3.1-8b-instant` for text curation / `action=text_complete` |
+| `GROQ_WHISPER_MODEL` | Default `whisper-large-v3-turbo` |
+| `GROQ_TEXT_MODEL` / `GROQ_SI_MODEL` | Default `openai/gpt-oss-20b` for text SI / `action=text_complete` / `!investigate` |
+| `CLEVERTREE_INVESTIGATE` | Default on — manual `!investigate` text SI (not per-message) |
+| `CLEVERTREE_INVESTIGATE_COOLDOWN_S` | Default `600` (per-channel) |
+| `CLEVERTREE_INVESTIGATE_DAILY_MAX` | Default `48` org/day soft Free-tier budget |
+| `CLEVERTREE_ASR_SOFT_RPD` / `CLEVERTREE_ASR_SOFT_RPM` | Soft Whisper caps ahead of Groq Free (defaults `1500` / `15`) |
 | `CLEVERTREE_ASR_DRY_RUN=1` | Stub in-channel transcript without calling Groq |
 | `CLEVERTREE_PROVIDER_FAILOVER` | Default on — text SI prefers Groq, falls back to Bedrock on 429 / rate-limit (and 5xx when enabled) |
 | `CLEVERTREE_BEDROCK_FAILOVER_ON_5XX` | Default `1` — also failover text SI on Groq 5xx |
@@ -45,7 +49,9 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_BEDROCK_MODEL_ID` | Default `anthropic.claude-3-haiku-20240307-v1:0` |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` | Bedrock creds; if missing on Groq rate-limit, log + fail clearly (no invented keys) |
 
-**ASR caveat:** channel Whisper stays on Groq only — there is no Bedrock drop-in for transcription. On Groq 429, ASR jobs return to `pending`. Text SI failover lives in `clevertree_chat/providers.py` (`action=provider_status`, `action=text_complete`).
+**ASR caveat:** channel Whisper stays on Groq only — there is no Bedrock drop-in for transcription. On Groq 429 or soft RPM/RPD cap, ASR jobs return to `pending`.
+
+**Text SI:** not per-message. Manual `!investigate` / room **Investigate** button → soft quota → Groq→Bedrock (`action=drain_investigate`, `action=quota_status`). Probe: `action=provider_status`, `action=text_complete`.
 
 ## Public hostnames
 

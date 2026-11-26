@@ -21,7 +21,7 @@ from urllib.parse import quote
 
 log = logging.getLogger("clevertree.providers")
 
-DEFAULT_GROQ_TEXT_MODEL = "llama-3.1-8b-instant"
+DEFAULT_GROQ_TEXT_MODEL = "openai/gpt-oss-20b"
 DEFAULT_BEDROCK_MODEL = "anthropic.claude-3-haiku-20240307-v1:0"
 DEFAULT_BEDROCK_REGION = "us-east-1"
 
