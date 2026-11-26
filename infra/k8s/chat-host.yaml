@@ -59,11 +59,13 @@ spec:
               # GPU wake stays off until RACKSPACE_SPOT_TOKEN is in the secret.
               export CLEVERTREE_SPOT_WAKE="${CLEVERTREE_SPOT_WAKE:-0}"
               export CLEVERTREE_IRC_ENABLE="${CLEVERTREE_IRC_ENABLE:-1}"
-              export CLEVERTREE_IRC_HOST="${CLEVERTREE_IRC_HOST:-flashbackrepository.org}"
+              export CLEVERTREE_IRC_HOST="${CLEVERTREE_IRC_HOST:-pub1.relaygateway.net}"
               export CLEVERTREE_IRC_PORT="${CLEVERTREE_IRC_PORT:-6697}"
               export CLEVERTREE_IRC_TLS="${CLEVERTREE_IRC_TLS:-1}"
               export CLEVERTREE_IRC_NICK="${CLEVERTREE_IRC_NICK:-clevertree-si}"
               export CLEVERTREE_IRC_PREFIX="${CLEVERTREE_IRC_PREFIX:-pt}"
+              export CLEVERTREE_IRC_CONSOLIDATE_PT="${CLEVERTREE_IRC_CONSOLIDATE_PT:-1}"
+              export CLEVERTREE_IRC_BOT_NICKS="${CLEVERTREE_IRC_BOT_NICKS:-clevertree-si,clevertree-ai,clevertree,relay-bot}"
               if [[ ! -f /app/var/clevertree-live/comments/.clevertree-full-sot ]] \
                 && [[ -n "${CLEVERTREE_GITHUB_TOKEN:-}" ]] \
                 && [[ -x /app/scripts/bootstrap_comments_checkout.sh || -f /app/scripts/bootstrap_comments_checkout.sh ]]; then
@@ -82,7 +84,7 @@ spec:
             - name: CLEVERTREE_IRC_ENABLE
               value: "1"
             - name: CLEVERTREE_IRC_HOST
-              value: flashbackrepository.org
+              value: pub1.relaygateway.net
             - name: CLEVERTREE_IRC_PORT
               value: "6697"
             - name: CLEVERTREE_IRC_TLS
@@ -91,6 +93,19 @@ spec:
               value: clevertree-si
             - name: CLEVERTREE_IRC_PREFIX
               value: pt
+            - name: CLEVERTREE_IRC_CONSOLIDATE_PT
+              value: "1"
+            - name: CLEVERTREE_IRC_BOT_NICKS
+              value: clevertree-si,clevertree-ai,clevertree,relay-bot
+            - name: CLEVERTREE_CHANNEL_ASR
+              value: "1"
+            # Optional: mount GROQ_API_KEY from a secret for live channel ASR.
+            # - name: GROQ_API_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: intake-ai
+            #       key: GROQ_API_KEY
+            #       optional: true
           ports:
             - containerPort: 8790
               hostPort: 8790

@@ -28,12 +28,16 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_GITHUB_TOKEN` + `CLEVERTREE_COMMENTS_SYNC=1` | Pull/push via GitHub API (optional) |
 | `CLEVERTREE_PUBLISH_REMOTES` | Space/comma-separated remotes for post-drain `git push` of `comments` (e.g. `git://iad1.relaygateway.net:9418/clevertree-chat-comments.git`) |
 | `CLEVERTREE_FETCH=1` | Fetch suggested-counter URLs during batch hooks |
-| `CLEVERTREE_SPOT_WAKE=1` | Request Spot GPU wake (needs `RACKSPACE_SPOT_TOKEN` for a real API call) |
+| `CLEVERTREE_SPOT_WAKE` | **Abandoned** — leave `0`; do not wake Spot GPU for comments SI |
 | `CLEVERTREE_SEED_FIXTURES=0` | Skip fixture seed (Intake full SoT) |
 | `CLEVERTREE_USE_SIBLING=1` | Dev: use `../clevertree-chat-comments` |
 | `CLEVERTREE_GIT_FALLBACK=1` | Force dulwich when `git` is absent |
 | `CLEVERTREE_IRC_ENABLE=1` | Start Ergo IRC bridge (see [irc-backbone.md](irc-backbone.md)) |
 | `CLEVERTREE_IRC_*` | Host/port/TLS/nick/prefix for the bridge |
+| `CLEVERTREE_CHANNEL_ASR` | Default `1` — enqueue ASR jobs from `[[mp:media]]` / Bunny URLs on submit |
+| `GROQ_API_KEY` | Provider Whisper for channel media drain; omit → jobs stay pending |
+| `GROQ_WHISPER_MODEL` | Default `whisper-large-v3` |
+| `CLEVERTREE_ASR_DRY_RUN=1` | Stub in-channel transcript without calling Groq |
 
 ## Public hostnames
 
