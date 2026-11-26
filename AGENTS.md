@@ -12,25 +12,27 @@ Standing debate, not a reply thread. People post original points; the **batch SI
 > **Queue every claim as soon as it appears; permanent filing only after batch accepts — cite the live web; don’t invent standing exceptions.**
 
 Policy detail: [`docs/intake-queue.md`](docs/intake-queue.md).  
-**Batch phases:** [`docs/batch-phases.md`](docs/batch-phases.md) · Relay SoT [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md) — same SI procedure as MyProblem/QuizGate (drain → commit queue → merge); Phase 1 Cursor / Phase 2 Spot.
+**Batch phases:** [`docs/batch-phases.md`](docs/batch-phases.md) · Relay SoT [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md) — same SI procedure as MyProblem/QuizGate (drain → providers → commit queue → merge); Phase 1 Cursor / Phase 2 CPU + Groq/Bedrock/peers. No Spot GPU SI — [`../../myproblem/docs/providers-ai.md`](../../myproblem/docs/providers-ai.md).
 
 ## Where things live
 
 | Piece | Location |
 |---|---|
 | Marketing + extension zip | This repo → Vercel → `clevertree.chat` |
-| Chat host (Debate board, WS, demos, PT review) | `scripts/chat_host.py` on Intake Spot → `api.clevertree.chat` |
+| Chat host (Debate board, WS, demos, PT review) | `scripts/chat_host.py` on Linode **pub1** → `api.clevertree.chat` |
 | Debate record (SoT) | [`clevertree-chat-comments`](https://github.com/paradigm-threat/clevertree-chat-comments) / [GitLab](https://gitlab.com/clevertree/clevertree-chat-comments) branch `comments` |
-| Intake queue (ephemeral, not git) | PVC `var/clevertree-live/queue/` (policy; cutover pending) |
+| Intake queue (ephemeral, not git) | Host disk `var/clevertree-live/queue/` on Linode pub1 (policy; cutover pending) |
 | Batch rules (defaults) | [`docs/default-rules.md`](docs/default-rules.md), [`clevertree_chat/rules.py`](clevertree_chat/rules.py) |
 | Batch decision cases | [`docs/cases/batch-decisions.md`](docs/cases/batch-decisions.md) |
 | PT backlog refile | [`scripts/refile_pt_batch.py`](scripts/refile_pt_batch.py) |
 | Browser extension (debate board) | [`fronts/extension/`](fronts/extension/) → [clevertree.chat/extension](https://clevertree.chat/extension) |
-| Relay / Networker social gather | Sibling **MyProblem** [`extensions/capture`](../myproblem/extensions/capture) → [myproblem.app/extension](https://myproblem.app/extension) |
+| Shared public IRC room UI | [`fronts/room/`](fronts/room/) — embed / page / sidepanel modes; context tags; independent theme key `clevertree.room.theme` on `.room` (not host `<html>`) |
+| Relay / Networker extension | [`fronts/relay-extension/`](fronts/relay-extension/) (canonical) — wraps room + Refresh; MyProblem gather APIs consumed from here |
+| Design kits | [`design/clevertree-kit/`](design/clevertree-kit/), [`design/relay-ui-kit/`](design/relay-ui-kit/) |
 
-Deploy chat host: `bash infra/deploy-chat-host.sh` (kubeconfig `~/.kube/myproblem-intake.yaml`).
+Deploy chat host: `bash infra/deploy-chat-host.sh` (SSH to Linode `pub1.relaygateway.net`; see `infra/linode/`). Rackspace Spot kubeconfig abandoned.
 
-IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge (`CLEVERTREE_IRC_ENABLE=1`), `#pt-<topic>` ↔ queue/submit path.
+IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`pub1`); PT consolidates to `#pt`; craft collections keep per-collection channels; context tags [`docs/context-tags.md`](docs/context-tags.md).
 
 ## What works today
 
@@ -44,10 +46,10 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Ergo TLS bridge
 
 ## Near-future goals (priority)
 
-1. **Queue-before-SoT cutover** — implement [`docs/intake-queue.md`](docs/intake-queue.md) (live enqueue only; Cursor/Spot sole SoT writer on shared queue).
+1. **Queue-before-SoT cutover** — implement [`docs/intake-queue.md`](docs/intake-queue.md) (live enqueue only; Cursor sole SoT writer on shared queue in Phase 1).
 2. **Align job schema** with MyProblem/QuizGate shared batch queue ([`docs/batch-phases.md`](docs/batch-phases.md)).
 3. **Chrome Web Store** — human dashboard upload + review.
-4. **Spot token mount** — `CLEVERTREE_SPOT_WAKE` only for product Phase 2 comments GPU pass.
+4. **Providers** — Groq/Bedrock/peers for gray-zone spam + curation; keep `CLEVERTREE_SPOT_WAKE=0` (GPU wake abandoned).
 5. **History `.relay.yaml` inject** — only if fleet ever needs a full history rewrite for hook compliance (tip already has policy).
 
 ## Locked product rules (don’t undo)

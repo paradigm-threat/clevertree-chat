@@ -1,21 +1,16 @@
 # Infrastructure
 
-The front of the product is the **live gatherer**. While someone writes, it may show a suggested existing category. Submit **enqueues** the body (plus recommendations) on an ephemeral PVC queue — it does not permanently file into the comments SoT. The author does not wait on the batch, and the live path does not boot a GPU. Policy: [`intake-queue.md`](intake-queue.md) · phases: [`batch-phases.md`](batch-phases.md). Phase 1: **Cursor** drains the shared queue and is the SoT writer; Phase 2: Spot.
+The front of the product is the **live gatherer**. While someone writes, it may show a suggested existing category. Submit **enqueues** the body (plus recommendations) on an ephemeral PVC queue — it does not permanently file into the comments SoT. The author does not wait on the batch, and the live path does not boot heavy AI. Policy: [`intake-queue.md`](intake-queue.md) · phases: [`batch-phases.md`](batch-phases.md). Phase 1: **Cursor** drains the shared queue and is the SoT writer; Phase 2: **CPU + API providers** (Groq / Bedrock / peers).
 
-**Chat host (realtime AI server):** containable UI, `/api/chat`, WebSocket fan-out, and batch drain on Intake (`scripts/chat_host.py`, see [`chat-host.md`](chat-host.md)). Optional **IRC bridge** — [`irc-backbone.md`](irc-backbone.md). Public hostname **`https://api.clevertree.chat`**.
+**Chat host (realtime AI server):** containable UI, `/api/chat`, WebSocket fan-out, and batch drain on Linode **pub1** (`scripts/chat_host.py`, see [`chat-host.md`](chat-host.md)). Deploy: `bash infra/deploy-chat-host.sh` (systemd + Caddy; see [`infra/linode/`](../infra/linode/)). Optional **IRC bridge** — [`irc-backbone.md`](irc-backbone.md). Public hostname **`https://api.clevertree.chat`** (DNS A → pub1). Rackspace Spot / kubectl Intake path is abandoned.
 
-The back is the **batch deep SI** — sole writer of permanent debate content under `pages/…` on the comments branch. It consumes the intake queue (and any dirty job markers), files accepted posts, drops rejects so spam never lands in git, then runs associations / fetch / spam-court on filed content. When the queue is empty, the result says the hardware should shut down.
+The back is the **batch deep SI** — sole writer of permanent debate content under `pages/…` on the comments branch. It consumes the intake queue (and any dirty job markers), files accepted posts, drops rejects so spam never lands in git, then runs associations / fetch / spam-court on filed content. Heavy think uses **metered providers** with rules + KB/context — **no Spot GPU wake** ([MyProblem `providers-ai.md`](../../myproblem/docs/providers-ai.md)).
 
 Cleverchat is an independent product repo. Other apps (including MyProblem) may mount it; they depend on Cleverchat, not the reverse. The debate is never written into the host page repo. `page.json` can pin a canonical URL or a content commit and flag the thesis stale. Nothing is written back to the host.
 
-## Spot wake gate
+## Spot GPU wake — abandoned
 
-By default the scripts only echo the calls (no network):
-
-- `infra/spot-wake-comments.sh` echoes `createCloudspace` and `createSpotNodePool` for class `gpu.vs2.xlargeplusplus-sjc` in `us-west-sjc-1`, org `paradigmthreat`, about $0.15/hr.
-- `infra/spot-decommission-comments.sh` echoes `deleteSpotNodePool` and `deleteCloudspace`.
-
-Set `CLEVERTREE_SPOT_WAKE=1` to mark a wake request. A real Spot create/delete runs only when `RACKSPACE_SPOT_TOKEN` (or `CLEVERTREE_SPOT_TOKEN`) is also present; otherwise the script stays soft-fail dry-run and `cloud_api_called` remains false. Leaving the A30 at desired=0 is not the idle state. On-demand A30 is not this path. A comments cloudspace is its own box so a debate pass does not sit behind ticket vision, and a vision job does not keep this GPU up.
+Historical scripts `infra/spot-wake-comments.sh` / `infra/spot-decommission-comments.sh` targeted SJC A30. **Do not use for product.** Leave `CLEVERTREE_SPOT_WAKE=0`. Batch SI = Cursor (Phase 1) or automated CPU drain calling Groq/Bedrock/peers (Phase 2). Log and publicize `$/request` when provider calls land.
 
 Curator commits use the service id `clevertree-chat-ai`. A person's name is never the author of a rewritten room. Each batch commit can be published to every local remote that serves the comments branch. The index and the files it points at are part of that commit.
 
@@ -27,9 +22,9 @@ A browser extension and an HTML snippet are small fronts in `fronts/`. They norm
 
 The always-on path is this site's API, `POST /api/debate` and `GET /api/debate`. It records submit latency (gauge); after queue cutover that latency is enqueue time, not SoT write time.
 
-The batch path is the curator (heuristic today; GPU when wake+token). Drain consumes the intake queue, then runs the phase-1 engine plus `batch_hooks` on **accepted** content. After the queue is empty, `clevertree_chat.gauge` runs the Spot scripts and stores their echo.
+The batch path is the curator (heuristic today; providers when wired). Drain consumes the intake queue, then runs the phase-1 engine plus `batch_hooks` on **accepted** content.
 
-`CLEVERTREE_SPOT_WAKE` gates a real wake. Production Intake keeps it `0` until a Spot token is mounted. Owner answers on IRC (`!answer …` or `si answer: …`) fold into `owner-answers.md` and `rules.md`.
+Owner answers on IRC (`!answer …` or `si answer: …`) fold into `owner-answers.md` and `rules.md`.
 
 Full comments SoT: mount via PVC (or `scripts/bootstrap_comments_checkout.sh`). Marker `.clevertree-full-sot` skips fixture seed. Set `CLEVERTREE_SEED_FIXTURES=0` on Intake.
 

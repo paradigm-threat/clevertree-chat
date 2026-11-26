@@ -1,0 +1,17 @@
+[Unit]
+Description=Clevertree chat-host (API + WS + channel ASR)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/clevertree-chat/app
+EnvironmentFile=-/opt/clevertree-chat/chat-host.env
+ExecStart=/opt/clevertree-chat/venv/bin/python3 scripts/chat_host.py 8790
+Restart=on-failure
+RestartSec=5
+# Chat host binds :8790; Caddy terminates TLS for api.clevertree.chat / intake paths.
+
+[Install]
+WantedBy=multi-user.target

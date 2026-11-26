@@ -1,0 +1,35 @@
+# Cleverchat API + MyProblem Intake chat paths on Linode pub1.
+# Imported from /etc/caddy/Caddyfile after deploy-chat-host.sh.
+
+api.clevertree.chat {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8790
+}
+
+intake.myproblem.app {
+	encode zstd gzip
+
+	handle /chat* {
+		reverse_proxy 127.0.0.1:8790
+	}
+	handle /api/chat* {
+		reverse_proxy 127.0.0.1:8790
+	}
+	handle /fronts/snippet* {
+		reverse_proxy 127.0.0.1:8790
+	}
+	handle /styles.css {
+		reverse_proxy 127.0.0.1:8790
+	}
+	handle /icon-128x128.png {
+		reverse_proxy 127.0.0.1:8790
+	}
+	handle /favicon.ico {
+		reverse_proxy 127.0.0.1:8790
+	}
+
+	# Ticket gateway (:8787) not yet cut over to Linode — return clear 503.
+	handle {
+		respond "Intake ticket gateway not yet on Linode pub1" 503
+	}
+}

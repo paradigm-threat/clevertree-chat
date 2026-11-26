@@ -46,13 +46,17 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | **https://api.clevertree.chat** | Cleverchat API + live boards + extension |
 | `https://intake.myproblem.app` | Shared Intake node; chat paths → `:8790` |
 
-## Deploy
+## Deploy (Linode pub1)
 
 ```bash
 bash infra/deploy-chat-host.sh
+# optional: CLEVERTREE_CHAT_SSH=root@pub1.relaygateway.net
+#           CLEVERTREE_CHAT_SSH_KEY=~/.ssh/id_ed25519_relay_gateway
 ```
 
-Packs the library, seeds light PT fixtures into `var/clevertree-live/comments`, installs `dulwich`, and rolls the Intake deployment.
+Packs the library, rsyncs onto Linode **pub1** (`/opt/clevertree-chat`), installs a venv + systemd unit, and reloads Caddy for `api.clevertree.chat` / `intake.myproblem.app` chat paths. Durable SoT lives under `/opt/clevertree-chat/var/clevertree-live/` (host disk — not Rackspace PVC). Channel ASR: set `GROQ_API_KEY` or `CLEVERTREE_ASR_DRY_RUN=1` in `/opt/clevertree-chat/chat-host.env`.
+
+There is **no LKE kubeconfig** for Intake; Rackspace Spot `~/.kube/myproblem-intake.yaml` is abandoned.
 
 ## Local
 
