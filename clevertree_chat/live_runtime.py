@@ -466,6 +466,43 @@ def dispatch(
         results = drain_channel_asr_jobs(limit=int(payload.get("limit") or 5))
         return 200, {"results": results, "count": len(results)}
 
+    if action == "provider_status":
+        from clevertree_chat.providers import provider_status
+
+        return 200, provider_status()
+
+    if action == "text_complete":
+        # Ops / Phase-2 text SI probe — Groq first, Bedrock on rate-limit failover.
+        from clevertree_chat.providers import ProviderError, complete_text
+
+        messages = payload.get("messages")
+        if not isinstance(messages, list) or not messages:
+            prompt = str(payload.get("prompt") or payload.get("body") or "").strip()
+            if not prompt:
+                return 400, {"ok": False, "error": "messages_or_prompt_required"}
+            messages = [{"role": "user", "content": prompt}]
+        try:
+            result = complete_text(
+                [{"role": str(m.get("role") or "user"), "content": str(m.get("content") or "")} for m in messages if isinstance(m, dict)],
+                temperature=float(payload.get("temperature") or 0.2),
+                max_tokens=int(payload.get("max_tokens") or 1024),
+                response_json=bool(payload.get("response_json")),
+            )
+        except ProviderError as exc:
+            return 502, {
+                "ok": False,
+                "error": str(exc),
+                "provider": exc.provider,
+                "status": exc.status,
+            }
+        return 200, {
+            "ok": True,
+            "text": result.text,
+            "provider": result.provider,
+            "model": result.model,
+            "failover": result.failover,
+        }
+
     view = view_topic(
         topic, visitor, str(query.get("subtopic") or payload.get("subtopic") or "")
     )

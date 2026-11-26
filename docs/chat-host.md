@@ -35,9 +35,17 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_IRC_ENABLE=1` | Start Ergo IRC bridge (see [irc-backbone.md](irc-backbone.md)) |
 | `CLEVERTREE_IRC_*` | Host/port/TLS/nick/prefix for the bridge |
 | `CLEVERTREE_CHANNEL_ASR` | Default `1` — enqueue ASR jobs from `[[mp:media]]` / Bunny URLs on submit |
-| `GROQ_API_KEY` | Provider Whisper for channel media drain; omit → jobs stay pending |
+| `GROQ_API_KEY` | Groq key for Whisper ASR **and** text SI; omit → ASR jobs stay pending; paste on pub1 (do not commit) |
 | `GROQ_WHISPER_MODEL` | Default `whisper-large-v3` |
+| `GROQ_TEXT_MODEL` / `GROQ_SI_MODEL` | Default `llama-3.1-8b-instant` for text curation / `action=text_complete` |
 | `CLEVERTREE_ASR_DRY_RUN=1` | Stub in-channel transcript without calling Groq |
+| `CLEVERTREE_PROVIDER_FAILOVER` | Default on — text SI prefers Groq, falls back to Bedrock on 429 / rate-limit (and 5xx when enabled) |
+| `CLEVERTREE_BEDROCK_FAILOVER_ON_5XX` | Default `1` — also failover text SI on Groq 5xx |
+| `CLEVERTREE_BEDROCK_REGION` / `AWS_REGION` | Bedrock region (default `us-east-1`) |
+| `CLEVERTREE_BEDROCK_MODEL_ID` | Default `anthropic.claude-3-haiku-20240307-v1:0` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` | Bedrock creds; if missing on Groq rate-limit, log + fail clearly (no invented keys) |
+
+**ASR caveat:** channel Whisper stays on Groq only — there is no Bedrock drop-in for transcription. On Groq 429, ASR jobs return to `pending`. Text SI failover lives in `clevertree_chat/providers.py` (`action=provider_status`, `action=text_complete`).
 
 ## Public hostnames
 

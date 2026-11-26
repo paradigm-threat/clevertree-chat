@@ -2,7 +2,9 @@
 
 Jobs live under var/clevertree-live/queue/channel_asr/ (ephemeral PVC, not git).
 Provider ASR uses GROQ_API_KEY when present; otherwise jobs stay pending (or dry-run
-when CLEVERTREE_ASR_DRY_RUN=1). Transcripts post back in-channel — no tip mint.
+when CLEVERTREE_ASR_DRY_RUN=1). Whisper has **no Bedrock failover** (unlike text SI in
+``providers.py``). On Groq 429, the job returns to pending for a later drain.
+Transcripts post back in-channel — no tip mint.
 """
 
 from __future__ import annotations
@@ -278,6 +280,11 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
         }
     except urllib.error.HTTPError as exc:
         msg = f"http_{exc.code}"
+        # Rate-limit: leave pending (ASR has no Bedrock drop-in). Other HTTP → error.
+        if exc.code == 429:
+            mark_job(job_path, "pending", error=msg, last_error_at=_utc_now())
+            log.warning("channel_asr %s rate-limited by Groq — left pending", job.get("id"))
+            return {"ok": False, "id": job.get("id"), "reason": msg, "pending": True}
         mark_job(job_path, "error", error=msg)
         return {"ok": False, "id": job.get("id"), "reason": msg}
     except Exception as exc:
