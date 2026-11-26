@@ -1,6 +1,8 @@
 # IRC backbone (Ergo ↔ Cleverchat)
 
-Realtime updates flow through **Linode Ergo IRC** (`pub1.relaygateway.net`; `mesh1` / `mesh2` proxy the same network). The Cleverchat host runs a thin bridge that mirrors IRC into the intake path and fans events to WebSocket clients. Permanent SoT filing is batch / AI consolidation — logs are temporary.
+Realtime updates flow through **Linode Ergo IRC** (`pub1.relaygateway.net`; `mesh1` / `mesh2` proxy the same network). The Cleverchat host runs a thin bridge that mirrors IRC into the public board path and fans events to WebSocket clients. Permanent SoT filing (when enabled) is batch / AI consolidation — channel logs are temporary.
+
+**Verified 2026-11-26:** `flashback-ergo` + `flashback-chat-edge` + irc-agent active on **pub1**; mesh1/mesh2 edge-only (`flashback-irc-proxy@6667` + agent); park `/chat/api/health` OK on Flashback + PT. Spot private-queue intake is gone — public mesh is IRC-only; private queues are premium.
 
 | | |
 |--|--|

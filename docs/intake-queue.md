@@ -1,8 +1,12 @@
 # Intake queue (queue-before-SoT)
 
-Canonical product policy: **IRC and web comments are queued; only the batch SI permanently stores accepted posts in the comments SoT.** The live lightweight AI gathers queued bodies and recommended categorization. Spam and inappropriate posts that fail batch intake never enter git.
+**Production default (2026-11-26+):** **public IRC** on Linode **`pub1`** (Ergo + chat-edge + Cleverchat bridge). See [`irc-backbone.md`](irc-backbone.md). The Rackspace Spot **`myproblem-intake`** private PVC queue host is **decommissioned** — do not redeploy Spot for this path. **Private / capability-gated queues are a premium feature**, not the public mesh.
 
-**Phases:** [`batch-phases.md`](batch-phases.md) · Relay SoT [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md). Phase 1 batch agent = **Cursor** on the shared multi-site queue; Phase 2 = Spot. Live path must not be the end-state SoT writer.
+Historical design below (queue-before-SoT) remains useful for premium/private batch SI; it is **not** what public park chat depends on.
+
+Canonical product policy for premium/private filing: **IRC and web comments may be queued; only the batch SI permanently stores accepted posts in the comments SoT.** The live lightweight AI gathers queued bodies and recommended categorization. Spam and inappropriate posts that fail batch intake never enter git.
+
+**Phases:** [`batch-phases.md`](batch-phases.md) · Relay SoT [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md). Phase 1 batch agent = **Cursor**; Phase 2 Spot GPU/CPU wake is **retired** with Spot intake.
 
 Related: [`infra.md`](infra.md) · [`chat-host.md`](chat-host.md) · [`irc-backbone.md`](irc-backbone.md) · [`spam.md`](spam.md) · [`AGENTS.md`](../AGENTS.md).
 
