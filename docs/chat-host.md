@@ -51,7 +51,7 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 
 **ASR caveat:** channel Whisper stays on Groq only — there is no Bedrock drop-in for transcription. On Groq 429 or soft RPM/RPD cap, ASR jobs return to `pending`.
 
-**Text SI:** not per-message. Manual `!investigate` / room **Investigate** button → soft quota → Groq→Bedrock (`action=drain_investigate`, `action=quota_status`). Probe: `action=provider_status`, `action=text_complete`.
+**Text SI:** not per-message. Manual `!investigate` / room **Investigate** button → soft quota → Groq→Bedrock (`action=drain_investigate`, `action=quota_status`). Probe: `action=provider_status`, `action=text_complete`. Replies are **chat lines only** (not auto-filed into SoT). Groq HTTP from pub1 must include `User-Agent` (stdlib clients send `clevertree-chat/1.0`) or Cloudflare returns 403/1010. With `openai/gpt-oss-20b`, use generous `max_tokens` so reasoning does not starve `content`.
 
 ## Public hostnames
 

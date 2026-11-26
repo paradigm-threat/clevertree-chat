@@ -162,7 +162,7 @@
         <h2 id="si-different-heading">Why is this SI different from other SIs?</h2>
         <p>Clevertree Chat uses the same Relay pattern as MyProblem and QuizGate: batch <strong>SI (Super Intelligence, i.e. AI)</strong> on temporary hardware — not a permanent cloud brain you only audit through a retention policy. Typical cloud AIs stay attached to always-on services; leftover retention is what you hope a vendor honored. Here leftover retention is the exception the rules chose to keep.</p>
         <h3>Ephemeral batch hardware</h3>
-        <p>Jobs run on interruptible Rackspace Spot GPUs (and similar temporary capacity). When the batch finishes — however long or detailed — the worker is decommissioned and scratch is destroyed, including inputs from apps, APIs, and other servers. Capacity exists only while the job runs, so thorough organization stays cheap.</p>
+        <p>Batch SI calls Groq / Bedrock / peer APIs with posted rules and context — not a Spot GPU fleet we operate. When the batch finishes, scratch is wiped; standing debate files are only what rules keep. Tips help cover servers and metered AI; we aim to show what requests cost.</p>
         <h3>Reconstructed SI, rules as memory</h3>
         <p>Each batch rebuilds the SI from programmed instructions: repo rule sets, and sometimes per-page or per-ticket rules. It has no durable private memory of prior runs beyond those instructions and what the standing debate map already publishes. When the batch ends, that instance is gone.</p>
         <h3>Retain only by decision</h3>

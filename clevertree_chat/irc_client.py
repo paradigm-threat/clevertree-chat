@@ -181,29 +181,49 @@ def _split_irc(line: str) -> tuple[str, str, str]:
 
 
 # Craft / collection rooms: explicit channel names (repo + collection), not #pt-<topic>.
-# e.g. Georgia tip repo + savannah-cat-rescue → #ga-savannah-cat-rescue
+# Prefer loading more from fronts/room/channel-policy.json / collection JSON at deploy.
 CRAFT_CHANNELS: dict[str, str] = {
+    "mp-general": "#mp-general",
     "ga-savannah-cat-rescue": "#ga-savannah-cat-rescue",
 }
+
+
+def _pt_consolidated() -> bool:
+    """Paradigm Threat: one IRC channel for the whole repo (topics via context tags)."""
+    import os
+
+    return os.environ.get("CLEVERTREE_IRC_CONSOLIDATE_PT", "1").strip().lower() not in {
+        "0",
+        "false",
+        "no",
+        "off",
+    }
 
 
 def channel_for_topic(prefix: str, topic: str) -> str:
     """Map a Cleverchat topic slug to IRC channel.
 
-    Classic rooms: #prefix-topic. Craft collections: CRAFT_CHANNELS override.
+    Craft collections: CRAFT_CHANNELS override.
+    PT (prefix pt) with consolidate (default on): always #pt — page identity via [[t:]] tags.
+    Legacy: #prefix-topic when CLEVERTREE_IRC_CONSOLIDATE_PT=0.
     """
     t = (topic or "").strip().lower().replace("/", "-")
     t = "".join(ch for ch in t if ch.isalnum() or ch in "-_")[:48]
     if t in CRAFT_CHANNELS:
         return CRAFT_CHANNELS[t]
     p = "".join(ch for ch in (prefix or "pt").lower() if ch.isalnum())[:8] or "pt"
+    if p == "pt" and _pt_consolidated():
+        return f"#{p}"
     if not t or t in {"lobby", "home"}:
         return f"#{p}"
     return f"#{p}-{t}"
 
 
 def topic_for_channel(prefix: str, channel: str) -> str | None:
-    """Inverse of channel_for_topic. Returns None if channel is not ours."""
+    """Inverse of channel_for_topic. Returns None if channel is not ours.
+
+    Consolidated #pt maps to general; finer topic comes from [[t:]] in the message body.
+    """
     ch_norm = normalize_channel(channel)
     for topic, craft_ch in CRAFT_CHANNELS.items():
         if normalize_channel(craft_ch) == ch_norm:
@@ -212,6 +232,11 @@ def topic_for_channel(prefix: str, channel: str) -> str | None:
     ch = ch_norm.lstrip("#")
     if ch == p:
         return "general"
+    if p == "pt" and _pt_consolidated():
+        # Legacy #pt-* still accepted as inbound during migration → treat as general room
+        if ch.startswith("pt-"):
+            return "general"
+        return None
     head = p + "-"
     if ch.startswith(head):
         slug = ch[len(head) :]

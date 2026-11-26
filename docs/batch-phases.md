@@ -1,6 +1,6 @@
 # Batch phases (Clevertree)
 
-Relay-wide product SoT: [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md) — **same SI procedure** as MyProblem and QuizGate (drain → commit queue → merge phase → remotes). Phase 1 Cursor / Phase 2 Spot only change the runner.
+Relay-wide product SoT: [`../../myproblem/docs/batch-phases.md`](../../myproblem/docs/batch-phases.md) — **same SI procedure** as MyProblem and QuizGate (drain → providers → commit queue → merge phase → remotes). Phase 1 Cursor / Phase 2 CPU + API providers only change the runner. AI: [`../../myproblem/docs/providers-ai.md`](../../myproblem/docs/providers-ai.md).
 
 **Tip lens:** a Clevertree tip is a **topic** / forum room on the comments SoT. It may bind to a MyProblem or QuizGate tip UUID (or an external-id translation) without minting another UUID.
 

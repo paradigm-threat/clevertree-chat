@@ -37,7 +37,8 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`p
 ## What works today
 
 - **Realtime AI host** on `api.clevertree.chat`: `/api/chat` (+ `/api/debate` alias) → PVC; WS fan-out; heuristic drain + `batch_hooks` *(transitional live SoT writes — Phase 1 end state is enqueue + Cursor drain)*
-- **IRC bridge**: PRIVMSG ↔ submit; `SI ask` / `!answer` fold into `owner-answers.md` + `rules.md`
+- **IRC bridge**: PRIVMSG ↔ submit; `SI ask` / `!answer` fold into `owner-answers.md` + `rules.md`; manual `!investigate` → Groq text SI (Free-tier soft budgets; chat reply only)
+- **Channel ASR**: `[[mp:media]]` → Whisper turbo on Groq (soft RPM/RPD); video markers ASR speech only (no VL yet)
 - Live boards + PT review rooms; full SoT via PVC + `.clevertree-full-sot`
 - Website rooms: `clevertree.chat/w/…` — SoT subpath only on first comment *(will become first batch accept)*
 - Fetch (`CLEVERTREE_FETCH=1`), associations, spam-state hooks; Spot wake gated off

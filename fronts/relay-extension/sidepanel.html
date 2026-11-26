@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Relay · CleverTree</title>
+    <link rel="stylesheet" href="../room/tokens.css" />
+    <link rel="stylesheet" href="../room/clevertree-room.css" />
+    <link rel="stylesheet" href="relay-tokens.css" />
+    <link rel="stylesheet" href="relay-chrome.css" />
+  </head>
+  <body class="relay-sidepanel">
+    <div class="relay-chrome" id="relay-chrome">
+      <div class="refreshbar" aria-live="polite">
+        <div class="refresh-status">
+          <div class="status" id="refresh-status">Last refreshed —</div>
+          <small id="refresh-detail">Tracked groups</small>
+        </div>
+        <button type="button" class="refreshbutton" id="refresh-btn">Refresh</button>
+      </div>
+    </div>
+    <div id="room-root" class="room-root"></div>
+    <script src="../room/context-tags.js"></script>
+    <script src="../room/clevertree-room.js"></script>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Relay · CleverTree Networker",
+  "version": "0.2.0",
+  "description": "Public IRC collection room + always-on Refresh gather. Chat stays open while the host tab walks tracked groups.",
+  "permissions": ["sidePanel", "storage", "tabs", "scripting"],
+  "host_permissions": [
+    "https://nextdoor.com/*",
+    "https://*.nextdoor.com/*",
+    "https://api.clevertree.chat/*",
+    "https://myproblem.app/*",
+    "https://*.relaygateway.net/*",
+    "wss://*.relaygateway.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open Relay"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

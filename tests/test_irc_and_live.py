@@ -15,13 +15,28 @@ from clevertree_chat.spam_court import SpamClocks, lifecycle_state
 
 class IrcMappingTests(unittest.TestCase):
     def test_channel_roundtrip(self):
-        self.assertEqual(channel_for_topic("pt", "general"), "#pt-general")
-        self.assertEqual(channel_for_topic("pt", "5g"), "#pt-5g")
+        # Default: PT consolidated → one channel #pt (topics via [[t:]] tags).
+        import os
+
+        os.environ["CLEVERTREE_IRC_CONSOLIDATE_PT"] = "1"
+        self.assertEqual(channel_for_topic("pt", "general"), "#pt")
+        self.assertEqual(channel_for_topic("pt", "5g"), "#pt")
         self.assertEqual(channel_for_topic("pt", ""), "#pt")
-        self.assertEqual(topic_for_channel("pt", "#pt-general"), "general")
         self.assertEqual(topic_for_channel("pt", "#pt"), "general")
-        self.assertEqual(topic_for_channel("pt", "#pt-geoengineering"), "geoengineering")
+        self.assertEqual(topic_for_channel("pt", "#pt-general"), "general")
+        self.assertEqual(topic_for_channel("pt", "#pt-geoengineering"), "general")
         self.assertIsNone(topic_for_channel("pt", "#flashback"))
+
+    def test_channel_legacy_unconsolidated(self):
+        import os
+
+        os.environ["CLEVERTREE_IRC_CONSOLIDATE_PT"] = "0"
+        try:
+            self.assertEqual(channel_for_topic("pt", "general"), "#pt-general")
+            self.assertEqual(channel_for_topic("pt", "5g"), "#pt-5g")
+            self.assertEqual(topic_for_channel("pt", "#pt-geoengineering"), "geoengineering")
+        finally:
+            os.environ["CLEVERTREE_IRC_CONSOLIDATE_PT"] = "1"
 
     def test_craft_collection_channel(self):
         self.assertEqual(

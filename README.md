@@ -14,7 +14,7 @@ After the post is in git, a heavier model reads the topic the user opened, sugge
 
 A second person is optional. The first comment is enough for a debate with the SI: questions on the section they opened, and counterpoints already published online offered as a suggestion. The other key waits until someone writes it. Each time a section they took part in changes, they are told that it was updated. They are not pinged because another comment appeared.
 
-The front of the product is built for that live moment. The back is built for the deep pass, then the heavy hardware shuts down. Cleverchat is an independent product; other apps may mount it. The public chat API and demos live at **https://api.clevertree.chat**. The page keeps its own content. The debate is stored here, on its own git branch.
+The front of the product is built for that live moment. The back is built for the deep pass via **metered AI providers** (Groq / Bedrock / peers) with posted rules + context — **no batch GPU fleet**. Cleverchat is an independent product; other apps may mount it. The public chat API and demos live at **https://api.clevertree.chat**. The page keeps its own content. The debate is stored here, on its own git branch. Tips/donations help cover servers + AI; we aim to **publicize $/request**.
 
 Phase 1 is the tests. Real arguments, including ones like Flock cameras, run until there is a reasonable confidence the SI can handle a topic and write the git files without leaving a mess for a later upgrade to clean up. The model will keep learning after launch. Launch waits on that confidence. The next phases run it on phone hardware and server hardware and measure the real thing.
 

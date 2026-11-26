@@ -253,14 +253,14 @@ class IrcBridgeUnitTests(unittest.TestCase):
                 sent.append((ch, text))
 
         bridge._client = FakeClient()
-        bridge._joined.add("#pt-general")
+        bridge._joined.add("#pt")
         fp = _fingerprint("general", "same body")
         bridge._echo_ids.add(fp)
         bridge.announce_submit("general", "same body", "Ari")
         self.assertEqual(sent, [])
         bridge.announce_submit("general", "fresh body", "Ari")
         self.assertEqual(len(sent), 1)
-        self.assertEqual(sent[0][0], "#pt-general")
+        self.assertEqual(sent[0][0], "#pt")
         self.assertIn("fresh body", sent[0][1])
 
 
