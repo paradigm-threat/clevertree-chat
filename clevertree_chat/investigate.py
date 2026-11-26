@@ -68,6 +68,31 @@ def _context_lines(topic: str, *, limit: int = 40) -> list[str]:
     return lines
 
 
+def _clean_si_text(text: str) -> str:
+    """Drop leaked chain-of-thought; keep heading block when present."""
+    body = (text or "").strip()
+    if not body:
+        return ""
+    lower = body.lower()
+    # Prefer the structured block if the model narrated then answered.
+    for marker in ("**topics:**", "topics:"):
+        idx = lower.find(marker)
+        if idx > 0:
+            body = body[idx:].strip()
+            break
+    # Reject pure meta / instruction replay.
+    meta_starts = (
+        "we need to respond",
+        "the user provided",
+        "the assistant",
+        "as clevertree si",
+        "i will now",
+    )
+    if any(body.lower().startswith(m) for m in meta_starts) and "topics:" not in body.lower():
+        return ""
+    return body
+
+
 def _build_messages(topic: str, focus: str) -> list[dict[str, str]]:
     from clevertree_chat.abuse_cues import scan_lines
 
@@ -96,7 +121,9 @@ def _build_messages(topic: str, focus: str) -> list[dict[str, str]]:
         "Abuse: (none | spam | scam/fraud | harassment — one line why; do not invent)\n"
         "Ask: (at most one SI ask for the owner/channel)\n"
         "Ignore emoji-only noise. Do not invent standing exceptions or private rules. "
-        "CPU abuse cues below are hints only — confirm from the lines."
+        "CPU abuse cues below are hints only — confirm from the lines. "
+        "Output ONLY the four headings and their lines — no chain-of-thought, "
+        "no restating these instructions."
     )
     user = (
         f"Channel topic: {topic}\n"
@@ -226,7 +253,7 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
             max_tokens=900,
             response_json=False,
         )
-        text = (result.text or "").strip()
+        text = _clean_si_text((result.text or "").strip())
         if not text:
             text = "(no findings)"
         if len(text) > 1200:
