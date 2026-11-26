@@ -76,6 +76,50 @@ def _ring(topic: str) -> deque[dict[str, Any]]:
     return _rings[key]
 
 
+def _hydrate_ring_from_disk(topic: str) -> None:
+    """Load current.jsonl (+ newest seg) into memory after process restart."""
+    t = _safe_topic(topic)
+    ring = _ring(t)
+    if ring:
+        return
+    topic_dir = irc_logs_dir(t)
+    paths: list[Path] = []
+    segs = sorted(topic_dir.glob("seg-*.jsonl"))
+    if segs:
+        paths.append(segs[-1])
+    current = topic_dir / "current.jsonl"
+    if current.is_file():
+        paths.append(current)
+    for path in paths:
+        try:
+            for line in path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except Exception:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                body = str(row.get("body") or "").strip()
+                if not body:
+                    continue
+                # Approximate epoch from ts when missing
+                epoch = float(row.get("_epoch") or 0) or time.time()
+                ts = str(row.get("ts") or "")
+                if ts and not row.get("_epoch"):
+                    try:
+                        epoch = datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+                    except Exception:
+                        pass
+                row = {**row, "_epoch": epoch}
+                ring.append(row)
+        except Exception:
+            continue
+    _prune_ring(ring)
+
+
 def _prune_ring(ring: deque[dict[str, Any]]) -> None:
     cutoff = time.time() - RING_MAX_AGE_S
     while ring and (
@@ -87,6 +131,7 @@ def _prune_ring(ring: deque[dict[str, Any]]) -> None:
 def recent(topic: str, *, limit: int | None = None) -> list[dict[str, Any]]:
     """Recent cached lines for WS replay (newest last). Strips internal _epoch."""
     with _lock:
+        _hydrate_ring_from_disk(topic)
         ring = list(_ring(topic))
         _prune_ring(_ring(topic))
         ring = list(_ring(topic))
