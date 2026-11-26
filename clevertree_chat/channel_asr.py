@@ -198,6 +198,8 @@ def _transcribe_groq(path: Path) -> dict[str, str]:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": f"multipart/form-data; boundary={boundary}",
+            # Cloudflare 1010 without UA from datacenter IPs
+            "User-Agent": "clevertree-chat/1.0",
         },
         method="POST",
     )

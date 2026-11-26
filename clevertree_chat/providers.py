@@ -141,7 +141,11 @@ def _http_json(
     body: bytes | None = None,
     timeout: float = 60.0,
 ) -> tuple[int, dict[str, Any] | str]:
-    req = urllib.request.Request(url, data=body, headers=headers or {}, method=method)
+    # Groq’s edge (Cloudflare) returns 403/1010 when User-Agent is omitted (common from VPS).
+    hdrs = {"User-Agent": "clevertree-chat/1.0"}
+    if headers:
+        hdrs.update(headers)
+    req = urllib.request.Request(url, data=body, headers=hdrs, method=method)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read().decode("utf-8")
