@@ -53,6 +53,8 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 
 **Text SI:** not per-message. Manual `!investigate` / room **Investigate** button → soft quota → Groq→Bedrock (`action=drain_investigate`, `action=quota_status`). Probe: `action=provider_status`, `action=text_complete`. Replies are **chat lines only** (not auto-filed into SoT). Groq HTTP from pub1 must include `User-Agent` (stdlib clients send `clevertree-chat/1.0`) or Cloudflare returns 403/1010. With `openai/gpt-oss-20b`, use generous `max_tokens` so reasoning does not starve `content`.
 
+**IRC PRIVMSG soft max:** 400 characters. Full SI bodies stay in `irc_log_cache` / WS; the bridge sends a short teaser for long `SI batch:` / `SI investigate:` lines. Room UI clamps long replies with **Expand full reply** → fullscreen.
+
 ## Public hostnames
 
 | Hostname | Role |

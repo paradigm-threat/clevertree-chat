@@ -10,6 +10,9 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+# Soft cap for outbound PRIVMSG (Ergo/IRCv3 hard ceiling ~512 bytes with prefix).
+IRC_PRIVMSG_SOFT_MAX = 400
+
 
 def normalize_channel(raw: str) -> str:
     c = (raw or "").strip().lower().lstrip("#")
@@ -101,12 +104,12 @@ class IrcClient:
         ch = normalize_channel(target) if target.startswith("#") or "/" not in target else target
         if not ch:
             return
-        # IRC line length soft limit
+        # IRC line length soft limit (~512 byte protocol ceiling incl. prefix).
         body = (text or "").replace("\r", " ").replace("\n", " ").strip()
         if not body:
             return
-        if len(body) > 400:
-            body = body[:397] + "…"
+        if len(body) > IRC_PRIVMSG_SOFT_MAX:
+            body = body[: IRC_PRIVMSG_SOFT_MAX - 3] + "…"
         self.raw(f"PRIVMSG {ch} :{body}")
 
     def _read_loop(self) -> None:

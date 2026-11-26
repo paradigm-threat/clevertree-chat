@@ -25,6 +25,7 @@ See [`fronts/room/channel-policy.json`](../fronts/room/channel-policy.json) and 
 
 - Human `PRIVMSG` → intake (anonymous nick; no chat visitor UUID required for room UX).
 - Board/API → `PRIVMSG`; echo skipped for bridge + bot denylist.
+- **Outbound soft limit:** `IRC_PRIVMSG_SOFT_MAX = 400` characters (`irc_client.privmsg`). Long `SI batch:` / `SI investigate:` posts keep **full text** in the room log/WS and send a short IRC teaser (“Full steps in the room.”).
 - Owner answers: `!answer …` / `si answer:` → `owner-answers.md` / `rules.md`.
 - **Ephemeral channel logs:** wire cache may vanish after consolidation into the tip/collection repo.
 - Extensions and embeds use **HTTPS/WSS** to chat-edge / api host, not raw IRC TCP from the browser.

@@ -92,10 +92,10 @@ class IrcBridge:
             return
         ch = self.ensure_channel(topic)
         label = (author or "").strip()
-        msg = f"<{label}> {text}" if label else text
+        wire = _irc_wire_body(text, author=label)
         out_fp = _fingerprint(topic, text)
         self._echo_ids.add(out_fp)
-        client.privmsg(ch, msg)
+        client.privmsg(ch, wire)
         # expire fingerprint shortly
         threading.Timer(30.0, lambda: self._echo_ids.discard(out_fp)).start()
 
@@ -287,6 +287,31 @@ class IrcBridge:
         )
         # fanout_submit already broadcasts + logs; ensure channel joined
         self.ensure_channel(topic)
+
+
+def _irc_wire_body(text: str, *, author: str = "") -> str:
+    """Body for IRC wire. Long SI replies become a ≤400-char teaser; full text stays in room log."""
+    from clevertree_chat.irc_client import IRC_PRIVMSG_SOFT_MAX
+
+    raw = (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    label = (author or "").strip()
+    # Prefixed SI deep dives: short teaser so PRIVMSG is not a wall of text.
+    first = raw.split("\n", 1)[0].strip()
+    lower_first = first.lower()
+    if lower_first.startswith("si batch:") or lower_first.startswith("si investigate"):
+        head = first
+        if len(head) > 180:
+            head = head[:177] + "…"
+        teaser = f"{head} — Full steps in the room."
+        if len(teaser) > IRC_PRIVMSG_SOFT_MAX:
+            teaser = teaser[: IRC_PRIVMSG_SOFT_MAX - 3] + "…"
+        return teaser
+    body = " ".join(line.strip() for line in raw.split("\n") if line.strip())
+    msg = f"<{label}> {body}" if label else body
+    if len(msg) > IRC_PRIVMSG_SOFT_MAX:
+        # Generic long posts: truncate on the wire (room keeps full via log/WS).
+        msg = msg[: IRC_PRIVMSG_SOFT_MAX - 3] + "…"
+    return msg
 
 
 def _fingerprint(topic: str, body: str) -> str:
