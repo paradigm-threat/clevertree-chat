@@ -46,10 +46,17 @@ assert.ok(
   "holdComposer must block scroll-collapse while focusing the draft"
 );
 assert.ok(
-  /function isDesktopChrome\s*\(/.test(roomJs) &&
+  /function isLandscapeChrome\s*\(/.test(roomJs) &&
     /data-chrome/.test(roomJs) &&
-    /gutter-si/.test(roomJs),
-  "desktop chrome mode + resize gutters required"
+    /gutter-si/.test(roomJs) &&
+    /PANEL_W_KEY/.test(roomJs) &&
+    /clevertree\.room\.panelWidths/.test(roomJs),
+  "row chrome mode + resize gutters + persisted panel widths required"
+);
+assert.ok(
+  /data-chrome", row \? "row" : "stack"/.test(roomJs) ||
+    /"row" : "stack"/.test(roomJs),
+  "landscape/desktop must use data-chrome=row with persisted % panels"
 );
 assert.ok(
   /draft\.focus\(\)/.test(roomJs) &&
@@ -85,10 +92,11 @@ const roomCss = fs.readFileSync(
   "utf8"
 );
 assert.ok(
-  /data-chrome="desktop"/.test(roomCss) &&
-    /--ct-si-w/.test(roomCss) &&
+  /data-chrome="row"/.test(roomCss) &&
+    /--ct-si-w:\s*33%/.test(roomCss) &&
+    /--ct-co-w:\s*33%/.test(roomCss) &&
     /col-resize/.test(roomCss),
-  "desktop CSS must expose resizable ~33% panel vars"
+  "row CSS must default to resizable ~33% panel vars"
 );
 
 console.log("test_room_composer_chrome.js: ok");

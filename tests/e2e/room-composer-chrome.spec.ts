@@ -162,7 +162,7 @@ test.describe("room composer chrome", () => {
     await page.goto(liveUrl());
     const room = page.locator(".room, .ct-room").first();
     await expect(room).toBeVisible({ timeout: 15_000 });
-    await expect(room).toHaveAttribute("data-chrome", "desktop");
+    await expect(room).toHaveAttribute("data-chrome", "row");
     const history = page.locator('[data-role="history"]');
     await history.click({ position: { x: 40, y: 40 } });
     /* Landscape/desktop keeps the composer expanded when the draft blurs. */
@@ -244,12 +244,32 @@ test.describe("room composer chrome", () => {
     }
   });
 
-  test("desktop gutters resize SI and composer widths", async ({ page }) => {
+  test("row gutters resize SI and composer widths and persist", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1200, height: 700 });
     await page.goto(liveUrl());
     const room = page.locator(".room, .ct-room").first();
-    await expect(room).toHaveAttribute("data-chrome", "desktop");
+    await expect(room).toHaveAttribute("data-chrome", "row");
     /* Ensure three-column layout so SI gutter is between SI and chat. */
+    await page.evaluate(() => {
+      try {
+        localStorage.setItem("clevertree.room.layoutMode", "split");
+        localStorage.removeItem("clevertree.room.panelWidths");
+      } catch (_) {}
+      const el = document.querySelector(".room") as HTMLElement | null;
+      if (el) el.setAttribute("data-layout", "split");
+      const body = document.querySelector(".room .body") as HTMLElement | null;
+      if (body) body.setAttribute("data-layout", "split");
+      const si = document.querySelector('[data-role="si"]') as HTMLElement | null;
+      if (si) {
+        si.classList.add("si-expanded");
+        si.classList.remove("si-collapsed");
+        si.setAttribute("data-expanded", "true");
+      }
+    });
+    await page.reload();
+    await expect(room).toHaveAttribute("data-chrome", "row");
     await page.evaluate(() => {
       try {
         localStorage.setItem("clevertree.room.layoutMode", "split");
@@ -288,15 +308,96 @@ test.describe("room composer chrome", () => {
 
     const after = await page.evaluate(() => {
       const si = document.querySelector('[data-role="si"]') as HTMLElement;
+      const roomEl = document.querySelector(".room") as HTMLElement;
+      let stored: { si?: number; co?: number } | null = null;
+      try {
+        stored = JSON.parse(
+          localStorage.getItem("clevertree.room.panelWidths") || "null"
+        );
+      } catch (_) {}
       return {
         w: si.getBoundingClientRect().width,
-        var: getComputedStyle(document.querySelector(".room") as HTMLElement)
-          .getPropertyValue("--ct-si-w")
-          .trim(),
+        var: getComputedStyle(roomEl).getPropertyValue("--ct-si-w").trim(),
+        stored,
       };
     });
     expect(after.w).toBeGreaterThan(before + 20);
     expect(after.var).toMatch(/%$/);
+    expect(after.stored?.si).toBeGreaterThan(33);
+  });
+
+  test("phone landscape: ~33% panels, resizable, remembered", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(liveUrl());
+    await page.evaluate(() => {
+      try {
+        localStorage.removeItem("clevertree.room.panelWidths");
+        localStorage.setItem("clevertree.room.layoutMode", "split");
+      } catch (_) {}
+    });
+    await page.reload();
+    const room = page.locator(".room, .ct-room").first();
+    await expect(room).toHaveAttribute("data-chrome", "row", { timeout: 15_000 });
+
+    const defaults = await page.evaluate(() => {
+      const roomEl = document.querySelector(".room") as HTMLElement;
+      const si = document.querySelector('[data-role="si"]') as HTMLElement;
+      const co = document.querySelector(
+        '[data-role="composer"]'
+      ) as HTMLElement;
+      const body = document.querySelector(".room .body") as HTMLElement;
+      return {
+        siVar: getComputedStyle(roomEl).getPropertyValue("--ct-si-w").trim(),
+        coVar: getComputedStyle(roomEl).getPropertyValue("--ct-co-w").trim(),
+        siPct: si.getBoundingClientRect().width / body.clientWidth,
+        coPct: co.getBoundingClientRect().width / body.clientWidth,
+      };
+    });
+    expect(defaults.siVar).toBe("33%");
+    expect(defaults.coVar).toBe("33%");
+    expect(defaults.siPct).toBeGreaterThan(0.25);
+    expect(defaults.siPct).toBeLessThan(0.42);
+    expect(defaults.coPct).toBeGreaterThan(0.25);
+    expect(defaults.coPct).toBeLessThan(0.42);
+
+    await page.evaluate(() => {
+      const si = document.querySelector('[data-role="si"]') as HTMLElement | null;
+      if (si) {
+        si.classList.add("si-expanded");
+        si.classList.remove("si-collapsed");
+        si.setAttribute("data-expanded", "true");
+      }
+    });
+    const gutter = page.locator('[data-role="gutter-si"]');
+    await expect(gutter).not.toHaveAttribute("hidden", "");
+    const gBox = await gutter.boundingBox();
+    expect(gBox).toBeTruthy();
+    await page.mouse.move(gBox!.x + gBox!.width / 2, gBox!.y + gBox!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(gBox!.x + 50, gBox!.y + gBox!.height / 2, { steps: 6 });
+    await page.mouse.up();
+
+    const saved = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("clevertree.room.panelWidths") || "null")
+    );
+    expect(saved?.si).toBeGreaterThan(33);
+
+    await page.reload();
+    await expect(room).toHaveAttribute("data-chrome", "row");
+    const restored = await page.evaluate(() => {
+      const roomEl = document.querySelector(".room") as HTMLElement;
+      return {
+        var: getComputedStyle(roomEl).getPropertyValue("--ct-si-w").trim(),
+        stored: JSON.parse(
+          localStorage.getItem("clevertree.room.panelWidths") || "null"
+        ),
+      };
+    });
+    expect(restored.stored?.si).toBe(saved.si);
+    expect(restored.var).toBe(`${saved.si}%`);
   });
 
   test("portrait: drag down on SI / drag up on composer open chrome", async ({
