@@ -75,6 +75,15 @@ class LiveDispatchTests(unittest.TestCase):
             self.assertEqual(code, 400)
             self.assertIn("scripted", body["error"])
 
+    def test_list_channels_includes_web(self):
+        code, body = live.dispatch({"action": "channels"}, {})
+        self.assertEqual(code, 200)
+        channels = body.get("channels") or []
+        names = {str(row.get("channel") or "") for row in channels}
+        self.assertIn("#web", names)
+        self.assertIn("#pt", names)
+        self.assertIn("#mp-general", names)
+
     def test_identify_and_resolve_guided_false(self):
         code, ident = live.dispatch({"action": "identify"}, {})
         self.assertEqual(code, 200)

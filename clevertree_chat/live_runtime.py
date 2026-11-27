@@ -353,6 +353,8 @@ def dispatch(
         return 200, {
             "topics": list(STARTER_TOPICS) + list(REVIEW_TOPICS),
         }
+    if action in {"channels", "list_channels"}:
+        return 200, {"channels": list_known_channels()}
     if action in {"replay", "advance", "play"}:
         return 400, {"error": "scripted demo actions removed; use live submit"}
 
@@ -773,6 +775,109 @@ def _dirty_topics(service: DebateService) -> list[str]:
             if topics_root.is_dir():
                 found.extend(p.name for p in topics_root.iterdir() if p.is_dir())
     return sorted(set(found))
+
+
+def list_known_channels() -> list[dict]:
+    """IRC-style channel catalog for the room switcher (policy + craft + live logs)."""
+    import json
+
+    from clevertree_chat.irc_client import CRAFT_CHANNELS, PUBLIC_WEB_CHANNEL, channel_for_topic
+
+    titles = {
+        "#web": "Clevertree Chat · public web",
+        "#pt": "Paradigm Threat",
+        "#mp-general": "MyProblem general",
+        "#ga-savannah-cat-rescue": "Savannah Cat Rescue",
+    }
+    by_ch: dict[str, dict] = {}
+
+    def add(channel: str, *, topic: str = "", title: str = "", source: str = "") -> None:
+        ch = (channel or "").strip()
+        if not ch:
+            return
+        if not ch.startswith("#"):
+            ch = "#" + ch
+        slug = ch.lstrip("#").lower()
+        topic_slug = (topic or slug).strip().lower() or slug
+        row = by_ch.get(ch) or {
+            "channel": ch,
+            "topic": topic_slug,
+            "title": titles.get(ch) or title or ch,
+            "source": source or "known",
+        }
+        if title and (not row.get("title") or row["title"] == ch):
+            row["title"] = title
+        if source:
+            row["source"] = source
+        by_ch[ch] = row
+
+    add(PUBLIC_WEB_CHANNEL, topic="web", title=titles["#web"], source="policy")
+    add("#pt", topic="general", title=titles["#pt"], source="policy")
+    for topic, ch in CRAFT_CHANNELS.items():
+        add(ch, topic=topic, title=titles.get(ch, ""), source="craft")
+
+    policy_path = ROOT / "fronts" / "room" / "channel-policy.json"
+    try:
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    except Exception:
+        policy = {}
+    repos = policy.get("repos") if isinstance(policy, dict) else {}
+    if isinstance(repos, dict):
+        for repo_name, repo in repos.items():
+            if not isinstance(repo, dict):
+                continue
+            default = str(repo.get("default_channel") or "").strip()
+            if default:
+                add(default, source="policy")
+            channels = repo.get("channels")
+            if isinstance(channels, list):
+                for item in channels:
+                    if isinstance(item, str):
+                        add(item, source="policy")
+            elif isinstance(channels, dict):
+                for key, meta in channels.items():
+                    if isinstance(meta, dict):
+                        irc = str(meta.get("irc_channel") or "").strip() or f"#{key}"
+                        add(
+                            irc,
+                            topic=str(key),
+                            title=str(meta.get("title") or ""),
+                            source=f"policy:{repo_name}",
+                        )
+                    elif isinstance(meta, str):
+                        add(meta, topic=str(key), source=f"policy:{repo_name}")
+
+    # Live log dirs (rooms that have spoken recently / ever on this host).
+    try:
+        from clevertree_chat import irc_log_cache
+
+        logs = irc_log_cache.irc_logs_dir()
+        if logs.is_dir():
+            for path in logs.iterdir():
+                if not path.is_dir():
+                    continue
+                topic = path.name
+                try:
+                    ch = channel_for_topic("pt", topic)
+                except Exception:
+                    ch = f"#{topic}"
+                add(ch, topic=topic, source="live")
+    except Exception:
+        pass
+
+    # Stable order: policy defaults first, then alpha.
+    preferred = ["#web", "#pt", "#mp-general", "#ga-savannah-cat-rescue"]
+    ordered: list[dict] = []
+    seen: set[str] = set()
+    for ch in preferred:
+        if ch in by_ch and ch not in seen:
+            ordered.append(by_ch[ch])
+            seen.add(ch)
+    for ch in sorted(by_ch.keys()):
+        if ch not in seen:
+            ordered.append(by_ch[ch])
+            seen.add(ch)
+    return ordered
 
 
 def fanout_submit(
