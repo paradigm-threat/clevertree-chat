@@ -26,7 +26,8 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 mkdir -p "$STAGE/api" "$STAGE/clevertree_chat/demos" "$STAGE/scripts" "$STAGE/chat" \
-  "$STAGE/fronts/snippet" "$STAGE/fronts/room" "$STAGE/fixtures/pt-review" "$STAGE/infra/linode"
+  "$STAGE/fronts/snippet" "$STAGE/fronts/room" "$STAGE/fixtures/pt-review" "$STAGE/infra/linode" \
+  "$STAGE/assets"
 # Do not pack var/clevertree-live — durable SoT lives on the Linode host disk.
 
 cp "$ROOT/clevertree_chat/"*.py "$STAGE/clevertree_chat/"
@@ -47,6 +48,9 @@ cp "$ROOT/fronts/room/"*.js "$ROOT/fronts/room/"*.css \
   "$STAGE/fronts/room/" 2>/dev/null || true
 mkdir -p "$STAGE/fronts/room/themes"
 cp -a "$ROOT/fronts/room/themes/." "$STAGE/fronts/room/themes/" 2>/dev/null || true
+# Marketing chrome referenced by /chat (theme toggle, site shell).
+cp "$ROOT/assets/"*.css "$ROOT/assets/"*.js "$ROOT/assets/"*.svg \
+  "$STAGE/assets/" 2>/dev/null || true
 mkdir -p "$STAGE/fixtures"
 cp "$ROOT/fixtures/pt-topics.json" "$STAGE/fixtures/" 2>/dev/null || true
 cp "$ROOT/schemas/chat-topics.v1.json" "$STAGE/" 2>/dev/null || true

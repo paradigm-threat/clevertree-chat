@@ -58,11 +58,7 @@
         showNetworker: !!networker,
         apiBase: API_BASE,
         wsUrl: wsFor(route.channel),
-        mirrors: [
-          "pub1.relaygateway.net",
-          "mesh1.relaygateway.net",
-          "mesh2.relaygateway.net",
-        ],
+        /* Let CleverTreeRoom.build default wss mirrors (bare hosts are rejected). */
         nick: "you",
       });
     } catch (err) {

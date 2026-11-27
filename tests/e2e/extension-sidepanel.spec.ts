@@ -114,7 +114,10 @@ test.describe("Clevertree Chat extension side panel", () => {
       expect(await page.locator("#room-root").getAttribute("data-channel")).toBe(
         "#pt",
       );
-      await expect(page.locator("text=Paradigm Threat").first()).toBeVisible();
+      await expect(page.locator('[data-role="channel-tag"]')).toHaveText("#pt");
+      await expect(page.locator('[data-role="si-title"]')).toHaveText(
+        /Paradigm Threat/i,
+      );
     } finally {
       await context.close();
     }

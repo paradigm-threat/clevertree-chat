@@ -81,10 +81,8 @@
     channel: "#ga-savannah-cat-rescue",
     apiBase: "https://api.clevertree.chat",
     mirrors: [
-      "wss://pub1.relaygateway.net/chat/ws",
-      "wss://mesh1.relaygateway.net/chat/ws",
-      "wss://mesh2.relaygateway.net/chat/ws",
       "wss://api.clevertree.chat/api/chat/ws",
+      "wss://pub1.relaygateway.net/chat/ws",
     ],
   };
 

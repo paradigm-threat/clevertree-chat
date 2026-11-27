@@ -68,6 +68,17 @@ assert.ok(
     /keepComposerOpenInRow\(\)/.test(roomJs),
   "landscape/desktop must keep composer open when chrome collapses"
 );
+assert.ok(
+  /function normalizeMirrors\s*\(/.test(roomJs) &&
+    /function roomAssetUrl\s*\(/.test(roomJs) &&
+    /roomAssetUrl\(\s*["']channel-policy\.json["']\s*\)/.test(roomJs),
+  "mirrors must normalize bare hosts; channel-policy loads from script URL"
+);
+assert.ok(
+  /data-role="si-title">'\s*\+\s*title/.test(roomJs) ||
+    /si-title">' \+[\s\S]{0,20}title/.test(roomJs),
+  "SI rail title must seed from opts.title on mount"
+);
 
 const roomCss = fs.readFileSync(
   path.join(root, "fronts/room/clevertree-room.css"),

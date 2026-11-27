@@ -42,6 +42,7 @@ PUBLIC_STATIC_EXACT = {
 PUBLIC_STATIC_PREFIXES = (
     "/chat",
     "/fronts/",
+    "/assets/",
 )
 
 ROBOTS_TXT = """\
@@ -49,6 +50,7 @@ User-agent: *
 Disallow: /
 Allow: /chat
 Allow: /fronts/
+Allow: /assets/
 Allow: /styles.css
 Allow: /favicon.ico
 Allow: /icon-128x128.png

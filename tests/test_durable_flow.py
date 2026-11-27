@@ -385,6 +385,14 @@ class HttpApiE2ETests(unittest.TestCase):
                 "chat shell missing",
             )
             self.assertIn("noindex", (resp.headers.get("X-Robots-Tag") or "").lower())
+        for asset in (
+            "/assets/theme.css",
+            "/assets/site.css",
+            "/assets/site.js",
+            "/fronts/room/channel-policy.json",
+        ):
+            with request.urlopen(self.base + asset, timeout=10) as resp:
+                self.assertEqual(resp.status, 200, msg=asset)
         for path in (
             "/",
             "/scripts/",
