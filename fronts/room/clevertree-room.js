@@ -45,6 +45,43 @@
   var BOT_NICKS = ["clevertree", "clevertree-si", "clevertree-ai", "relay-bot"];
   /** Separate from MyProblem site theme (`myproblem.theme`). */
   var THEME_KEY = "clevertree.room.theme";
+  var VISITOR_KEY = "clevertree.visitor";
+
+  function ensureVisitor(opts) {
+    if (opts && opts.visitor) return String(opts.visitor);
+    try {
+      var id = localStorage.getItem(VISITOR_KEY);
+      if (!id && typeof crypto !== "undefined" && crypto.randomUUID) {
+        id = crypto.randomUUID();
+        localStorage.setItem(VISITOR_KEY, id);
+      }
+      return id || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function withVisitorParam(url, visitor) {
+    if (!url || !visitor) return url;
+    try {
+      var base =
+        typeof location !== "undefined" && location.href
+          ? location.href
+          : "https://api.clevertree.chat/";
+      var u = new URL(url, base);
+      if (!u.searchParams.get("visitor")) {
+        u.searchParams.set("visitor", visitor);
+      }
+      return u.toString();
+    } catch (e) {
+      return (
+        url +
+        (url.indexOf("?") >= 0 ? "&" : "?") +
+        "visitor=" +
+        encodeURIComponent(visitor)
+      );
+    }
+  }
   var THEME_SUN =
     '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.75"/><path d="M12 2v2.2M12 19.8V22M4.2 12H2M22 12h-2.2M5.05 5.05l1.56 1.56M17.39 17.39l1.56 1.56M5.05 18.95l1.56-1.56M17.39 6.61l1.56-1.56" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>';
   var THEME_MOON =
@@ -327,6 +364,8 @@
 
   function mount(el, opts) {
     opts = opts || {};
+    var visitor = ensureVisitor(opts);
+    opts.visitor = visitor;
     if (!el) throw new Error("CleverTreeRoom.mount: element required");
 
     var mode = opts.mode || "page";
@@ -559,6 +598,8 @@
               type: "privmsg",
               channel: opts.channel,
               text: tagged,
+              visitor: visitor,
+              nick: opts.nick || "you",
             })
           );
         } catch (e) {
@@ -638,6 +679,7 @@
     function connect() {
       var url = pickMirror(state.mirrors, state.mirrorIndex);
       if (!url && opts.wsUrl) url = opts.wsUrl;
+      url = withVisitorParam(url, visitor);
       if (!url) {
         setConnUi("Offline (demo)", "no mirror");
         return;
@@ -685,13 +727,27 @@
             typ === "message" ||
             typ === "post.live" ||
             data.text ||
-            data.body
+            data.body ||
+            (data.comment && data.comment.body)
           ) {
-            var nick = data.nick || data.from || data.author || "anon";
+            var comment = data.comment || {};
+            var line = data.chat_line || {};
+            var nick =
+              data.nick ||
+              line.nick ||
+              comment.author ||
+              data.from ||
+              data.author ||
+              "anon";
             var msg = {
               nick: nick,
-              text: data.text || data.body || "",
-              time: data.time || "",
+              text:
+                data.text ||
+                data.body ||
+                line.body ||
+                comment.body ||
+                "",
+              time: data.time || line.ts || "",
             };
             if (!msg.text) return;
             state.messages.push(msg);
