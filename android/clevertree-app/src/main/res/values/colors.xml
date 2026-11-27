@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ct_bg">#FF0B1210</color>
+    <color name="ct_accent">#FF5FD4A4</color>
+    <color name="ct_on_accent">#FF0B1210</color>
+    <color name="ct_text">#FFE8EEF6</color>
+    <color name="ct_muted">#FFA0B0C4</color>
+    <color name="ct_field">#FF15201C</color>
+    <color name="ic_launcher_background">#FF0B1210</color>
+</resources>

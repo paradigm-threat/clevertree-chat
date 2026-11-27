@@ -1,6 +1,9 @@
 # Clevertree public IRC room UI
 
-Shared room chrome for web embed, full page, and Relay side panel.
+Shared room chrome for web embed, full page, Relay side panel, and the Android AAR ([`docs/android-room.md`](../../docs/android-room.md)).
+
+- **Demo embed:** [`embed.html`](embed.html) (seed messages)
+- **Production / APK shell:** [`live.html`](live.html) — query `channel`, `api`, `title`, `collection`, `topic`, `theme`, `ai` (no seeds)
 
 ## Themes (independent of host)
 

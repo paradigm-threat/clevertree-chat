@@ -179,7 +179,7 @@
       } catch (e) {}
     }
     var topic = String(route.channel || "").replace(/^#/, "");
-    var apiBase = opts.apiBase || "https://intake.myproblem.app";
+    var apiBase = opts.apiBase || "https://api.clevertree.chat";
     var mirrors = opts.mirrors;
     if (!mirrors || !mirrors.length) {
       var wsHost = apiBase.replace(/^https:/, "wss:").replace(/^http:/, "ws:");

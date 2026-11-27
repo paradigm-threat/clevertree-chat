@@ -515,6 +515,30 @@ def dispatch(
         results = drain_channel_asr_jobs(limit=int(payload.get("limit") or 5))
         return 200, {"results": results, "count": len(results)}
 
+    if action == "drain_channel_media_review":
+        results = drain_channel_media_review_jobs(limit=int(payload.get("limit") or 5))
+        return 200, {"results": results, "count": len(results)}
+
+    if action == "media_review_status":
+        from clevertree_chat import channel_media_review
+
+        url = str(payload.get("url") or query.get("url") or "")
+        sha = str(payload.get("sha") or query.get("sha") or "")
+        if not url and not sha:
+            return 400, {"error": "url_or_sha_required"}
+        if sha:
+            stored = channel_media_review.read_review(sha)
+            return 200, {"sha": sha, "review": stored}
+        status = channel_media_review.get_review_status(url, sha=sha)
+        return 200, {
+            "url": url,
+            "sha": channel_media_review.sha_for_url(url, sha),
+            "status": status,
+            "review": channel_media_review.read_review(
+                channel_media_review.sha_for_url(url, sha)
+            ),
+        }
+
     if action == "drain_investigate":
         results = drain_investigate_jobs(limit=int(payload.get("limit") or 3))
         return 200, {"results": results, "count": len(results)}
@@ -692,13 +716,19 @@ def start_drain_worker(interval_s: float = 2.0) -> None:
                 # Channel media ASR (Groq when GROQ_API_KEY set)
                 try:
                     if ticks % 5 == 0:  # ~10s
-                        drain_channel_asr_jobs(limit=3)
+                        drain_channel_asr_jobs(limit=2)
+                except Exception:
+                    pass
+                # Media review covers (Groq vision) — slower slice, lower concurrency
+                try:
+                    if ticks % 8 == 0:  # ~16s
+                        drain_channel_media_review_jobs(limit=1)
                 except Exception:
                     pass
                 # Manual !investigate text SI (Groq→Bedrock)
                 try:
-                    if ticks % 5 == 0:
-                        drain_investigate_jobs(limit=2)
+                    if ticks % 7 == 0:
+                        drain_investigate_jobs(limit=1)
                 except Exception:
                     pass
             except Exception:
@@ -784,6 +814,19 @@ def fanout_submit(
         )
     except Exception:
         pass
+    # Visual media → review queue (cover until AI clear).
+    try:
+        from clevertree_chat import channel_media_review
+
+        channel_media_review.enqueue_from_body(
+            topic,
+            str(text),
+            visitor=str(visitor or ""),
+            source=source,
+            nick=nick or str(author),
+        )
+    except Exception:
+        pass
     HUB.broadcast(
         topic,
         {
@@ -860,6 +903,16 @@ def drain_channel_asr_jobs(*, limit: int = 5) -> list[dict]:
     return channel_asr.process_pending(
         limit=limit,
         reply=channel_asr.default_channel_reply,
+    )
+
+
+def drain_channel_media_review_jobs(*, limit: int = 5) -> list[dict]:
+    """Drain pending media review jobs; broadcast media.review on clear/reject."""
+    from clevertree_chat import channel_media_review
+
+    return channel_media_review.process_pending(
+        limit=limit,
+        broadcast=channel_media_review.default_broadcast,
     )
 
 

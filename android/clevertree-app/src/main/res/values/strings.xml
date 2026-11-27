@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Clevertree Chat</string>
+    <string name="onboard_eyebrow">Universal room</string>
+    <string name="onboard_hint">What do you need help with?</string>
+    <string name="onboard_submit">Submit</string>
+    <string name="onboard_skip">Skip to room</string>
+    <string name="onboard_error">Could not post. Check network and try again.</string>
+    <string name="onboard_lead">See live chat below. Ask here — no account required.</string>
+</resources>

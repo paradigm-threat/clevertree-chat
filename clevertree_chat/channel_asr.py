@@ -1,9 +1,10 @@
 """Enqueue + drain channel media ASR jobs from [[mp:media]] / Bunny URLs.
 
 Jobs live under var/clevertree-live/queue/channel_asr/ (ephemeral PVC, not git).
-Provider ASR uses GROQ_API_KEY when present; otherwise jobs stay pending (or dry-run
-when CLEVERTREE_ASR_DRY_RUN=1). Whisper has **no Bedrock failover** (unlike text SI in
-``providers.py``). On Groq 429, the job returns to pending for a later drain.
+Provider ASR prefers **Groq Whisper** (``GROQ_API_KEY``); on rate-limit / missing key,
+falls through to **AWS** audio when ``CLEVERTREE_ASR_S3_BUCKET`` + AWS credentials
+are set (Amazon Transcribe via S3 — Bedrock has no Whisper drop-in). Otherwise jobs
+stay pending (or dry-run when ``CLEVERTREE_ASR_DRY_RUN=1``).
 Transcripts post back in-channel — no tip mint.
 """
 
@@ -114,16 +115,23 @@ def enqueue_from_body(
     return jobs
 
 
-def list_pending_jobs() -> list[dict[str, Any]]:
+def list_pending_jobs(*, now: float | None = None) -> list[dict[str, Any]]:
+    import time
+
+    ts = time.time() if now is None else now
     jobs = []
     for path in sorted(queue_dir().glob("*.json")):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except Exception:
             continue
-        if str(data.get("status") or "pending") == "pending":
-            data["_job_path"] = str(path)
-            jobs.append(data)
+        if str(data.get("status") or "pending") != "pending":
+            continue
+        not_before = data.get("not_before")
+        if isinstance(not_before, (int, float)) and float(not_before) > ts:
+            continue
+        data["_job_path"] = str(path)
+        jobs.append(data)
     return jobs
 
 
@@ -206,7 +214,105 @@ def _transcribe_groq(path: Path) -> dict[str, str]:
     with urllib.request.urlopen(req, timeout=120) as resp:
         payload = json.loads(resp.read().decode("utf-8"))
     text = str(payload.get("text") or "").strip()
-    return {"text": text, "model": model}
+    return {"text": text, "model": model, "provider": "groq"}
+
+
+def _aws_asr_ready() -> bool:
+    bucket = (os.environ.get("CLEVERTREE_ASR_S3_BUCKET") or "").strip()
+    if not bucket:
+        return False
+    try:
+        from clevertree_chat.providers import bedrock_configured
+
+        return bedrock_configured()
+    except Exception:
+        return False
+
+
+def _transcribe_aws(path: Path) -> dict[str, str]:
+    """Amazon Transcribe via S3 (AWS audio path; Bedrock has no Whisper equivalent).
+
+    Requires ``CLEVERTREE_ASR_S3_BUCKET`` and the same AWS keys as text Bedrock SI.
+    Uses boto3 when installed; otherwise raises a clear configuration error.
+    """
+    bucket = (os.environ.get("CLEVERTREE_ASR_S3_BUCKET") or "").strip()
+    if not bucket:
+        raise RuntimeError("missing_CLEVERTREE_ASR_S3_BUCKET")
+    try:
+        from clevertree_chat.providers import bedrock_configured, bedrock_region
+
+        if not bedrock_configured():
+            raise RuntimeError("missing_AWS_credentials")
+        region = bedrock_region()
+    except RuntimeError:
+        raise
+    except Exception as exc:
+        raise RuntimeError(f"aws_asr_providers:{exc}") from exc
+
+    try:
+        import boto3  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError("aws_asr_needs_boto3") from exc
+
+    import time
+
+    key = f"channel-asr/{uuidlib.uuid4().hex}{path.suffix or '.webm'}"
+    s3 = boto3.client("s3", region_name=region)
+    s3.upload_file(str(path), bucket, key)
+    media_uri = f"s3://{bucket}/{key}"
+    job_name = f"ct-asr-{uuidlib.uuid4().hex[:16]}"
+    transcribe = boto3.client("transcribe", region_name=region)
+    lang = (os.environ.get("CLEVERTREE_ASR_LANG") or "en-US").strip()
+    transcribe.start_transcription_job(
+        TranscriptionJobName=job_name,
+        Media={"MediaFileUri": media_uri},
+        MediaFormat=(path.suffix.lstrip(".") or "webm")[:10],
+        LanguageCode=lang,
+    )
+    deadline = time.time() + float(os.environ.get("CLEVERTREE_ASR_AWS_TIMEOUT_S") or "120")
+    while time.time() < deadline:
+        desc = transcribe.get_transcription_job(TranscriptionJobName=job_name)
+        status = desc["TranscriptionJob"]["TranscriptionJobStatus"]
+        if status == "COMPLETED":
+            uri = desc["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]
+            with urllib.request.urlopen(uri, timeout=60) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            text = str(
+                payload.get("results", {}).get("transcripts", [{}])[0].get("transcript") or ""
+            ).strip()
+            try:
+                s3.delete_object(Bucket=bucket, Key=key)
+            except Exception:
+                pass
+            return {"text": text, "model": f"aws-transcribe/{lang}", "provider": "aws"}
+        if status == "FAILED":
+            reason = desc["TranscriptionJob"].get("FailureReason") or "failed"
+            raise RuntimeError(f"aws_transcribe_failed:{reason}")
+        time.sleep(2.0)
+    raise RuntimeError("aws_transcribe_timeout")
+
+
+def _transcribe_media(path: Path) -> dict[str, str]:
+    """Groq Whisper first; AWS Transcribe when Groq unavailable or rate-limited."""
+    groq_err: Exception | None = None
+    try:
+        return _transcribe_groq(path)
+    except urllib.error.HTTPError as exc:
+        if exc.code != 429:
+            raise
+        groq_err = exc
+        log.warning("channel_asr Groq 429 — trying AWS ASR failover")
+    except RuntimeError as exc:
+        if "missing_GROQ_API_KEY" not in str(exc):
+            raise
+        groq_err = exc
+        log.info("channel_asr no Groq key — trying AWS ASR failover")
+
+    if not _aws_asr_ready():
+        if groq_err is not None:
+            raise groq_err
+        raise RuntimeError("no_asr_provider")
+    return _transcribe_aws(path)
 
 
 def _format_reply(job: dict[str, Any], text: str, model: str) -> str:
@@ -239,9 +345,10 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
         "yes",
         "on",
     }
-    if not api_key and not dry:
+    aws_ready = _aws_asr_ready()
+    if not api_key and not aws_ready and not dry:
         # Leave pending for a later drain when keys exist.
-        return {"ok": False, "reason": "awaiting_GROQ_API_KEY", "pending": True}
+        return {"ok": False, "reason": "awaiting_asr_provider", "pending": True}
 
     # Soft Free-tier gate (ahead of Groq 20 RPM / 2K RPD hard caps).
     if api_key and not dry:
@@ -249,7 +356,7 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
             from clevertree_chat import quota
 
             soft = quota.check_asr()
-            if not soft.get("ok"):
+            if not soft.get("ok") and not aws_ready:
                 log.info(
                     "channel_asr %s soft-capped (%s) — left pending",
                     job.get("id"),
@@ -267,7 +374,7 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
     mark_job(job_path, "leased")
     tmp: Path | None = None
     try:
-        if dry and not api_key:
+        if dry and not api_key and not aws_ready:
             text = f"[dry-run] would transcribe {url}"
             model = "dry-run"
             status = "dry-run"
@@ -275,16 +382,17 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
             suffix = _suffix_for_url(url)
             tmp = Path(tempfile.mkstemp(prefix="channel-asr-", suffix=suffix, dir=cache_dir())[1])
             _download(url, tmp)
-            result = _transcribe_groq(tmp)
+            result = _transcribe_media(tmp)
             text = result["text"]
             model = result["model"]
             status = "done"
-            try:
-                from clevertree_chat import quota
+            if result.get("provider") == "groq":
+                try:
+                    from clevertree_chat import quota
 
-                quota.consume_asr()
-            except Exception:
-                pass
+                    quota.consume_asr()
+                except Exception:
+                    pass
 
         reply_body = _format_reply(job, text, model)
         if reply is not None:
@@ -309,11 +417,40 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
         }
     except urllib.error.HTTPError as exc:
         msg = f"http_{exc.code}"
-        # Rate-limit: leave pending (ASR has no Bedrock drop-in). Other HTTP → error.
-        if exc.code == 429:
-            mark_job(job_path, "pending", error=msg, last_error_at=_utc_now())
-            log.warning("channel_asr %s rate-limited by Groq — left pending", job.get("id"))
-            return {"ok": False, "id": job.get("id"), "reason": msg, "pending": True}
+        # Rate-limit without AWS failover: leave pending. Other HTTP → error.
+        if exc.code == 429 and not aws_ready:
+            import time
+
+            body = ""
+            try:
+                body = exc.read().decode("utf-8", "replace")
+            except Exception:
+                body = ""
+            try:
+                from clevertree_chat.providers import parse_retry_after_s
+
+                wait = parse_retry_after_s(body, default=20.0)
+            except Exception:
+                wait = 20.0
+            mark_job(
+                job_path,
+                "pending",
+                error=msg,
+                last_error_at=_utc_now(),
+                not_before=time.time() + wait,
+            )
+            log.warning(
+                "channel_asr %s rate-limited by Groq — left pending %.1fs",
+                job.get("id"),
+                wait,
+            )
+            return {
+                "ok": False,
+                "id": job.get("id"),
+                "reason": msg,
+                "pending": True,
+                "retry_after_s": wait,
+            }
         mark_job(job_path, "error", error=msg)
         return {"ok": False, "id": job.get("id"), "reason": msg}
     except Exception as exc:

@@ -19,9 +19,66 @@ sys.path.insert(0, str(ROOT))
 
 from clevertree_chat.chat_hub import HUB, activity_from_view  # noqa: E402
 from clevertree_chat import live_runtime as live  # noqa: E402
+from clevertree_chat.media_allowlist import MAX_BYTES  # noqa: E402
 from clevertree_chat.wsutil import accept_key, encode_close, encode_text, iter_frames  # noqa: E402
 
 PORT = 8790
+
+UPLOAD_PATHS = {
+    "/api/chat/media/upload",
+    "/api/chat/media/upload/",
+    "/api/debate/media/upload",
+    "/api/debate/media/upload/",
+}
+
+
+def _parse_multipart(content_type: str, body: bytes) -> dict:
+    """Minimal multipart/form-data parser → {name: (filename, content_type, bytes)|str}."""
+    if "boundary=" not in (content_type or ""):
+        return {}
+    boundary = content_type.split("boundary=", 1)[1].strip().strip('"')
+    if not boundary:
+        return {}
+    delim = b"--" + boundary.encode("utf-8")
+    out: dict = {}
+    for part in body.split(delim):
+        if not part or part in (b"--", b"--\r\n", b"\r\n"):
+            continue
+        if part.startswith(b"--"):
+            continue
+        if part.startswith(b"\r\n"):
+            part = part[2:]
+        if part.endswith(b"\r\n"):
+            part = part[:-2]
+        if b"\r\n\r\n" not in part:
+            continue
+        header_blob, data = part.split(b"\r\n\r\n", 1)
+        if data.endswith(b"\r\n"):
+            data = data[:-2]
+        headers = {}
+        for line in header_blob.split(b"\r\n"):
+            if b":" in line:
+                k, v = line.split(b":", 1)
+                headers[k.decode("utf-8", "replace").strip().lower()] = v.decode(
+                    "utf-8", "replace"
+                ).strip()
+        disp = headers.get("content-disposition", "")
+        name = ""
+        filename = None
+        for piece in disp.split(";"):
+            piece = piece.strip()
+            if piece.startswith("name="):
+                name = piece.split("=", 1)[1].strip().strip('"')
+            elif piece.startswith("filename="):
+                filename = piece.split("=", 1)[1].strip().strip('"')
+        if not name:
+            continue
+        ctype = headers.get("content-type", "application/octet-stream")
+        if filename is not None:
+            out[name] = (filename, ctype, data)
+        else:
+            out[name] = data.decode("utf-8", "replace")
+    return out
 
 
 class ChatHandler(SimpleHTTPRequestHandler):
@@ -54,8 +111,12 @@ class ChatHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
+        if parsed.path in UPLOAD_PATHS:
+            return self._media_upload(parsed)
         if parsed.path.startswith("/api/chat") or parsed.path.startswith("/api/debate"):
             length = int(self.headers.get("Content-Length") or 0)
+            if length > MAX_BYTES + 1024:
+                return self._json(413, {"error": "file_too_large", "max_bytes": MAX_BYTES})
             payload = json.loads(self.rfile.read(length).decode() or "{}") if length else {}
             return self._api(parsed, payload)
         self.send_error(404)
@@ -69,6 +130,78 @@ class ChatHandler(SimpleHTTPRequestHandler):
             "Content-Type, Idempotency-Key",
         )
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+
+    def _json(self, code: int, body: dict):
+        raw = json.dumps(body).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self._cors()
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
+    def _client_ip(self) -> str:
+        xff = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        if xff:
+            return xff
+        return self.client_address[0] if self.client_address else ""
+
+    def _media_upload(self, parsed):
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            return self._json(400, {"error": "missing_body"})
+        if length > MAX_BYTES + (1024 * 64):
+            # Drain a bit then reject so clients don't hang forever
+            remaining = length
+            while remaining > 0:
+                chunk = self.rfile.read(min(65536, remaining))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+            return self._json(413, {"error": "file_too_large", "max_bytes": MAX_BYTES})
+        content_type = self.headers.get("Content-Type") or ""
+        if "multipart/form-data" not in content_type:
+            return self._json(400, {"error": "expected_multipart"})
+        body = self.rfile.read(length)
+        form = _parse_multipart(content_type, body)
+        file_field = form.get("file")
+        if not isinstance(file_field, tuple) or len(file_field) != 3:
+            return self._json(400, {"error": "missing_file"})
+        filename, file_ctype, data = file_field
+        channel = str(form.get("channel") or "web")
+        kind = str(form.get("kind") or "")
+        try:
+            from clevertree_chat import bunny_upload
+
+            result = bunny_upload.upload_file(
+                data,
+                filename=str(filename or "upload.bin"),
+                content_type=str(file_ctype or "application/octet-stream"),
+                channel=channel,
+                kind=kind,
+                client_ip=self._client_ip(),
+            )
+        except Exception as exc:
+            sys.stderr.write(traceback.format_exc())
+            return self._json(500, {"error": str(exc)})
+        if not result.get("ok"):
+            err = str(result.get("error") or "upload_failed")
+            code = 413 if err == "file_too_large" else 429 if err == "rate_limited" else 503 if err == "bunny_not_configured" else 400
+            if err.startswith("bunny_upload"):
+                code = 502
+            return self._json(code, result)
+        # Include ready-to-post marker for clients
+        from clevertree_chat.bunny_upload import format_media_marker
+
+        result["marker"] = format_media_marker(
+            kind=str(result.get("kind") or "file"),
+            url=str(result.get("url") or ""),
+            channel=str(result.get("channel") or channel),
+            review="pending",
+            sha256=str(result.get("sha256") or ""),
+        )
+        return self._json(200, result)
 
     def _api(self, parsed, payload: dict):
         query = {key: values[-1] for key, values in parse_qs(parsed.query).items()}
@@ -157,6 +290,27 @@ class ChatHandler(SimpleHTTPRequestHandler):
 
             view = live.view_topic(topic, visitor)
             history = irc_log_cache.recent(topic)
+            media_reviews = {}
+            try:
+                from clevertree_chat import channel_media_review
+
+                # Snapshot host review map (sha → status) for cover hydration.
+                for path in channel_media_review.review_dir().glob("*.json"):
+                    try:
+                        data = json.loads(path.read_text(encoding="utf-8"))
+                    except Exception:
+                        continue
+                    st = str(data.get("status") or "")
+                    if st not in {"clear", "reject", "pending"}:
+                        continue
+                    sha = str(data.get("sha") or path.stem)
+                    url = str(data.get("url") or "")
+                    if sha:
+                        media_reviews[sha] = st
+                    if url:
+                        media_reviews[url] = st
+            except Exception:
+                media_reviews = {}
             send_raw(
                 json.dumps(
                     {
@@ -165,6 +319,7 @@ class ChatHandler(SimpleHTTPRequestHandler):
                         "view": view,
                         "activity": activity_from_view(view, visitor),
                         "chat_history": history,
+                        "media_reviews": media_reviews,
                     }
                 )
             )

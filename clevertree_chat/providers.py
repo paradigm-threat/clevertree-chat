@@ -125,6 +125,27 @@ def is_rate_limit_error(status: int | None, body: str = "") -> bool:
     return any(n in lower for n in needles)
 
 
+def parse_retry_after_s(body: str = "", *, default: float = 15.0) -> float:
+    """Best-effort seconds until Groq says we may retry (from JSON error text)."""
+    import re
+
+    text = body or ""
+    # "Please try again in 2.185714285s"
+    m = re.search(r"try again in\s+([0-9]+(?:\.[0-9]+)?)\s*s", text, re.I)
+    if m:
+        try:
+            return max(1.0, float(m.group(1)))
+        except ValueError:
+            pass
+    m = re.search(r"retry[_ -]?after[\"':\s]+([0-9]+(?:\.[0-9]+)?)", text, re.I)
+    if m:
+        try:
+            return max(1.0, float(m.group(1)))
+        except ValueError:
+            pass
+    return max(1.0, float(default))
+
+
 def should_failover(status: int | None, body: str = "") -> bool:
     if is_rate_limit_error(status, body):
         return True

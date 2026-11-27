@@ -35,7 +35,12 @@ def _day_path() -> Path:
 def _load() -> dict[str, Any]:
     path = _day_path()
     if not path.is_file():
-        return {"day": _utc_day(), "investigate": {"total": 0, "channels": {}}, "asr": {"total": 0, "minute": {}}}
+        return {
+            "day": _utc_day(),
+            "investigate": {"total": 0, "channels": {}},
+            "asr": {"total": 0, "minute": {}},
+            "vision": {"total": 0, "minute": {}, "cooldown_until": 0},
+        }
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
@@ -45,6 +50,7 @@ def _load() -> dict[str, Any]:
     data.setdefault("day", _utc_day())
     data.setdefault("investigate", {"total": 0, "channels": {}})
     data.setdefault("asr", {"total": 0, "minute": {}})
+    data.setdefault("vision", {"total": 0, "minute": {}, "cooldown_until": 0})
     inv = data["investigate"]
     if not isinstance(inv, dict):
         inv = {"total": 0, "channels": {}}
@@ -57,6 +63,13 @@ def _load() -> dict[str, Any]:
         data["asr"] = asr
     asr.setdefault("total", 0)
     asr.setdefault("minute", {})
+    vision = data["vision"]
+    if not isinstance(vision, dict):
+        vision = {"total": 0, "minute": {}, "cooldown_until": 0}
+        data["vision"] = vision
+    vision.setdefault("total", 0)
+    vision.setdefault("minute", {})
+    vision.setdefault("cooldown_until", 0)
     return data
 
 
@@ -91,6 +104,19 @@ def asr_soft_rpd() -> int:
 
 def asr_soft_rpm() -> int:
     return _int_env("CLEVERTREE_ASR_SOFT_RPM", 15)
+
+
+def vision_soft_rpd() -> int:
+    # Free-tier qwen ITPM is tight (~7k); keep day volume modest.
+    return _int_env("CLEVERTREE_VISION_SOFT_RPD", 200)
+
+
+def vision_soft_rpm() -> int:
+    return _int_env("CLEVERTREE_VISION_SOFT_RPM", 4)
+
+
+def vision_cooldown_floor_s() -> float:
+    return float(_int_env("CLEVERTREE_VISION_COOLDOWN_FLOOR_S", 20))
 
 
 def check_investigate(topic: str) -> dict[str, Any]:
@@ -228,11 +254,91 @@ def consume_asr() -> dict[str, Any]:
         return {"ok": True, "reason": "", "message": ""}
 
 
+def check_vision() -> dict[str, Any]:
+    """Soft vision gate (cooldown + RPM + RPD). Does not consume."""
+    rpd = vision_soft_rpd()
+    rpm = vision_soft_rpm()
+    minute_key = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
+    now = time.time()
+    with _lock:
+        data = _load()
+        vision = data["vision"]
+        cool = float(vision.get("cooldown_until") or 0)
+        if cool and now < cool:
+            left = int(cool - now)
+            return {
+                "ok": False,
+                "reason": "vision_cooldown",
+                "retry_after_s": left,
+                "message": f"Vision cooling down ({left}s) after Groq rate-limit",
+            }
+        total = int(vision.get("total") or 0)
+        minute = vision.get("minute") or {}
+        if not isinstance(minute, dict):
+            minute = {}
+        keys = sorted(str(k) for k in minute.keys())[-3:]
+        minute = {k: minute[k] for k in keys if k in minute}
+        vision["minute"] = minute
+        cur = int(minute.get(minute_key) or 0)
+        if rpd and total >= rpd:
+            return {
+                "ok": False,
+                "reason": "vision_daily_soft",
+                "retry_after_s": None,
+                "message": f"Vision soft daily cap ({rpd})",
+            }
+        if rpm and cur >= rpm:
+            return {
+                "ok": False,
+                "reason": "vision_rpm_soft",
+                "retry_after_s": 60 - int(now) % 60,
+                "message": f"Vision soft RPM cap ({rpm})",
+            }
+        return {"ok": True, "reason": "", "retry_after_s": 0, "message": ""}
+
+
+def consume_vision() -> dict[str, Any]:
+    gate = check_vision()
+    if not gate["ok"]:
+        return gate
+    minute_key = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
+    with _lock:
+        data = _load()
+        vision = data["vision"]
+        minute = vision.setdefault("minute", {})
+        if not isinstance(minute, dict):
+            minute = {}
+            vision["minute"] = minute
+        minute[minute_key] = int(minute.get(minute_key) or 0) + 1
+        vision["total"] = int(vision.get("total") or 0) + 1
+        keys = sorted(str(k) for k in minute.keys())[-5:]
+        vision["minute"] = {k: minute[k] for k in keys if k in minute}
+        _save(data)
+        return {"ok": True, "reason": "", "message": ""}
+
+
+def set_vision_cooldown(retry_after_s: float) -> float:
+    """Extend global vision cooldown (monotonic). Returns absolute until-ts."""
+    floor = vision_cooldown_floor_s()
+    wait = max(floor, float(retry_after_s or 0))
+    until = time.time() + wait
+    with _lock:
+        data = _load()
+        vision = data["vision"]
+        prev = float(vision.get("cooldown_until") or 0)
+        vision["cooldown_until"] = max(prev, until)
+        _save(data)
+        return float(vision["cooldown_until"])
+
+
 def status() -> dict[str, Any]:
     with _lock:
         data = _load()
         inv = data.get("investigate") or {}
         asr = data.get("asr") or {}
+        vision = data.get("vision") or {}
+        cool = float(vision.get("cooldown_until") or 0)
+        now = time.time()
         return {
             "day": data.get("day") or _utc_day(),
             "investigate": {
@@ -245,5 +351,13 @@ def status() -> dict[str, Any]:
                 "total": int(asr.get("total") or 0),
                 "soft_rpd": asr_soft_rpd(),
                 "soft_rpm": asr_soft_rpm(),
+            },
+            "vision": {
+                "total": int(vision.get("total") or 0),
+                "soft_rpd": vision_soft_rpd(),
+                "soft_rpm": vision_soft_rpm(),
+                "cooldown_until": cool,
+                "cooldown_remaining_s": max(0, int(cool - now)) if cool else 0,
+                "model_default": "qwen/qwen3.8-27b",
             },
         }

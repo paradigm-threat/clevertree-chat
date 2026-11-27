@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags: ["v*"]
 
 jobs:
   unit:
@@ -37,5 +38,53 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Durable board + website room E2E
         run: npx playwright test tests/e2e/chat-websocket.spec.ts tests/e2e/website-url-room.spec.ts
+      - name: Live embed shell
+        run: npx playwright test tests/e2e/live-embed.spec.ts
       - name: ADA contrast (axe WCAG AA)
         run: npx playwright test tests/e2e/a11y-contrast.spec.ts
+
+  android-room:
+    name: Android room AAR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Assemble + unit tests
+        working-directory: android
+        run: ./gradlew :clevertree-room:assembleRelease :clevertree-room:test --stacktrace
+      - name: Upload AAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clevertree-room-aar
+          path: android/clevertree-room/build/outputs/aar/*.aar
+          if-no-files-found: error
+      - name: Assemble standalone APK
+        working-directory: android
+        run: ./gradlew :clevertree-app:assembleRelease --stacktrace
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clevertree-chat-apk
+          path: android/clevertree-app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+      - name: Publish to GitHub Packages
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        working-directory: android
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="0.1.0"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          ./gradlew :clevertree-room:publishReleasePublicationToGitHubPackagesRepository \
+            -Pclevertree.room.version="$VERSION" \
+            --stacktrace

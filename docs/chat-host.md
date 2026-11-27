@@ -35,13 +35,22 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_IRC_ENABLE=1` | Start Ergo IRC bridge (see [irc-backbone.md](irc-backbone.md)) |
 | `CLEVERTREE_IRC_*` | Host/port/TLS/nick/prefix for the bridge |
 | `CLEVERTREE_CHANNEL_ASR` | Default `1` — enqueue ASR jobs from `[[mp:media]]` / Bunny URLs on submit |
-| `GROQ_API_KEY` | Groq key for Whisper ASR **and** text SI; omit → ASR jobs stay pending; paste on pub1 (do not commit) |
+| `CLEVERTREE_CHANNEL_MEDIA_REVIEW` | Default `1` — cover images/video until AI clear; WS `media.review` |
+| `CLEVERTREE_MEDIA_REVIEW_DRY_RUN` | Stub-clear covers without Groq vision (also implied when ASR dry-run and no `GROQ_API_KEY`) |
+| `BUNNY_STORAGE_API_KEY` | Bunny **storage zone password** for `POST /api/chat/media/upload` (never in browser) |
+| `BUNNY_STORAGE_ZONE` | Default `myproblem-stills` |
+| `BUNNY_STORAGE_HOST` | Default `storage.bunnycdn.com` |
+| `BUNNY_CDN_BASE` | Default `https://myproblem-stills.b-cdn.net` |
+| `GROQ_API_KEY` | Groq key for Whisper ASR, text SI, **and** vision media review; omit → ASR/review jobs stay pending (or dry-run); paste on pub1 (do not commit) |
 | `GROQ_WHISPER_MODEL` | Default `whisper-large-v3-turbo` |
+| `GROQ_VISION_MODEL` | Default `qwen/qwen3.8-27b` (current Groq multimodal). Override if your account uses another vision model |
 | `GROQ_TEXT_MODEL` / `GROQ_SI_MODEL` | Default `openai/gpt-oss-20b` for text SI / `action=text_complete` / `!investigate` |
 | `CLEVERTREE_INVESTIGATE` | Default on — manual `!investigate` text SI (not per-message) |
 | `CLEVERTREE_INVESTIGATE_COOLDOWN_S` | Default `600` (per-channel) |
 | `CLEVERTREE_INVESTIGATE_DAILY_MAX` | Default `48` org/day soft Free-tier budget |
 | `CLEVERTREE_ASR_SOFT_RPD` / `CLEVERTREE_ASR_SOFT_RPM` | Soft Whisper caps ahead of Groq Free (defaults `1500` / `15`) |
+| `CLEVERTREE_VISION_SOFT_RPD` / `CLEVERTREE_VISION_SOFT_RPM` | Soft vision caps (defaults `200` / `4`) ahead of qwen ITPM |
+| `CLEVERTREE_VISION_COOLDOWN_FLOOR_S` | Min pause after vision 429 (default `20`) |
 | `CLEVERTREE_ASR_DRY_RUN=1` | Stub in-channel transcript without calling Groq |
 | `CLEVERTREE_PROVIDER_FAILOVER` | Default on — text SI prefers Groq, falls back to Bedrock on 429 / rate-limit (and 5xx when enabled) |
 | `CLEVERTREE_BEDROCK_FAILOVER_ON_5XX` | Default `1` — also failover text SI on Groq 5xx |
@@ -70,7 +79,17 @@ bash infra/deploy-chat-host.sh
 #           CLEVERTREE_CHAT_SSH_KEY=~/.ssh/id_ed25519_relay_gateway
 ```
 
-Packs the library, rsyncs onto Linode **pub1** (`/opt/clevertree-chat`), installs a venv + systemd unit, and reloads Caddy for `api.clevertree.chat` / `intake.myproblem.app` chat paths. Durable SoT lives under `/opt/clevertree-chat/var/clevertree-live/` (host disk — not Rackspace PVC). Channel ASR: set `GROQ_API_KEY` or `CLEVERTREE_ASR_DRY_RUN=1` in `/opt/clevertree-chat/chat-host.env`.
+Packs the library, rsyncs onto Linode **pub1** (`/opt/clevertree-chat`), installs a venv + systemd unit, and reloads Caddy for `api.clevertree.chat` / `intake.myproblem.app` chat paths. Durable SoT lives under `/opt/clevertree-chat/var/clevertree-live/` (host disk — not Rackspace PVC). Channel ASR: set `GROQ_API_KEY` or `CLEVERTREE_ASR_DRY_RUN=1` in `/opt/clevertree-chat/chat-host.env`. Media uploads: set `BUNNY_STORAGE_API_KEY` (zone password for `myproblem-stills`).
+
+### Media upload
+
+- `POST /api/chat/media/upload` — multipart `file` + `channel` (+ optional `kind`); max **50 MiB**.
+- Allowlist: images, video, audio, PDF, plain text (magic + sniff). Returns CDN URL + `[[mp:media … review=pending]]` marker.
+- Path: `chat-public/<channel>/<sha>.<ext>` on Bunny; room renders from CDN with covers until `media.review` clear (see [channel-moderation.md](channel-moderation.md)).
+- Drain: `action=drain_channel_media_review` (also on the host tick).
+- Vision: default `qwen/qwen3.8-27b`. Prefers CDN URL over base64 (header peek only); images under 32×32px auto-clear (Groq VL minimum). Soft RPM/RPD + global cooldown after 429; jobs get `not_before` so drains skip them until Groq says retry. Staging-only: `CLEVERTREE_MEDIA_REVIEW_DRY_RUN=1`.
+- Host tick spaces drains (ASR ~10s×2, vision ~16s×1, investigate ~14s×1) to stay under Free-tier ITPM/RPM.
+- WS `hello.media_reviews` hydrates cover state; `media.review` updates live clients. `action=quota_status` reports investigate / ASR / vision soft budgets.
 
 There is **no LKE kubeconfig** for Intake; Rackspace Spot `~/.kube/myproblem-intake.yaml` is abandoned.
 

@@ -18,6 +18,28 @@ URL_RE = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
 BUNNY_HINT = re.compile(r"b-cdn\.net|bunnycdn|chat-public/", re.IGNORECASE)
 AUDIO_EXT = {".webm", ".wav", ".mp3", ".m4a", ".ogg", ".opus", ".flac", ".aac"}
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm"}  # webm may be audio-only; kind wins
+IMAGE_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"}
+TEXT_EXT = {
+    ".txt",
+    ".md",
+    ".markdown",
+    ".csv",
+    ".tsv",
+    ".json",
+    ".xml",
+    ".yaml",
+    ".yml",
+    ".log",
+    ".html",
+    ".htm",
+    ".css",
+    ".js",
+    ".ts",
+    ".py",
+    ".rs",
+    ".go",
+    ".sh",
+}
 
 
 def _attrs(blob: str) -> dict[str, str]:
@@ -26,9 +48,17 @@ def _attrs(blob: str) -> dict[str, str]:
 
 def _guess_kind(url: str, explicit: str = "") -> str:
     kind = (explicit or "").strip().lower()
-    if kind in {"audio", "video", "file"}:
+    if kind in {"audio", "video", "image", "pdf", "text", "file"}:
         return kind
     path = urlparse(url).path.lower()
+    for ext in IMAGE_EXT:
+        if path.endswith(ext):
+            return "image"
+    if path.endswith(".pdf"):
+        return "pdf"
+    for ext in TEXT_EXT:
+        if path.endswith(ext):
+            return "text"
     for ext in AUDIO_EXT:
         if path.endswith(ext) and ext != ".webm":
             return "audio"
@@ -55,11 +85,17 @@ def parse_media_markers(body: str) -> list[dict[str, Any]]:
         seen.add(url)
         kind = _guess_kind(url, attrs.get("kind") or "")
         channel = (attrs.get("channel") or "").strip()
+        review = (attrs.get("review") or "pending").strip().lower()
+        if review not in {"pending", "clear", "reject"}:
+            review = "pending"
+        sha = (attrs.get("sha") or "").strip()
         out.append(
             {
                 "kind": kind,
                 "url": url,
                 "channel": channel,
+                "review": review,
+                "sha": sha,
                 "raw": match.group(0),
                 "source": "marker",
             }
@@ -85,6 +121,8 @@ def extract_channel_media(body: str) -> list[dict[str, Any]]:
                 "kind": _guess_kind(url),
                 "url": url,
                 "channel": "",
+                "review": "pending",
+                "sha": "",
                 "raw": url,
                 "source": "url",
             }
@@ -96,3 +134,9 @@ def asr_eligible(item: dict[str, Any]) -> bool:
     """Audio (and audio-bearing video notes) are ASR candidates; plain files are not."""
     kind = str(item.get("kind") or "")
     return kind in {"audio", "video"}
+
+
+def visual_cover_eligible(item: dict[str, Any]) -> bool:
+    """Images and videos start covered until review clears."""
+    kind = str(item.get("kind") or "")
+    return kind in {"image", "video"}

@@ -27,6 +27,7 @@ Policy detail: [`docs/intake-queue.md`](docs/intake-queue.md).
 | PT backlog refile | [`scripts/refile_pt_batch.py`](scripts/refile_pt_batch.py) |
 | Browser extension (IRC+SI; all sites) | [`fronts/extension/`](fronts/extension/) → [clevertree.chat/extension](https://clevertree.chat/extension) — Networker via Options only |
 | Shared public IRC room UI | [`fronts/room/`](fronts/room/) — dock / page / sidepanel; SI panel stub; themes; context tags |
+| Android room AAR (embeddable) | [`android/clevertree-room/`](android/clevertree-room/) → GitHub Packages `chat.clevertree:clevertree-room` — [`docs/android-room.md`](docs/android-room.md) |
 | Header chat launcher | [`fronts/room/chat-launcher.js`](fronts/room/chat-launcher.js) — corner button; prefers extension side panel |
 | Design kit | [`design/clevertree-chat-kit/`](design/clevertree-chat-kit/) — shared IRC+SI room; theme packs in `tokens/` + [`fronts/room/themes/`](fronts/room/themes/) |
 
@@ -70,9 +71,10 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`p
 npm run test:unit
 npm run test:e2e
 npm run test:e2e:a11y   # axe WCAG AA contrast on board (light + dark)
+cd android && ./gradlew :clevertree-room:assembleRelease :clevertree-room:test
 ```
 
-PR CI (GitHub Actions + GitLab CI): unit, durable E2E, and ADA contrast gates.
+PR CI (GitHub Actions + GitLab CI): unit, durable E2E, ADA contrast, and Android room AAR gates.
 
 ## Related
 
