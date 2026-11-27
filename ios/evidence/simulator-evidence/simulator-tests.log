@@ -1,0 +1,851 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project ClevertreeApp.xcodeproj -scheme ClevertreeApp -destination "platform=iOS Simulator,id=0F0C939F-B7A2-4C26-A415-A1638167EB70" -destination "platform=iOS Simulator,id=0817FDFF-6FAC-4D2E-A077-DBB5E2EF36FE" -destination "platform=iOS Simulator,id=7952007A-6B91-4CE6-9EE4-9D279980FCF0" -derivedDataPath /tmp/clevertree-ios-build -resultBundlePath /tmp/clevertree-final.xcresult -parallel-testing-enabled NO -disable-concurrent-destination-testing CODE_SIGNING_ALLOWED=NO test
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  ClevertreeRoom: /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeRoom
+
+Writing result bundle at path:
+	/tmp/clevertree-final.xcresult
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (6 targets)
+    Target 'ClevertreeAppUITests' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeApp' in project 'ClevertreeApp'
+    Target 'ClevertreeAppTests' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeApp' in project 'ClevertreeApp'
+    Target 'ClevertreeApp' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: c462ed65ee8398459fa7ae3a6919987b
+Build description path: /tmp/clevertree-ios-build/Build/Intermediates.noindex/XCBuildData/c462ed65ee8398459fa7ae3a6919987b.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk /tmp/clevertree-ios-build/SDKStatCaches.noindex/iphonesimulator26.2-23C57-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/ClevertreeApp.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -o /tmp/clevertree-ios-build/SDKStatCaches.noindex/iphonesimulator26.2-23C57-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+
+ProcessInfoPlistFile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.bundle/Info.plist /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeRoom.build/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.build/empty-ClevertreeRoom_ClevertreeRoom.plist (in target 'ClevertreeRoom_ClevertreeRoom' from project 'ClevertreeRoom')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeRoom
+    builtin-infoPlistUtility /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeRoom.build/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.build/empty-ClevertreeRoom_ClevertreeRoom.plist -producttype com.apple.product-type.bundle -expandbuildsettings -format binary -platform iphonesimulator -o /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.bundle/Info.plist
+
+ProcessInfoPlistFile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Info.plist /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Info.plist (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-infoPlistUtility /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/ClevertreeRoom_ClevertreeRoom.bundle -o /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Info.plist
+
+CopySwiftLibs /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest (in target 'ClevertreeAppTests' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/ClevertreeAppTests --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Frameworks --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/PlugIns --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/SystemExtensions --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeAppTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+2026-11-27 13:50:50.791825-0500 ClevertreeChat[13724:4676971] [default] Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 21089DCC-26C1-4124-9F2E-E505CDB05C84])
+Test Suite 'All tests' started at 2026-11-27 13:50:52.206.
+Test Suite 'ClevertreeAppTests.xctest' started at 2026-11-27 13:50:52.207.
+Test Suite 'ClevertreeAppSmokeTests' started at 2026-11-27 13:50:52.207.
+Test Case '-[ClevertreeAppTests.ClevertreeAppSmokeTests testHostBundleIdentifier]' started.
+Test Case '-[ClevertreeAppTests.ClevertreeAppSmokeTests testHostBundleIdentifier]' passed (0.001 seconds).
+Test Suite 'ClevertreeAppSmokeTests' passed at 2026-11-27 13:50:52.208.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ClevertreeAppTests.xctest' passed at 2026-11-27 13:50:52.208.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'All tests' passed at 2026-11-27 13:50:52.208.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+2026-11-27 13:50:52.208263-0500 ClevertreeChat[13724:4676865] [Process] Networking process (0x135128100) took 1.416922 seconds to launch
+2026-11-27 13:50:52.209179-0500 ClevertreeChat[13724:4676865] [Process] GPU process (0x1351081e0) took 1.424176 seconds to launch
+2026-11-27 13:50:52.209494-0500 ClevertreeChat[13724:4676865] [Process] WebContent process (0x1350c00c0) took 1.440696 seconds to launch
+2026-11-27 13:50:53.050113-0500 ClevertreeAppUITests-Runner[13731:4677233] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-27 13:50:53.850.
+Test Suite 'ClevertreeAppUITests.xctest' started at 2026-11-27 13:50:53.850.
+Test Suite 'ClevertreeAppUITests' started at 2026-11-27 13:50:53.850.
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testAttachmentPickerOffersPhotoLibrary]' started.
+    t =     0.00s Start Test at 2026-11-27 13:50:53.851
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.22s         Setting up automation session
+    t =     0.92s         Wait for chat.clevertree.app to idle
+    t =     2.16s Waiting 10.0s for WebView (First Match) to exist
+    t =     3.25s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     3.25s         Checking existence of `WebView (First Match)`
+    t =     3.27s Waiting 8.0s for "Attach file" Button to exist
+    t =     4.34s     Checking `Expect predicate `existsNoRetry == 1` for object "Attach file" Button`
+    t =     4.35s         Checking existence of `"Attach file" Button`
+    t =     4.40s Tap "Attach file" Button
+    t =     4.40s     Wait for chat.clevertree.app to idle
+    t =     4.40s     Find the "Attach file" Button
+    t =     4.43s     Check for interrupting elements affecting "Attach file" Button
+    t =     4.46s     Synthesize event
+    t =     4.75s     Wait for chat.clevertree.app to idle
+    t =     5.96s Waiting 6.0s for "Photo Library" Any to exist
+    t =     7.04s     Checking `Expect predicate `existsNoRetry == 1` for object "Photo Library" Any`
+    t =     7.04s         Checking existence of `"Photo Library" Any`
+    t =     7.14s Added attachment named 'Attachment picker'
+    t =     7.14s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testAttachmentPickerOffersPhotoLibrary]' passed (7.380 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testChannelMenuOpens]' started.
+    t =     0.00s Start Test at 2026-11-27 13:51:01.232
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13735
+    t =     1.24s         Setting up automation session
+    t =     1.93s         Wait for chat.clevertree.app to idle
+    t =     3.16s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.24s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.24s         Checking existence of `WebView (First Match)`
+    t =     4.27s Waiting 10.0s for "Open menu" Button to exist
+    t =     5.33s     Checking `Expect predicate `existsNoRetry == 1` for object "Open menu" Button`
+    t =     5.33s         Checking existence of `"Open menu" Button`
+    t =     5.38s Tap "Open menu" Button
+    t =     5.38s     Wait for chat.clevertree.app to idle
+    t =     5.38s     Find the "Open menu" Button
+    t =     5.42s     Check for interrupting elements affecting "Open menu" Button
+    t =     5.44s     Synthesize event
+    t =     5.74s     Wait for chat.clevertree.app to idle
+    t =     5.81s Added attachment named 'Room drawer'
+    t =     5.81s Waiting 6.0s for "List channels" Any to exist
+    t =     6.89s     Checking `Expect predicate `existsNoRetry == 1` for object "List channels" Any`
+    t =     6.89s         Checking existence of `"List channels" Any`
+    t =     6.95s Find the "List channels" Any
+    t =     7.00s Tap "List channels" Other
+    t =     7.00s     Wait for chat.clevertree.app to idle
+    t =     7.01s     Find the "List channels" Other
+    t =     7.05s     Check for interrupting elements affecting "List channels" Other
+    t =     7.08s     Synthesize event
+    t =     7.37s     Wait for chat.clevertree.app to idle
+    t =     8.46s Checking `Expect predicate `BLOCKPREDICATE(0x600000d098c0)` for object WebView (First Match)`
+    t =     8.46s     Checking existence of `Any (First Match)`
+    t =     8.56s Added attachment named 'Channel list'
+    t =     8.56s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testChannelMenuOpens]' passed (8.783 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testComposerStaysAboveKeyboard]' started.
+    t =     0.00s Start Test at 2026-11-27 13:51:10.016
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13768
+    t =     1.33s         Setting up automation session
+    t =     2.00s         Wait for chat.clevertree.app to idle
+    t =     3.22s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.29s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.29s         Checking existence of `WebView (First Match)`
+    t =     4.32s Waiting 10.0s for "Message to public room" TextView to exist
+    t =     5.40s     Checking `Expect predicate `existsNoRetry == 1` for object "Message to public room" TextView`
+    t =     5.40s         Checking existence of `"Message to public room" TextView`
+    t =     5.45s Tap "Message to public room" TextView
+    t =     5.45s     Wait for chat.clevertree.app to idle
+    t =     5.45s     Find the "Message to public room" TextView
+    t =     5.48s     Check for interrupting elements affecting "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     5.51s     Synthesize event
+    t =     5.80s     Wait for chat.clevertree.app to idle
+    t =     5.81s Waiting 5.0s for Keyboard (First Match) to exist
+    t =     6.89s     Checking `Expect predicate `existsNoRetry == 1` for object Keyboard (First Match)`
+    t =     6.89s         Checking existence of `Keyboard (First Match)`
+    t =     6.90s Type 'Simulator draft' into "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     6.90s     Wait for chat.clevertree.app to idle
+    t =     6.90s     Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     6.95s     Check for interrupting elements affecting "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     6.98s     Synthesize event
+    t =     7.44s     Wait for chat.clevertree.app to idle
+    t =     7.44s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.49s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.54s Find the "Send" Button
+    t =     7.59s Find the "Send" Button
+    t =     7.63s Find the Keyboard (First Match)
+    t =     7.71s Added attachment named 'Composer above keyboard'
+    t =     7.71s Tap "Clevertree Chat" StaticText
+    t =     7.71s     Wait for chat.clevertree.app to idle
+    t =     7.71s     Find the "Clevertree Chat" StaticText
+    t =     7.76s     Check for interrupting elements affecting "Clevertree Chat" StaticText
+    t =     7.79s     Synthesize event
+    t =     8.08s     Wait for chat.clevertree.app to idle
+    t =     9.42s Checking `Expect predicate `exists == 0` for object Keyboard at {{0.0, 583.0}, {402.0, 233.0}}`
+    t =     9.42s     Checking existence of `Keyboard at {{0.0, 583.0}, {402.0, 233.0}}`
+    t =     9.45s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     9.55s Added attachment named 'Keyboard dismissed'
+    t =     9.55s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testComposerStaysAboveKeyboard]' passed (9.774 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testDefaultChannel]' started.
+    t =     0.00s Start Test at 2026-11-27 13:51:19.790
+    t =     0.01s Set Up
+    t =     0.01s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13806
+    t =     1.24s         Setting up automation session
+    t =     1.89s         Wait for chat.clevertree.app to idle
+    t =     3.12s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.19s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.19s         Checking existence of `WebView (First Match)`
+    t =     4.22s Waiting 10.0s for "#web" StaticText to exist
+    t =     5.26s     Checking `Expect predicate `existsNoRetry == 1` for object "#web" StaticText`
+    t =     5.26s         Checking existence of `"#web" StaticText`
+    t =     5.33s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testDefaultChannel]' passed (5.554 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait]' started.
+    t =     0.00s Start Test at 2026-11-27 13:51:25.346
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13832
+    t =     1.32s         Setting up automation session
+    t =     1.96s         Wait for chat.clevertree.app to idle
+    t =     3.17s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.22s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.22s         Checking existence of `WebView (First Match)`
+/Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/UITests/ClevertreeAppUITests.swift:78: -[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait] : Test skipped - Orientation smoke test runs on iPad.
+    t =     4.26s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait]' skipped (4.474 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testLaunchRoom]' started.
+    t =     0.00s Start Test at 2026-11-27 13:51:29.820
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13854
+    t =     1.33s         Setting up automation session
+    t =     1.93s         Wait for chat.clevertree.app to idle
+    t =     3.13s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.20s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.20s         Checking existence of `WebView (First Match)`
+    t =     4.23s Waiting 10.0s for "Open menu" Button to exist
+    t =     5.31s     Checking `Expect predicate `existsNoRetry == 1` for object "Open menu" Button`
+    t =     5.32s         Checking existence of `"Open menu" Button`
+    t =     5.37s Checking existence of `"Attach file" Button`
+    t =     5.40s Checking existence of `"Record audio" Button`
+    t =     5.43s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testLaunchRoom]' passed (5.671 seconds).
+Test Suite 'ClevertreeAppUITests' passed at 2026-11-27 13:51:35.490.
+	 Executed 6 tests, with 1 test skipped and 0 failures (0 unexpected) in 41.636 (41.640) seconds
+Test Suite 'ClevertreeAppUITests.xctest' passed at 2026-11-27 13:51:35.491.
+	 Executed 6 tests, with 1 test skipped and 0 failures (0 unexpected) in 41.636 (41.641) seconds
+Test Suite 'All tests' passed at 2026-11-27 13:51:35.491.
+	 Executed 6 tests, with 1 test skipped and 0 failures (0 unexpected) in 41.636 (41.641) seconds
+2026-11-27 13:51:35.794 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 47.055 elapsed -- Testing started completed.
+2026-11-27 13:51:35.794 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-27 13:51:35.794 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 47.055 sec, +47.055 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/clevertree-final.xcresult
+
+** TEST SUCCEEDED **
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (6 targets)
+    Target 'ClevertreeAppUITests' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeApp' in project 'ClevertreeApp'
+    Target 'ClevertreeAppTests' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeApp' in project 'ClevertreeApp'
+    Target 'ClevertreeApp' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: c65302a1b30bc9677c9ac334821afb07
+Build description path: /tmp/clevertree-ios-build/Build/Intermediates.noindex/XCBuildData/c65302a1b30bc9677c9ac334821afb07.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk /tmp/clevertree-ios-build/SDKStatCaches.noindex/iphonesimulator26.2-23C57-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/ClevertreeApp.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -o /tmp/clevertree-ios-build/SDKStatCaches.noindex/iphonesimulator26.2-23C57-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+
+ProcessInfoPlistFile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.bundle/Info.plist /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeRoom.build/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.build/empty-ClevertreeRoom_ClevertreeRoom.plist (in target 'ClevertreeRoom_ClevertreeRoom' from project 'ClevertreeRoom')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeRoom
+    builtin-infoPlistUtility /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeRoom.build/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.build/empty-ClevertreeRoom_ClevertreeRoom.plist -producttype com.apple.product-type.bundle -expandbuildsettings -format binary -platform iphonesimulator -o /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.bundle/Info.plist
+
+CompileAssetCatalogVariant thinned /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets --compile /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_dependencies_thinned --output-partial-info-plist /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --filter-for-thinning-device-configuration iPhone14,6 --filter-for-device-os-version 26.3.1 --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 16.0 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_thinned
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned/Assets.car
+
+
+LinkAssetCatalog /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-linkAssetCatalog --thinned /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned --thinned-dependencies /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_unthinned --output /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app --plist-output /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist
+note: Emplaced /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Assets.car (in target 'ClevertreeApp' from project 'ClevertreeApp')
+note: Emplaced /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/AppIcon60x60@2x.png (in target 'ClevertreeApp' from project 'ClevertreeApp')
+note: Emplaced /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/AppIcon76x76@2x~ipad.png (in target 'ClevertreeApp' from project 'ClevertreeApp')
+
+ProcessInfoPlistFile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Info.plist /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Info.plist (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-infoPlistUtility /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/ClevertreeRoom_ClevertreeRoom.bundle -o /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Info.plist
+
+CopySwiftLibs /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/ClevertreeChat.debug.dylib --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Frameworks --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/SystemExtensions --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+CopySwiftLibs /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest (in target 'ClevertreeAppTests' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/ClevertreeAppTests --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Frameworks --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/PlugIns --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/SystemExtensions --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeAppTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+CopySwiftLibs /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest (in target 'ClevertreeAppUITests' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/ClevertreeAppUITests --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/Frameworks --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/PlugIns --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/SystemExtensions --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeAppUITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+2026-11-27 13:51:43.739502-0500 ClevertreeChat[13935:4687769] [default] Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: F609944C-33ED-4F69-9D30-600904F16302])
+Test Suite 'All tests' started at 2026-11-27 13:51:44.987.
+Test Suite 'ClevertreeAppTests.xctest' started at 2026-11-27 13:51:44.988.
+Test Suite 'ClevertreeAppSmokeTests' started at 2026-11-27 13:51:44.988.
+Test Case '-[ClevertreeAppTests.ClevertreeAppSmokeTests testHostBundleIdentifier]' started.
+Test Case '-[ClevertreeAppTests.ClevertreeAppSmokeTests testHostBundleIdentifier]' passed (0.001 seconds).
+Test Suite 'ClevertreeAppSmokeTests' passed at 2026-11-27 13:51:44.989.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ClevertreeAppTests.xctest' passed at 2026-11-27 13:51:44.989.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'All tests' passed at 2026-11-27 13:51:44.989.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+2026-11-27 13:51:44.989649-0500 ClevertreeChat[13935:4687626] [Process] WebContent process (0x12e0c00c0) took 1.272686 seconds to launch
+2026-11-27 13:51:44.990206-0500 ClevertreeChat[13935:4687626] [Process] Networking process (0x12e12c100) took 1.251064 seconds to launch
+2026-11-27 13:51:44.990387-0500 ClevertreeChat[13935:4687626] [Process] GPU process (0x12e1041e0) took 1.257029 seconds to launch
+2026-11-27 13:51:45.813832-0500 ClevertreeAppUITests-Runner[13953:4687914] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-27 13:51:46.583.
+Test Suite 'ClevertreeAppUITests.xctest' started at 2026-11-27 13:51:46.583.
+Test Suite 'ClevertreeAppUITests' started at 2026-11-27 13:51:46.584.
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testAttachmentPickerOffersPhotoLibrary]' started.
+    t =     0.00s Start Test at 2026-11-27 13:51:46.584
+    t =     0.01s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.22s         Setting up automation session
+    t =     0.95s         Wait for chat.clevertree.app to idle
+    t =     2.16s Waiting 10.0s for WebView (First Match) to exist
+    t =     3.25s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     3.25s         Checking existence of `WebView (First Match)`
+    t =     3.27s Waiting 8.0s for "Attach file" Button to exist
+    t =     4.34s     Checking `Expect predicate `existsNoRetry == 1` for object "Attach file" Button`
+    t =     4.34s         Checking existence of `"Attach file" Button`
+    t =     4.40s Tap "Attach file" Button
+    t =     4.40s     Wait for chat.clevertree.app to idle
+    t =     4.40s     Find the "Attach file" Button
+    t =     4.43s     Check for interrupting elements affecting "Attach file" Button
+    t =     4.46s     Synthesize event
+    t =     4.75s     Wait for chat.clevertree.app to idle
+    t =     5.80s Waiting 6.0s for "Photo Library" Any to exist
+    t =     6.89s     Checking `Expect predicate `existsNoRetry == 1` for object "Photo Library" Any`
+    t =     6.89s         Checking existence of `"Photo Library" Any`
+    t =     6.96s Added attachment named 'Attachment picker'
+    t =     6.96s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testAttachmentPickerOffersPhotoLibrary]' passed (7.185 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testChannelMenuOpens]' started.
+    t =     0.00s Start Test at 2026-11-27 13:51:53.770
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13954
+    t =     1.33s         Setting up automation session
+    t =     1.97s         Wait for chat.clevertree.app to idle
+    t =     3.17s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.24s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.24s         Checking existence of `WebView (First Match)`
+    t =     4.27s Waiting 10.0s for "Open menu" Button to exist
+    t =     5.33s     Checking `Expect predicate `existsNoRetry == 1` for object "Open menu" Button`
+    t =     5.34s         Checking existence of `"Open menu" Button`
+    t =     5.39s Tap "Open menu" Button
+    t =     5.39s     Wait for chat.clevertree.app to idle
+    t =     5.39s     Find the "Open menu" Button
+    t =     5.43s     Check for interrupting elements affecting "Open menu" Button
+    t =     5.46s     Synthesize event
+    t =     5.75s     Wait for chat.clevertree.app to idle
+    t =     5.78s Added attachment named 'Room drawer'
+    t =     5.78s Waiting 6.0s for "List channels" Any to exist
+    t =     6.86s     Checking `Expect predicate `existsNoRetry == 1` for object "List channels" Any`
+    t =     6.87s         Checking existence of `"List channels" Any`
+    t =     6.93s Find the "List channels" Any
+    t =     6.98s Tap "List channels" Other
+    t =     6.98s     Wait for chat.clevertree.app to idle
+    t =     6.99s     Find the "List channels" Other
+    t =     7.03s     Check for interrupting elements affecting "List channels" Other
+    t =     7.07s     Synthesize event
+    t =     7.36s     Wait for chat.clevertree.app to idle
+    t =     8.44s Checking `Expect predicate `BLOCKPREDICATE(0x600000d15cb0)` for object WebView (First Match)`
+    t =     8.44s     Checking existence of `Any (First Match)`
+    t =     8.51s Added attachment named 'Channel list'
+    t =     8.51s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testChannelMenuOpens]' passed (8.732 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testComposerStaysAboveKeyboard]' started.
+    t =     0.00s Start Test at 2026-11-27 13:52:02.503
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13973
+    t =     1.33s         Setting up automation session
+    t =     1.94s         Wait for chat.clevertree.app to idle
+    t =     3.15s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.22s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.22s         Checking existence of `WebView (First Match)`
+    t =     4.26s Waiting 10.0s for "Message to public room" TextView to exist
+    t =     5.34s     Checking `Expect predicate `existsNoRetry == 1` for object "Message to public room" TextView`
+    t =     5.34s         Checking existence of `"Message to public room" TextView`
+    t =     5.39s Tap "Message to public room" TextView
+    t =     5.39s     Wait for chat.clevertree.app to idle
+    t =     5.39s     Find the "Message to public room" TextView
+    t =     5.42s     Check for interrupting elements affecting "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     5.45s     Synthesize event
+    t =     5.74s     Wait for chat.clevertree.app to idle
+    t =     6.10s Waiting 5.0s for Keyboard (First Match) to exist
+    t =     7.18s     Checking `Expect predicate `existsNoRetry == 1` for object Keyboard (First Match)`
+    t =     7.18s         Checking existence of `Keyboard (First Match)`
+    t =     7.19s Type 'Simulator draft' into "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.20s     Wait for chat.clevertree.app to idle
+    t =     7.20s     Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.24s     Check for interrupting elements affecting "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.27s     Synthesize event
+    t =     7.72s     Wait for chat.clevertree.app to idle
+    t =     7.73s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.77s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.81s Find the "Send" Button
+    t =     7.85s Find the "Send" Button
+    t =     7.89s Find the Keyboard (First Match)
+    t =     7.93s Added attachment named 'Composer above keyboard'
+    t =     7.93s Tap "Clevertree Chat" StaticText
+    t =     7.94s     Wait for chat.clevertree.app to idle
+    t =     7.94s     Find the "Clevertree Chat" StaticText
+    t =     7.97s     Check for interrupting elements affecting "Clevertree Chat" StaticText
+    t =     8.00s     Synthesize event
+    t =     8.29s     Wait for chat.clevertree.app to idle
+    t =     9.64s Checking `Expect predicate `exists == 0` for object Keyboard at {{0.0, 451.0}, {375.0, 216.0}}`
+    t =     9.64s     Checking existence of `Keyboard at {{0.0, 451.0}, {375.0, 216.0}}`
+    t =     9.67s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     9.73s Added attachment named 'Keyboard dismissed'
+    t =     9.73s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testComposerStaysAboveKeyboard]' passed (9.953 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testDefaultChannel]' started.
+    t =     0.00s Start Test at 2026-11-27 13:52:12.457
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:13993
+    t =     1.33s         Setting up automation session
+    t =     2.10s         Wait for chat.clevertree.app to idle
+    t =     3.31s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.38s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.38s         Checking existence of `WebView (First Match)`
+    t =     4.42s Waiting 10.0s for "#web" StaticText to exist
+    t =     5.48s     Checking `Expect predicate `existsNoRetry == 1` for object "#web" StaticText`
+    t =     5.48s         Checking existence of `"#web" StaticText`
+    t =     5.54s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testDefaultChannel]' passed (5.757 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait]' started.
+    t =     0.00s Start Test at 2026-11-27 13:52:18.214
+    t =     0.01s Set Up
+    t =     0.01s Open chat.clevertree.app
+    t =     0.01s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:14035
+    t =     1.33s         Setting up automation session
+    t =     1.94s         Wait for chat.clevertree.app to idle
+    t =     3.15s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.22s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.22s         Checking existence of `WebView (First Match)`
+/Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/UITests/ClevertreeAppUITests.swift:78: -[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait] : Test skipped - Orientation smoke test runs on iPad.
+    t =     4.27s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait]' skipped (4.488 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testLaunchRoom]' started.
+    t =     0.00s Start Test at 2026-11-27 13:52:22.703
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:14056
+    t =     1.33s         Setting up automation session
+    t =     2.22s         Wait for chat.clevertree.app to idle
+    t =     3.44s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.52s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.52s         Checking existence of `WebView (First Match)`
+    t =     4.55s Waiting 10.0s for "Open menu" Button to exist
+    t =     5.63s     Checking `Expect predicate `existsNoRetry == 1` for object "Open menu" Button`
+    t =     5.63s         Checking existence of `"Open menu" Button`
+    t =     5.67s Checking existence of `"Attach file" Button`
+    t =     5.70s Checking existence of `"Record audio" Button`
+    t =     5.74s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testLaunchRoom]' passed (5.967 seconds).
+Test Suite 'ClevertreeAppUITests' passed at 2026-11-27 13:52:28.670.
+	 Executed 6 tests, with 1 test skipped and 0 failures (0 unexpected) in 42.082 (42.086) seconds
+Test Suite 'ClevertreeAppUITests.xctest' passed at 2026-11-27 13:52:28.671.
+	 Executed 6 tests, with 1 test skipped and 0 failures (0 unexpected) in 42.082 (42.088) seconds
+Test Suite 'All tests' passed at 2026-11-27 13:52:28.673.
+	 Executed 6 tests, with 1 test skipped and 0 failures (0 unexpected) in 42.082 (42.090) seconds
+2026-11-27 13:52:28.978 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 47.276 elapsed -- Testing started completed.
+2026-11-27 13:52:28.978 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-27 13:52:28.978 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 47.276 sec, +47.276 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/clevertree-final.xcresult
+
+** TEST SUCCEEDED **
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (6 targets)
+    Target 'ClevertreeAppUITests' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeApp' in project 'ClevertreeApp'
+    Target 'ClevertreeAppTests' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeApp' in project 'ClevertreeApp'
+    Target 'ClevertreeApp' in project 'ClevertreeApp'
+        ➜ Explicit dependency on target 'ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom' in project 'ClevertreeRoom'
+        ➜ Explicit dependency on target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom'
+    Target 'ClevertreeRoom_ClevertreeRoom' in project 'ClevertreeRoom' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: c06985790cfe1a1db377c255940fd350
+Build description path: /tmp/clevertree-ios-build/Build/Intermediates.noindex/XCBuildData/c06985790cfe1a1db377c255940fd350.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk /tmp/clevertree-ios-build/SDKStatCaches.noindex/iphonesimulator26.2-23C57-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/ClevertreeApp.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -o /tmp/clevertree-ios-build/SDKStatCaches.noindex/iphonesimulator26.2-23C57-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+
+ProcessInfoPlistFile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.bundle/Info.plist /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeRoom.build/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.build/empty-ClevertreeRoom_ClevertreeRoom.plist (in target 'ClevertreeRoom_ClevertreeRoom' from project 'ClevertreeRoom')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeRoom
+    builtin-infoPlistUtility /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeRoom.build/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.build/empty-ClevertreeRoom_ClevertreeRoom.plist -producttype com.apple.product-type.bundle -expandbuildsettings -format binary -platform iphonesimulator -o /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeRoom_ClevertreeRoom.bundle/Info.plist
+
+CompileAssetCatalogVariant thinned /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets --compile /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_dependencies_thinned --output-partial-info-plist /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --filter-for-thinning-device-configuration iPad13,18 --filter-for-device-os-version 26.3.1 --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 16.0 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_thinned
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+/tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned/Assets.car
+
+
+LinkAssetCatalog /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Assets.xcassets (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-linkAssetCatalog --thinned /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/thinned --thinned-dependencies /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist_unthinned --output /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app --plist-output /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist
+note: Emplaced /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/AppIcon76x76@2x~ipad.png (in target 'ClevertreeApp' from project 'ClevertreeApp')
+note: Emplaced /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/AppIcon60x60@2x.png (in target 'ClevertreeApp' from project 'ClevertreeApp')
+note: Emplaced /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Assets.car (in target 'ClevertreeApp' from project 'ClevertreeApp')
+
+ProcessInfoPlistFile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Info.plist /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Info.plist (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-infoPlistUtility /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp/Resources/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/ClevertreeRoom_ClevertreeRoom.bundle -o /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Info.plist
+
+CopySwiftLibs /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app (in target 'ClevertreeApp' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/ClevertreeChat.debug.dylib --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Frameworks --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/SystemExtensions --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeApp.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+CopySwiftLibs /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest (in target 'ClevertreeAppTests' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/ClevertreeAppTests --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Frameworks --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/PlugIns --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/SystemExtensions --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeChat.app/PlugIns/ClevertreeAppTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeAppTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+CopySwiftLibs /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest (in target 'ClevertreeAppUITests' from project 'ClevertreeApp')
+    cd /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeApp
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/ClevertreeAppUITests --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/Frameworks --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/PlugIns --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/SystemExtensions --scan-folder /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/clevertree-ios-build/Build/Products/Debug-iphonesimulator/ClevertreeAppUITests-Runner.app/PlugIns/ClevertreeAppUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/clevertree-ios-build/Build/Intermediates.noindex/ClevertreeApp.build/Debug-iphonesimulator/ClevertreeAppUITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+Ignoring --strip-bitcode because --sign was not passed
+
+2026-11-27 13:52:35.170113-0500 ClevertreeChat[14142:4691608] [default] Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 42C075C6-6D2C-486E-8588-391BC4AAF1DF])
+Test Suite 'All tests' started at 2026-11-27 13:52:36.462.
+Test Suite 'ClevertreeAppTests.xctest' started at 2026-11-27 13:52:36.463.
+Test Suite 'ClevertreeAppSmokeTests' started at 2026-11-27 13:52:36.463.
+Test Case '-[ClevertreeAppTests.ClevertreeAppSmokeTests testHostBundleIdentifier]' started.
+Test Case '-[ClevertreeAppTests.ClevertreeAppSmokeTests testHostBundleIdentifier]' passed (0.001 seconds).
+Test Suite 'ClevertreeAppSmokeTests' passed at 2026-11-27 13:52:36.464.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ClevertreeAppTests.xctest' passed at 2026-11-27 13:52:36.464.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'All tests' passed at 2026-11-27 13:52:36.464.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+2026-11-27 13:52:36.464218-0500 ClevertreeChat[14142:4691486] [Process] WebContent process (0x10e0c00c0) took 1.318212 seconds to launch
+2026-11-27 13:52:36.464608-0500 ClevertreeChat[14142:4691486] [Process] Networking process (0x10e128100) took 1.294930 seconds to launch
+2026-11-27 13:52:36.464846-0500 ClevertreeChat[14142:4691486] [Process] GPU process (0x10e1081e0) took 1.304715 seconds to launch
+2026-11-27 13:52:37.299471-0500 ClevertreeAppUITests-Runner[14162:4691806] [Default] Running tests...
+2026-11-27 13:52:37.313143-0500 ClevertreeAppUITests-Runner[14162:4691806] [UIKit App Config] Update the Info.plist: Launch screens will soon be required.
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-27 13:52:38.021.
+Test Suite 'ClevertreeAppUITests.xctest' started at 2026-11-27 13:52:38.021.
+Test Suite 'ClevertreeAppUITests' started at 2026-11-27 13:52:38.021.
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testAttachmentPickerOffersPhotoLibrary]' started.
+    t =     0.00s Start Test at 2026-11-27 13:52:38.022
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.23s         Setting up automation session
+    t =     0.84s         Wait for chat.clevertree.app to idle
+    t =     2.07s Waiting 10.0s for WebView (First Match) to exist
+    t =     3.15s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     3.15s         Checking existence of `WebView (First Match)`
+    t =     3.18s Waiting 8.0s for "Attach file" Button to exist
+    t =     4.26s     Checking `Expect predicate `existsNoRetry == 1` for object "Attach file" Button`
+    t =     4.26s         Checking existence of `"Attach file" Button`
+    t =     4.32s Tap "Attach file" Button
+    t =     4.32s     Wait for chat.clevertree.app to idle
+    t =     4.32s     Find the "Attach file" Button
+    t =     4.35s     Check for interrupting elements affecting "Attach file" Button
+    t =     4.38s         Wait for com.apple.springboard to idle
+    t =     4.40s     Synthesize event
+    t =     4.69s     Wait for chat.clevertree.app to idle
+    t =     5.75s Waiting 6.0s for "Photo Library" Any to exist
+    t =     6.83s     Checking `Expect predicate `existsNoRetry == 1` for object "Photo Library" Any`
+    t =     6.83s         Checking existence of `"Photo Library" Any`
+    t =     6.95s Added attachment named 'Attachment picker'
+    t =     6.95s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testAttachmentPickerOffersPhotoLibrary]' passed (7.181 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testChannelMenuOpens]' started.
+    t =     0.00s Start Test at 2026-11-27 13:52:45.204
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:14165
+    t =     1.33s         Setting up automation session
+    t =     2.00s         Wait for chat.clevertree.app to idle
+    t =     3.22s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.29s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.29s         Checking existence of `WebView (First Match)`
+    t =     4.32s Waiting 10.0s for "Open menu" Button to exist
+    t =     5.38s     Checking `Expect predicate `existsNoRetry == 1` for object "Open menu" Button`
+    t =     5.38s         Checking existence of `"Open menu" Button`
+    t =     5.44s Tap "Open menu" Button
+    t =     5.44s     Wait for chat.clevertree.app to idle
+    t =     5.44s     Find the "Open menu" Button
+    t =     5.48s     Check for interrupting elements affecting "Open menu" Button
+    t =     5.50s         Wait for com.apple.springboard to idle
+    t =     5.51s     Synthesize event
+    t =     5.81s     Wait for chat.clevertree.app to idle
+    t =     5.89s Added attachment named 'Room drawer'
+    t =     5.89s Waiting 6.0s for "List channels" Any to exist
+    t =     6.97s     Checking `Expect predicate `existsNoRetry == 1` for object "List channels" Any`
+    t =     6.97s         Checking existence of `"List channels" Any`
+    t =     7.03s Find the "List channels" Any
+    t =     7.08s Tap "List channels" Other
+    t =     7.08s     Wait for chat.clevertree.app to idle
+    t =     7.08s     Find the "List channels" Other
+    t =     7.13s     Check for interrupting elements affecting "List channels" Other
+    t =     7.15s         Wait for com.apple.springboard to idle
+    t =     7.17s     Synthesize event
+    t =     7.46s     Wait for chat.clevertree.app to idle
+    t =     8.54s Checking `Expect predicate `BLOCKPREDICATE(0x600000d2c090)` for object WebView (First Match)`
+    t =     8.54s     Checking existence of `Any (First Match)`
+    t =     8.68s Added attachment named 'Channel list'
+    t =     8.68s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testChannelMenuOpens]' passed (8.926 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testComposerStaysAboveKeyboard]' started.
+    t =     0.00s Start Test at 2026-11-27 13:52:54.131
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:14178
+    t =     1.33s         Setting up automation session
+    t =     1.94s         Wait for chat.clevertree.app to idle
+    t =     3.16s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.23s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.23s         Checking existence of `WebView (First Match)`
+    t =     4.26s Waiting 10.0s for "Message to public room" TextView to exist
+    t =     5.33s     Checking `Expect predicate `existsNoRetry == 1` for object "Message to public room" TextView`
+    t =     5.34s         Checking existence of `"Message to public room" TextView`
+    t =     5.39s Tap "Message to public room" TextView
+    t =     5.39s     Wait for chat.clevertree.app to idle
+    t =     5.39s     Find the "Message to public room" TextView
+    t =     5.42s     Check for interrupting elements affecting "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     5.46s         Wait for com.apple.springboard to idle
+    t =     5.47s     Synthesize event
+    t =     5.76s     Wait for chat.clevertree.app to idle
+    t =     6.14s Waiting 5.0s for Keyboard (First Match) to exist
+    t =     7.22s     Checking `Expect predicate `existsNoRetry == 1` for object Keyboard (First Match)`
+    t =     7.22s         Checking existence of `Keyboard (First Match)`
+    t =     7.24s Type 'Simulator draft' into "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.24s     Wait for chat.clevertree.app to idle
+    t =     7.24s     Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.28s     Check for interrupting elements affecting "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.32s         Wait for com.apple.springboard to idle
+    t =     7.33s     Synthesize event
+    t =     7.78s     Wait for chat.clevertree.app to idle
+    t =     7.79s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.83s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     7.88s Find the "Send" Button
+    t =     7.92s Find the "Send" Button
+    t =     7.96s Find the Keyboard (First Match)
+    t =     8.06s Added attachment named 'Composer above keyboard'
+    t =     8.06s Tap "Clevertree Chat" StaticText
+    t =     8.06s     Wait for chat.clevertree.app to idle
+    t =     8.06s     Find the "Clevertree Chat" StaticText
+    t =     8.09s     Check for interrupting elements affecting "Clevertree Chat" StaticText
+    t =     8.12s         Wait for com.apple.springboard to idle
+    t =     8.14s     Synthesize event
+    t =     8.43s     Wait for chat.clevertree.app to idle
+    t =     9.77s Checking `Expect predicate `exists == 0` for object Keyboard at {{0.0, 898.0}, {820.0, 279.0}}`
+    t =     9.78s     Checking existence of `Keyboard at {{0.0, 898.0}, {820.0, 279.0}}`
+    t =     9.81s Find the "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…" TextView
+    t =     9.92s Added attachment named 'Keyboard dismissed'
+    t =     9.92s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testComposerStaysAboveKeyboard]' passed (10.172 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testDefaultChannel]' started.
+    t =     0.00s Start Test at 2026-11-27 13:53:04.304
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:14198
+    t =     1.24s         Setting up automation session
+    t =     1.92s         Wait for chat.clevertree.app to idle
+    t =     3.15s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.21s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.21s         Checking existence of `WebView (First Match)`
+    t =     4.24s Waiting 10.0s for "#web" StaticText to exist
+    t =     5.31s     Checking `Expect predicate `existsNoRetry == 1` for object "#web" StaticText`
+    t =     5.31s         Checking existence of `"#web" StaticText`
+    t =     5.37s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testDefaultChannel]' passed (5.596 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait]' started.
+    t =     0.00s Start Test at 2026-11-27 13:53:09.901
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:14587
+    t =     1.33s         Setting up automation session
+    t =     1.94s         Wait for chat.clevertree.app to idle
+    t =     3.18s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.26s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.26s         Checking existence of `WebView (First Match)`
+    t =     4.29s Setting device orientation to Landscape Left
+    t =     4.29s     Device orientation changed to Landscape Left
+    t =     4.34s     Interface orientation changed to Landscape Right
+    t =     4.34s     Wait for chat.clevertree.app to idle
+    t =     4.34s     Wait for com.apple.springboard to idle
+    t =     5.41s Checking `Expect predicate `BLOCKPREDICATE(0x600000d242d0)` for object Window (First Match)`
+    t =     5.41s     Find the Window (First Match)
+    t =     5.42s     Find the Window at {{0.0, 0.0}, {1180.0, 820.0}}
+    t =     5.43s Find the "Open menu" Button
+    t =     5.56s Added attachment named 'iPad landscape'
+    t =     5.56s Setting device orientation to Portrait
+    t =     5.56s     Device orientation changed to Portrait
+    t =     5.61s     Interface orientation changed to Portrait
+    t =     5.61s     Wait for chat.clevertree.app to idle
+    t =     6.01s     Wait for com.apple.springboard to idle
+    t =     7.53s Checking `Expect predicate `BLOCKPREDICATE(0x600000d20810)` for object Window (First Match)`
+    t =     7.53s     Find the Window (First Match)
+    t =     7.54s     Find the Window at {{0.0, 0.0}, {820.0, 1180.0}}
+    t =     7.55s Find the "Open menu" Button
+    t =     7.67s Added attachment named 'iPad portrait'
+    t =     7.67s Setting device orientation to Portrait
+    t =     7.67s     Wait for chat.clevertree.app to idle
+    t =     7.67s     Wait for com.apple.springboard to idle
+    t =     7.67s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testIPadRoomSupportsLandscapeAndPortrait]' passed (7.911 seconds).
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testLaunchRoom]' started.
+    t =     0.00s Start Test at 2026-11-27 13:53:17.812
+    t =     0.02s Set Up
+    t =     0.02s Open chat.clevertree.app
+    t =     0.02s     Launch chat.clevertree.app
+    t =     0.02s         Terminate chat.clevertree.app:14610
+    t =     1.32s         Setting up automation session
+    t =     1.97s         Wait for chat.clevertree.app to idle
+    t =     3.19s Waiting 10.0s for WebView (First Match) to exist
+    t =     4.24s     Checking `Expect predicate `existsNoRetry == 1` for object WebView (First Match)`
+    t =     4.24s         Checking existence of `WebView (First Match)`
+    t =     4.27s Waiting 10.0s for "Open menu" Button to exist
+    t =     5.31s     Checking `Expect predicate `existsNoRetry == 1` for object "Open menu" Button`
+    t =     5.31s         Checking existence of `"Open menu" Button`
+    t =     5.38s Checking existence of `"Attach file" Button`
+    t =     5.41s Checking existence of `"Record audio" Button`
+    t =     5.45s Tear Down
+Test Case '-[ClevertreeAppUITests.ClevertreeAppUITests testLaunchRoom]' passed (5.702 seconds).
+Test Suite 'ClevertreeAppUITests' passed at 2026-11-27 13:53:23.515.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 45.488 (45.494) seconds
+Test Suite 'ClevertreeAppUITests.xctest' passed at 2026-11-27 13:53:23.516.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 45.488 (45.495) seconds
+Test Suite 'All tests' passed at 2026-11-27 13:53:23.516.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 45.488 (45.496) seconds
+2026-11-27 13:53:23.818 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 50.710 elapsed -- Testing started completed.
+2026-11-27 13:53:23.818 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-27 13:53:23.818 xcodebuild[13692:4676106] [MT] IDETestOperationsObserverDebug: 50.710 sec, +50.710 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/clevertree-final.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+Testing started
+Testing started

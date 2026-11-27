@@ -1,0 +1,150 @@
+/**
+ * Map active-tab host → IRC channel + attribution context.
+ * Product hosts → repo channel; Clevertree Chat site + everyone else →
+ * universal #web (same channel as https://clevertree.chat/chat) + [[d:domain]] when needed.
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) {
+    module.exports = factory();
+  } else {
+    root.CleverTreeChannelRoute = factory();
+  }
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  var PT_HOSTS = {
+    "paradigmthreat.net": 1,
+    "www.paradigmthreat.net": 1,
+    "old.paradigmthreat.net": 1,
+  };
+  var MP_HOSTS = {
+    "myproblem.app": 1,
+    "www.myproblem.app": 1,
+  };
+  /** Product hosts that share #web without domain attribution tags. */
+  var CT_HOSTS = {
+    "clevertree.chat": 1,
+    "clevertree.net": 1,
+    "quizgate.app": 1,
+    "api.clevertree.chat": 1,
+  };
+  var SW_HOSTS = {
+    "songwalker.net": 1,
+    "www.songwalker.net": 1,
+  };
+  var SNES_HOSTS = {
+    "snesology.org": 1,
+    "www.snesology.org": 1,
+  };
+
+  function normalizeHost(host) {
+    var h = String(host || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .split("/")[0]
+      .split(":")[0];
+    if (h.indexOf("www.") === 0) h = h.slice(4);
+    return h;
+  }
+
+  /**
+   * @returns {{ channel: string, title: string, topicId: number|null, domain: string, repo: string }}
+   */
+  function routeForUrl(href, opts) {
+    opts = opts || {};
+    var domain = "";
+    try {
+      var u = new URL(href);
+      domain = normalizeHost(u.hostname);
+    } catch (e) {
+      domain = normalizeHost(href);
+    }
+    // Explicit channel always wins (dedicated product rooms, embeds, CE attrs).
+    if (opts.channel) {
+      var chOpt = String(opts.channel).trim();
+      if (chOpt.charAt(0) !== "#") chOpt = "#" + chOpt;
+      return {
+        channel: chOpt,
+        title: opts.title || "Public room",
+        topicId:
+          opts.topicId !== undefined && opts.topicId !== null
+            ? opts.topicId
+            : null,
+        domain: "",
+        repo: opts.repo || "product",
+      };
+    }
+    if (PT_HOSTS[domain] || PT_HOSTS["www." + domain]) {
+      var tid = opts.topicId !== undefined && opts.topicId !== null ? opts.topicId : 0;
+      return {
+        channel: "#pt",
+        title: "Paradigm Threat",
+        topicId: tid,
+        domain: "",
+        repo: "paradigm-threat",
+      };
+    }
+    if (MP_HOSTS[domain] || MP_HOSTS["www." + domain]) {
+      var path = "";
+      try {
+        path = new URL(href).pathname || "";
+      } catch (e2) {}
+      if (path.indexOf("ga-savannah") >= 0 || path.indexOf("savannah-cat") >= 0) {
+        return {
+          channel: "#ga-savannah-cat-rescue",
+          title: "Savannah Cat Rescue",
+          topicId: null,
+          domain: "",
+          repo: "myproblem",
+        };
+      }
+      return {
+        channel: "#mp-general",
+        title: "MyProblem general",
+        topicId: null,
+        domain: "",
+        repo: "myproblem",
+      };
+    }
+    if (CT_HOSTS[domain]) {
+      return {
+        channel: "#web",
+        title: "Clevertree Chat",
+        topicId: null,
+        domain: "",
+        repo: "public-web",
+      };
+    }
+    if (SW_HOSTS[domain] || SW_HOSTS["www." + domain]) {
+      return {
+        channel: "#songwalker",
+        title: "SongWalker",
+        topicId: null,
+        domain: "",
+        repo: "songwalker",
+      };
+    }
+    if (SNES_HOSTS[domain] || SNES_HOSTS["www." + domain]) {
+      return {
+        channel: "#snesology",
+        title: "SNESology",
+        topicId: null,
+        domain: "",
+        repo: "snesology",
+      };
+    }
+    return {
+      channel: "#web",
+      title: "Public web",
+      topicId: null,
+      domain: domain || "unknown",
+      repo: "public-web",
+    };
+  }
+
+  return {
+    normalizeHost: normalizeHost,
+    routeForUrl: routeForUrl,
+  };
+});

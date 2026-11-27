@@ -1,0 +1,39 @@
+warning: 'clevertreeroom': found 1 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /Users/ari.asulin/p/ios/clevertree-ios-handoff/A-sources/ClevertreeRoom/Sources/ClevertreeRoom/Resources/README.md
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[1/4] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Compiling ClevertreeRoom ClevertreeRoomConfig.swift
+[4/7] Compiling ClevertreeRoom ClevertreeRoomAssetSchemeHandler.swift
+[5/7] Emitting module ClevertreeRoom
+[6/9] Compiling ClevertreeRoomTests ClevertreeRoomConfigTests.swift
+[7/9] Emitting module ClevertreeRoomTests
+[8/11] Compiling ClevertreeRoomPackageTests runner.swift
+[9/11] Emitting module ClevertreeRoomPackageTests
+[9/11] Write Objects.LinkFileList
+[10/11] Linking ClevertreeRoomPackageTests
+Build complete! (12.69s)
+Test Suite 'All tests' started at 2026-11-27 13:45:26.517.
+Test Suite 'ClevertreeRoomPackageTests.xctest' started at 2026-11-27 13:45:26.518.
+Test Suite 'ClevertreeRoomConfigTests' started at 2026-11-27 13:45:26.518.
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetPathIsStable]' started.
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetPathIsStable]' passed (0.001 seconds).
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetUrlEncodesOptionalFields]' started.
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetUrlEncodesOptionalFields]' passed (0.000 seconds).
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetUrlIgnoresInvalidTheme]' started.
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetUrlIgnoresInvalidTheme]' passed (0.000 seconds).
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetUrlIncludesApiChannelAndTitle]' started.
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testAssetUrlIncludesApiChannelAndTitle]' passed (0.000 seconds).
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testDefaultChannelIsUniversalWeb]' started.
+Test Case '-[ClevertreeRoomTests.ClevertreeRoomConfigTests testDefaultChannelIsUniversalWeb]' passed (0.000 seconds).
+Test Suite 'ClevertreeRoomConfigTests' passed at 2026-11-27 13:45:26.521.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'ClevertreeRoomPackageTests.xctest' passed at 2026-11-27 13:45:26.521.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'All tests' passed at 2026-11-27 13:45:26.521.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.004) seconds
+◇ Test run started.
+↳ Testing Library Version: 1501
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.002 seconds.

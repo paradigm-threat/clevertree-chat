@@ -1,0 +1,4 @@
+audio CLEVERTREE_INSPECTOR {"url":"clevertree-room://appassets.clevertree.local/clevertree-room/live.html","draftLabel":"Message to public room","channel":"#web","secureContext":true,"mediaDevicesExposed":true,"webKitVersion":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
+audio CLEVERTREE_MEDIA {"state":"device available","kinds":["audio"]}
+video CLEVERTREE_INSPECTOR {"url":"clevertree-room://appassets.clevertree.local/clevertree-room/live.html","draftLabel":"Message to public room","channel":"#web","secureContext":true,"mediaDevicesExposed":true,"webKitVersion":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"}
+video CLEVERTREE_MEDIA {"state":"device available","kinds":["video"]}

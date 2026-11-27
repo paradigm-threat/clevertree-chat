@@ -3,11 +3,21 @@
 
 api.clevertree.chat {
 	encode zstd gzip
+	# API + embed host is not the SEO surface (clevertree.chat is).
+	header X-Robots-Tag "noindex, nofollow"
 	reverse_proxy 127.0.0.1:8790
 }
 
 intake.myproblem.app {
 	encode zstd gzip
+
+	handle /robots.txt {
+		header Content-Type "text/plain; charset=utf-8"
+		header X-Robots-Tag "noindex, nofollow"
+		respond `User-agent: *
+Disallow: /
+` 200
+	}
 
 	handle /chat* {
 		reverse_proxy 127.0.0.1:8790
@@ -29,7 +39,9 @@ intake.myproblem.app {
 	}
 
 	# Ticket gateway (:8787) not yet cut over to Linode — return clear 503.
+	# Keep Google from treating the apex as an indexable 404/soft-404.
 	handle {
+		header X-Robots-Tag "noindex, nofollow"
 		respond "Intake ticket gateway not yet on Linode pub1" 503
 	}
 }

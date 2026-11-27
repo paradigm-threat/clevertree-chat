@@ -162,6 +162,7 @@ test.describe("room composer chrome", () => {
     await page.goto(liveUrl());
     const room = page.locator(".room, .ct-room").first();
     await expect(room).toBeVisible({ timeout: 15_000 });
+    await expect(room).toHaveAttribute("data-chrome", "desktop");
     const history = page.locator('[data-role="history"]');
     await history.click({ position: { x: 40, y: 40 } });
     await expect
@@ -186,6 +187,9 @@ test.describe("room composer chrome", () => {
         const titles = document.querySelector(
           ".si-rail-titles"
         ) as HTMLElement | null;
+        const gSi = document.querySelector(
+          '[data-role="gutter-si"]'
+        ) as HTMLElement | null;
         if (!body || !si || !chat || !composer || !fab || !titles) return null;
         const cs = getComputedStyle(body);
         const contentH =
@@ -194,15 +198,20 @@ test.describe("room composer chrome", () => {
           parseFloat(cs.paddingBottom);
         const fabR = fab.getBoundingClientRect();
         const titlesR = titles.getBoundingClientRect();
+        const bodyW = body.clientWidth;
         return {
           contentH,
           si: si.getBoundingClientRect().height,
           chat: chat.getBoundingClientRect().height,
           composer: composer.getBoundingClientRect().height,
+          siW: si.getBoundingClientRect().width,
+          coW: composer.getBoundingClientRect().width,
+          bodyW,
           siCollapsed: si.classList.contains("si-collapsed"),
           composerCollapsed: composer.classList.contains("composer-collapsed"),
           fabLeftOfTitles: fabR.left < titlesR.left,
           fabRightOfTitles: fabR.right > titlesR.right,
+          gutterVisible: !!(gSi && !gSi.hidden),
           orient: o,
         };
       }, orient);
@@ -213,17 +222,175 @@ test.describe("room composer chrome", () => {
       expect(m, orient).toBeTruthy();
       expect(m!.siCollapsed).toBe(true);
       expect(m!.composerCollapsed).toBe(true);
+      expect(m!.gutterVisible).toBe(true);
       for (const key of ["si", "chat", "composer"] as const) {
         expect(
           Math.abs(m![key] - m!.contentH),
           `${orient} ${key} ${m![key]} vs content ${m!.contentH}`
         ).toBeLessThanOrEqual(2);
       }
+      /* Desktop panels default near one-third width. */
+      expect(m!.siW / m!.bodyW).toBeGreaterThan(0.22);
+      expect(m!.siW / m!.bodyW).toBeLessThan(0.42);
+      expect(m!.coW / m!.bodyW).toBeGreaterThan(0.22);
+      expect(m!.coW / m!.bodyW).toBeLessThan(0.42);
       if (orient === "left") {
         expect(m!.fabLeftOfTitles, "left: FAB outer/left").toBe(true);
       } else {
         expect(m!.fabRightOfTitles, "right: FAB outer/right").toBe(true);
       }
     }
+  });
+
+  test("desktop gutters resize SI and composer widths", async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 700 });
+    await page.goto(liveUrl());
+    const room = page.locator(".room, .ct-room").first();
+    await expect(room).toHaveAttribute("data-chrome", "desktop");
+    /* Ensure three-column layout so SI gutter is between SI and chat. */
+    await page.evaluate(() => {
+      try {
+        localStorage.setItem("clevertree.room.layoutMode", "split");
+      } catch (_) {}
+      const el = document.querySelector(".room") as HTMLElement | null;
+      if (el) el.setAttribute("data-layout", "split");
+      const body = document.querySelector(".room .body") as HTMLElement | null;
+      if (body) body.setAttribute("data-layout", "split");
+      const si = document.querySelector('[data-role="si"]') as HTMLElement | null;
+      if (si) {
+        si.classList.add("si-expanded");
+        si.classList.remove("si-collapsed");
+        si.setAttribute("data-expanded", "true");
+      }
+    });
+    const gutter = page.locator('[data-role="gutter-si"]');
+    await expect(gutter).not.toHaveAttribute("hidden", "");
+    await expect
+      .poll(async () => {
+        const box = await gutter.boundingBox();
+        return box && box.width > 0 && box.height > 0;
+      })
+      .toBe(true);
+
+    const before = await page.evaluate(() => {
+      const si = document.querySelector('[data-role="si"]') as HTMLElement;
+      return si.getBoundingClientRect().width;
+    });
+
+    const box = await gutter.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box!.x + 80, box!.y + box!.height / 2, { steps: 8 });
+    await page.mouse.up();
+
+    const after = await page.evaluate(() => {
+      const si = document.querySelector('[data-role="si"]') as HTMLElement;
+      return {
+        w: si.getBoundingClientRect().width,
+        var: getComputedStyle(document.querySelector(".room") as HTMLElement)
+          .getPropertyValue("--ct-si-w")
+          .trim(),
+      };
+    });
+    expect(after.w).toBeGreaterThan(before + 20);
+    expect(after.var).toMatch(/%$/);
+  });
+
+  test("portrait: drag down on SI / drag up on composer open chrome", async ({
+    page,
+  }) => {
+    await openRoom(page);
+    const history = page.locator('[data-role="history"]');
+    const composer = page.locator('[data-role="composer"]');
+    const si = page.locator('[data-role="si"]');
+
+    await history.click({ position: { x: 24, y: 40 } });
+    await expect
+      .poll(async () => (await composerExpanded(page)).expanded)
+      .toBe(false);
+
+    const siBox = await si.boundingBox();
+    expect(siBox).toBeTruthy();
+    const sx = siBox!.x + siBox!.width / 2;
+    const sy = siBox!.y + Math.min(20, siBox!.height / 2);
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.mouse.move(sx, sy + 80, { steps: 10 });
+    await page.mouse.up();
+    await expect
+      .poll(async () =>
+        si.evaluate((el) => el.classList.contains("si-expanded"))
+      )
+      .toBe(true);
+    await expect(composer).toHaveClass(/composer-collapsed/);
+
+    await history.click({ position: { x: 24, y: 40 } });
+    await expect
+      .poll(async () =>
+        si.evaluate((el) => el.classList.contains("si-collapsed"))
+      )
+      .toBe(true);
+
+    const coBox = await composer.boundingBox();
+    expect(coBox).toBeTruthy();
+    const cx = coBox!.x + coBox!.width / 2;
+    const cy = coBox!.y + Math.max(12, coBox!.height - 12);
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx, cy - 80, { steps: 10 });
+    await page.mouse.up();
+    await expect
+      .poll(async () => (await composerExpanded(page)).expanded)
+      .toBe(true);
+    await expect(si).toHaveClass(/si-collapsed/);
+  });
+
+  test("landscape: drag down on SI / drag up on composer open chrome", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(liveUrl());
+    const history = page.locator('[data-role="history"]');
+    const composer = page.locator('[data-role="composer"]');
+    const si = page.locator('[data-role="si"]');
+    await expect(history).toBeVisible({ timeout: 15_000 });
+
+    await history.click({ position: { x: 24, y: 40 } });
+    await expect
+      .poll(async () => (await composerExpanded(page)).expanded)
+      .toBe(false);
+
+    const siBox = await si.boundingBox();
+    expect(siBox).toBeTruthy();
+    const sx = siBox!.x + siBox!.width / 2;
+    const sy = siBox!.y + 24;
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.mouse.move(sx, sy + 80, { steps: 10 });
+    await page.mouse.up();
+    await expect
+      .poll(async () =>
+        si.evaluate((el) => el.classList.contains("si-expanded"))
+      )
+      .toBe(true);
+
+    await history.click({ position: { x: 24, y: 40 } });
+    await expect
+      .poll(async () => (await composerExpanded(page)).expanded)
+      .toBe(false);
+
+    const coBox = await composer.boundingBox();
+    expect(coBox).toBeTruthy();
+    const cx = coBox!.x + coBox!.width / 2;
+    const cy = coBox!.y + Math.max(16, coBox!.height - 16);
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx, cy - 80, { steps: 10 });
+    await page.mouse.up();
+    await expect
+      .poll(async () => (await composerExpanded(page)).expanded)
+      .toBe(true);
   });
 });

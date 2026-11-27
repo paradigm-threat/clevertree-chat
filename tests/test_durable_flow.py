@@ -372,6 +372,42 @@ class HttpApiE2ETests(unittest.TestCase):
             except Exception as exc:
                 self.assertIn("400", str(exc))
 
+    def test_static_allowlist_blocks_repo_exposure(self):
+        """Public host must not directory-list or serve app/source paths."""
+        with request.urlopen(self.base + "/robots.txt", timeout=15) as resp:
+            robots = resp.read().decode()
+            self.assertIn("Disallow: /", robots)
+            self.assertIn("noindex", (resp.headers.get("X-Robots-Tag") or "").lower())
+        with request.urlopen(self.base + "/chat", timeout=15) as resp:
+            html = resp.read().decode()
+            self.assertTrue(
+                "data-clevertree-board" in html or "clevertree-room" in html,
+                "chat shell missing",
+            )
+            self.assertIn("noindex", (resp.headers.get("X-Robots-Tag") or "").lower())
+        for path in (
+            "/",
+            "/scripts/",
+            "/scripts/chat_host.py",
+            "/clevertree_chat/",
+            "/infra/",
+            "/requirements.txt",
+            "/var/clevertree-live/",
+            "/.git/HEAD",
+        ):
+            try:
+                with request.urlopen(self.base + path, timeout=10) as resp:
+                    self.fail(f"expected 404 for {path}, got {resp.status}")
+            except Exception as exc:
+                self.assertIn("404", str(exc), msg=path)
+            # HEAD must also 404 (base class would otherwise serve files).
+            head_req = request.Request(self.base + path, method="HEAD")
+            try:
+                with request.urlopen(head_req, timeout=10) as resp:
+                    self.fail(f"expected HEAD 404 for {path}, got {resp.status}")
+            except Exception as exc:
+                self.assertIn("404", str(exc), msg=f"HEAD {path}")
+
     def test_http_website_room_empty_until_submit(self):
         """ /chat/w parity: resolve leaves SoT empty; first submit creates topic. """
         slug = f"e2e-site-{int(time.time())}"
@@ -390,8 +426,11 @@ class HttpApiE2ETests(unittest.TestCase):
         # HTML board route serves chat shell for /chat/w/...
         with request.urlopen(self.base + f"/chat/w/example.com/{slug}", timeout=15) as resp:
             html = resp.read().decode()
-        self.assertIn("data-clevertree-board", html)
-        self.assertIn("/chat/w", html)  # script handles w mode
+        self.assertTrue(
+            "room-root" in html or "data-clevertree-board" in html,
+            "chat shell missing",
+        )
+        self.assertIn("clevertree-room", html)
 
         marker = f"website-first-{int(time.time())}"
         filed = self._post(

@@ -1,0 +1,70 @@
+{
+  "schema": "clevertree.channel-policy.v1",
+  "notes": "Per-repo channel topology. One IRC channel can host many topics via context tags. #web is the universal channel — same room as clevertree.chat/chat and the Clevertree Chat app default.",
+  "repos": {
+    "paradigm-threat": {
+      "hosts": ["paradigmthreat.net", "www.paradigmthreat.net", "old.paradigmthreat.net"],
+      "default_channel": "#pt",
+      "channels": ["#pt"],
+      "topic_via": "context_tags",
+      "topics_url": "/chat/topics.json",
+      "consolidate_from_prefix": "#pt-"
+    },
+    "myproblem": {
+      "hosts": ["myproblem.app", "www.myproblem.app"],
+      "default_channel": "#mp-general",
+      "demo_allowlist": ["mp-general", "ga-savannah-cat-rescue"],
+      "channels": {
+        "mp-general": {
+          "irc_channel": "#mp-general",
+          "title": "MyProblem general",
+          "path": "/c/mp-general"
+        },
+        "ga-savannah-cat-rescue": {
+          "irc_channel": "#ga-savannah-cat-rescue",
+          "title": "Savannah Cat Rescue",
+          "collection_id": "savannah-cat-rescue",
+          "path": "/c/ga-savannah-cat-rescue"
+        }
+      }
+    },
+    "public-web": {
+      "default_channel": "#web",
+      "channels": ["#web"],
+      "topic_via": "domain_tag",
+      "notes": "Universal room (#web): Clevertree Chat website + app + unassigned embeds; attribution [[d:host]] for non-product hosts"
+    },
+    "songwalker": {
+      "hosts": ["songwalker.net", "www.songwalker.net"],
+      "default_channel": "#songwalker",
+      "channels": ["#songwalker"],
+      "notes": "SongWalker product room — dedicated IRC channel"
+    },
+    "snesology": {
+      "hosts": ["snesology.org", "www.snesology.org"],
+      "default_channel": "#snesology",
+      "channels": ["#snesology"],
+      "notes": "SNESology product room — dedicated IRC channel"
+    }
+  },
+  "product_hosts": {
+    "clevertree.chat": { "repo": "public-web", "channel": "#web" },
+    "www.clevertree.chat": { "repo": "public-web", "channel": "#web" },
+    "clevertree.net": { "repo": "public-web", "channel": "#web" },
+    "www.clevertree.net": { "repo": "public-web", "channel": "#web" },
+    "quizgate.app": { "repo": "public-web", "channel": "#web" },
+    "www.quizgate.app": { "repo": "public-web", "channel": "#web" },
+    "api.clevertree.chat": { "repo": "public-web", "channel": "#web" },
+    "songwalker.net": { "repo": "songwalker", "channel": "#songwalker" },
+    "www.songwalker.net": { "repo": "songwalker", "channel": "#songwalker" },
+    "snesology.org": { "repo": "snesology", "channel": "#snesology" },
+    "www.snesology.org": { "repo": "snesology", "channel": "#snesology" }
+  },
+  "mirrors": [
+    "pub1.relaygateway.net",
+    "mesh1.relaygateway.net",
+    "mesh2.relaygateway.net"
+  ],
+  "anonymous_default": true,
+  "visitor_uuid_for_chat": false
+}

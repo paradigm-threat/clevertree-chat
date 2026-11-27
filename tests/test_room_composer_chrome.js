@@ -40,5 +40,39 @@ assert.ok(
   /document\.activeElement\s*!==\s*draft/.test(roomJs),
   "applyComposerClass should not re-focus when already focused"
 );
+assert.ok(
+  /function holdComposer\s*\(/.test(roomJs) &&
+    /holdComposerOpen/.test(roomJs),
+  "holdComposer must block scroll-collapse while focusing the draft"
+);
+assert.ok(
+  /function isDesktopChrome\s*\(/.test(roomJs) &&
+    /data-chrome/.test(roomJs) &&
+    /gutter-si/.test(roomJs),
+  "desktop chrome mode + resize gutters required"
+);
+assert.ok(
+  /draft\.focus\(\)/.test(roomJs) &&
+    /holdComposer\(CHROME_MS/.test(roomJs),
+  "focusComposer must focus draft in-gesture before chrome expand"
+);
+assert.ok(
+  /function wireChromeSwipe\s*\(/.test(roomJs) &&
+    /wireChromeSwipe\(aiPanel,\s*["']down["']\)/.test(roomJs) &&
+    /wireChromeSwipe\(composerEl,\s*["']up["']\)/.test(roomJs) &&
+    !/wireChromeSwipe\(history\)/.test(roomJs),
+  "swipes bind to SI/composer shells only — not scrolling history"
+);
+
+const roomCss = fs.readFileSync(
+  path.join(root, "fronts/room/clevertree-room.css"),
+  "utf8"
+);
+assert.ok(
+  /data-chrome="desktop"/.test(roomCss) &&
+    /--ct-si-w/.test(roomCss) &&
+    /col-resize/.test(roomCss),
+  "desktop CSS must expose resizable ~33% panel vars"
+);
 
 console.log("test_room_composer_chrome.js: ok");

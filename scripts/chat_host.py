@@ -31,6 +31,31 @@ UPLOAD_PATHS = {
     "/api/debate/media/upload/",
 }
 
+# Static files Google (and anyone) may fetch. Everything else under ROOT is 404 —
+# including directory listings of scripts/, clevertree_chat/, infra/, etc.
+PUBLIC_STATIC_EXACT = {
+    "/styles.css",
+    "/favicon.ico",
+    "/icon-128x128.png",
+    "/robots.txt",
+}
+PUBLIC_STATIC_PREFIXES = (
+    "/chat",
+    "/fronts/",
+)
+
+ROBOTS_TXT = """\
+User-agent: *
+Disallow: /
+Allow: /chat
+Allow: /fronts/
+Allow: /styles.css
+Allow: /favicon.ico
+Allow: /icon-128x128.png
+
+# Indexing SoT is https://clevertree.chat (Vercel). This host is API + embed UI.
+"""
+
 
 def _parse_multipart(content_type: str, body: bytes) -> dict:
     """Minimal multipart/form-data parser → {name: (filename, content_type, bytes)|str}."""
@@ -90,6 +115,16 @@ class ChatHandler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         sys.stderr.write("%s\n" % (fmt % args))
 
+    def list_directory(self, path):  # noqa: ARG002 — signature fixed by base class
+        """Never expose repo / app directory listings on the public API host."""
+        self.send_error(404, "Not found")
+        return None
+
+    def end_headers(self):
+        # This host is API + embed UI — indexing SoT is clevertree.chat (Vercel).
+        self.send_header("X-Robots-Tag", "noindex, nofollow")
+        super().end_headers()
+
     def do_OPTIONS(self):
         if self.path.startswith("/api/chat") or self.path.startswith("/api/debate"):
             self.send_response(204)
@@ -98,16 +133,65 @@ class ChatHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(404)
 
+    def _is_public_static(self, path: str) -> bool:
+        if path in PUBLIC_STATIC_EXACT:
+            return True
+        if path == "/chat" or path.startswith("/chat/"):
+            return True
+        return any(path.startswith(prefix) for prefix in PUBLIC_STATIC_PREFIXES)
+
+    def _serve_robots(self) -> None:
+        raw = ROBOTS_TXT.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Cache-Control", "public, max-age=300")
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
     def do_GET(self):
         parsed = urlparse(self.path)
+        path = parsed.path or "/"
         if parsed.path in ("/api/chat/ws", "/api/chat/ws/"):
             return self._websocket(parsed)
         if parsed.path.startswith("/api/chat") or parsed.path.startswith("/api/debate"):
             return self._api(parsed, {})
-        if parsed.path == "/chat" or parsed.path.startswith("/chat/"):
+        if path == "/robots.txt":
+            return self._serve_robots()
+        if not self._is_public_static(path):
+            self.send_error(404, "Not found")
+            return
+        if path == "/chat" or path.startswith("/chat/"):
             self.path = "/chat/index.html"
             return super().do_GET()
         return super().do_GET()
+
+    def do_HEAD(self):
+        # Base SimpleHTTPRequestHandler.do_HEAD bypasses do_GET — enforce the
+        # same public-static allowlist so source files are not HEAD-reachable.
+        parsed = urlparse(self.path)
+        path = parsed.path or "/"
+        if parsed.path.startswith("/api/chat") or parsed.path.startswith("/api/debate"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self._cors()
+            self.end_headers()
+            return
+        if path == "/robots.txt":
+            raw = ROBOTS_TXT.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Cache-Control", "public, max-age=300")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            return
+        if not self._is_public_static(path):
+            self.send_error(404, "Not found")
+            return
+        if path == "/chat" or path.startswith("/chat/"):
+            self.path = "/chat/index.html"
+        return super().do_HEAD()
 
     def do_POST(self):
         parsed = urlparse(self.path)

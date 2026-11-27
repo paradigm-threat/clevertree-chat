@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.PermissionRequest
 import android.webkit.WebResourceRequest
@@ -135,6 +136,13 @@ fun ClevertreeRoom(
                     )
                 isFocusable = true
                 isFocusableInTouchMode = true
+                // Claim window focus on touch so soft keyboard can open for <textarea>.
+                setOnTouchListener { v, event ->
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        v.requestFocus()
+                    }
+                    false
+                }
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.allowFileAccess = true
