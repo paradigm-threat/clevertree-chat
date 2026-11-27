@@ -51,6 +51,10 @@ See [`fronts/room/channel-policy.json`](../fronts/room/channel-policy.json) and 
 | `CLEVERTREE_IRC_CONSOLIDATE_PT` | `1` | Map all PT topics → `#pt` |
 | `CLEVERTREE_IRC_BOT_NICKS` | si/ai/… | Self-ignore denylist |
 
+## External networks (planned)
+
+Relay Ergo is the product home. A separate **peer bot** plan covers monitoring and on-demand joins on **outside** IRC networks (Georgia + Israel first), answering only on `!` commands or scarce help-phrases — aimed at MyProblem help workflows. See [`external-irc-peers.md`](external-irc-peers.md).
+
 ## Related
 
-- [chat-host.md](chat-host.md) · [context-tags.md](context-tags.md) · [intake-queue.md](intake-queue.md) · PT mesh chat ops in fan-edits `ops/chat/README.md`
+- [chat-host.md](chat-host.md) · [context-tags.md](context-tags.md) · [intake-queue.md](intake-queue.md) · [external-irc-peers.md](external-irc-peers.md) · PT mesh chat ops in fan-edits `ops/chat/README.md`

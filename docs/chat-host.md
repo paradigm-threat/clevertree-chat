@@ -80,5 +80,11 @@ There is **no LKE kubeconfig** for Intake; Rackspace Spot `~/.kube/myproblem-int
 export CLEVERTREE_COMMENTS_PATH=/tmp/clevertree-comments
 python3 scripts/seed_live_comments_from_fixtures.py "$CLEVERTREE_COMMENTS_PATH"  # optional PT seed
 python3 scripts/chat_host.py 8790
-# open http://127.0.0.1:8790/chat/flock-cameras
+# open http://127.0.0.1:8790/chat
 ```
+
+## Related
+
+- [irc-backbone.md](irc-backbone.md) — home Ergo mesh  
+- [external-irc-peers.md](external-irc-peers.md) — planned peer bots on outside networks (MyProblem / Georgia–Israel first)  
+- [intake-queue.md](intake-queue.md)

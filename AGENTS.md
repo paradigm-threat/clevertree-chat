@@ -32,7 +32,8 @@ Policy detail: [`docs/intake-queue.md`](docs/intake-queue.md).
 
 Deploy chat host: `bash infra/deploy-chat-host.sh` (SSH to Linode `pub1.relaygateway.net`; see `infra/linode/`). Rackspace Spot kubeconfig abandoned.
 
-IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`pub1`); PT → `#pt`; public catch-all `#web`; craft collections per-collection; context tags [`docs/context-tags.md`](docs/context-tags.md).
+IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`pub1`); PT → `#pt`; public catch-all `#web`; craft collections per-collection; context tags [`docs/context-tags.md`](docs/context-tags.md).  
+**Planned:** external IRC peers (Georgia/Israel first, MyProblem-oriented helper bot, `!` / help-phrase triggers only) — [`docs/external-irc-peers.md`](docs/external-irc-peers.md).
 
 ## What works today
 
@@ -48,9 +49,10 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`p
 
 1. **Queue-before-SoT cutover** — implement [`docs/intake-queue.md`](docs/intake-queue.md) (live enqueue only; Cursor sole SoT writer on shared queue in Phase 1).
 2. **Align job schema** with MyProblem/QuizGate shared batch queue ([`docs/batch-phases.md`](docs/batch-phases.md)).
-3. **Chrome Web Store** — human dashboard upload + review.
-4. **Providers** — Groq/Bedrock/peers for gray-zone spam + curation; keep `CLEVERTREE_SPOT_WAKE=0` (GPU wake abandoned).
-5. **History `.relay.yaml` inject** — only if fleet ever needs a full history rewrite for hook compliance (tip already has policy).
+3. **External IRC peers** — MyProblem-oriented helper bot on outside nets (Georgia/Israel first); `!` / help-phrase triggers only — [`docs/external-irc-peers.md`](docs/external-irc-peers.md).
+4. **Chrome Web Store** — human dashboard upload + review.
+5. **Providers** — Groq/Bedrock/peers for gray-zone spam + curation; keep `CLEVERTREE_SPOT_WAKE=0` (GPU wake abandoned).
+6. **History `.relay.yaml` inject** — only if fleet ever needs a full history rewrite for hook compliance (tip already has policy).
 
 ## Locked product rules (don’t undo)
 

@@ -11,3 +11,7 @@ One article can offer one topic, or more than one when the page actually contain
 The widget, the realtime path, and the batch worker are Clevertree Chat. myproblem.app does not grow a second comment implementation. Tickets stay private dossiers. The knowledge base stays the curated articles. Live chat and this debate are the same kind of add-on: the host page keeps its own content.
 
 The site is [clevertree.chat](https://clevertree.chat). The repo is this one, `clevertree-chat`.
+
+## External IRC peers (planned)
+
+MyProblem is the primary product for a future **peer IRC bot**: connect to networks outside Relay Ergo (starting with **Georgia-** and **Israel-oriented** nets such as IvritNet / regional channels, plus optional Libera/OFTC tech rooms), join channels when asked, and answer only on bang commands or scarce “can anyone help…” patterns — short replies, rules-bound SI/API when needed. Design SoT: [`external-irc-peers.md`](external-irc-peers.md). Keep that plan in this repo; mount from MyProblem rather than forking peer-bot docs into other product trees.
