@@ -2,7 +2,7 @@
   "schema": "clevertree.chat-topics.v1",
   "irc_channel": "#pt",
   "topics": [
-    { "id": 0, "slug": "general", "title": "General", "href": "/chat" },
+    { "id": 0, "slug": "general", "title": "General", "href": "/" },
     { "id": 1, "slug": "nukes", "title": "Nuclear weapons", "href": "/science/nukes" },
     { "id": 2, "slug": "hollow-earth", "title": "Hollow Earth", "href": "/cosmos/cosmology/hollow_earth" },
     { "id": 3, "slug": "cosmos-cosmology", "title": "Cosmology", "href": "/cosmos/cosmology" },

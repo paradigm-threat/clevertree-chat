@@ -1,0 +1,235 @@
+/* Portable PT bottom chrome — UI only; hosts wire backends via events. */
+pt-bottom-overlay {
+  display: block;
+  position: fixed;
+  z-index: 2147483001;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #e2e8f0;
+}
+
+@media (min-width: 768px) {
+  pt-bottom-overlay {
+    left: auto;
+    right: 2rem;
+    bottom: 2rem;
+    max-width: 28rem;
+    width: min(28rem, calc(100vw - 2rem));
+  }
+}
+
+pt-bottom-overlay .pt-bo {
+  pointer-events: auto;
+  margin: 0 1rem 1rem;
+}
+
+@media (min-width: 768px) {
+  pt-bottom-overlay .pt-bo {
+    margin: 0;
+  }
+}
+
+pt-bottom-overlay .pt-bo-panel {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.55);
+  border-radius: 1rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+pt-bottom-overlay .pt-bo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+pt-bottom-overlay .pt-bo-btn {
+  flex-shrink: 0;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.15s ease, transform 0.15s ease, filter 0.15s ease;
+}
+
+pt-bottom-overlay .pt-bo-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+pt-bottom-overlay .pt-bo-btn:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+pt-bottom-overlay .pt-bo-btn[hidden] {
+  display: none !important;
+}
+
+pt-bottom-overlay .pt-bo-top,
+pt-bottom-overlay .pt-bo-chat,
+pt-bottom-overlay .pt-bo-ai,
+pt-bottom-overlay .pt-bo-stop {
+  width: 3rem;
+  height: 3rem;
+}
+
+pt-bottom-overlay .pt-bo-play {
+  width: 3.5rem;
+  height: 3.5rem;
+  background: #4f46e5;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+}
+
+pt-bottom-overlay .pt-bo-play:hover {
+  background: #6366f1;
+  transform: scale(1.05);
+}
+
+pt-bottom-overlay .pt-bo-ai {
+  background: rgba(124, 58, 237, 0.9);
+}
+
+pt-bottom-overlay .pt-bo-ai:hover {
+  background: #8b5cf6;
+  transform: scale(1.05);
+}
+
+pt-bottom-overlay .pt-bo-chat.is-open {
+  background: rgba(239, 68, 68, 0.85);
+}
+
+pt-bottom-overlay .pt-bo-chat.is-open:hover {
+  background: #ef4444;
+}
+
+pt-bottom-overlay .pt-bo-settings {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: auto;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+pt-bottom-overlay .pt-bo-settings[aria-expanded="true"] {
+  background: rgba(79, 70, 229, 0.3);
+  color: #818cf8;
+}
+
+pt-bottom-overlay .pt-bo-seek {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0.25rem;
+}
+
+pt-bottom-overlay .pt-bo-seek[hidden] {
+  display: none !important;
+}
+
+pt-bottom-overlay .pt-bo-seek input[type="range"] {
+  width: 100%;
+  height: 0.5rem;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+pt-bottom-overlay .pt-bo-count {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+pt-bottom-overlay .pt-bo-settings-panel {
+  border-top: 1px solid rgba(51, 65, 85, 0.55);
+  padding: 1rem;
+}
+
+pt-bottom-overlay .pt-bo-settings-panel[hidden] {
+  display: none !important;
+}
+
+pt-bottom-overlay .pt-bo-err {
+  margin: 0 0 0.5rem;
+  border-radius: 0.75rem;
+  background: rgba(127, 29, 29, 0.9);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+pt-bottom-overlay .pt-bo-err[hidden] {
+  display: none !important;
+}
+
+pt-bottom-overlay .pt-bo-err-msg {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+pt-bottom-overlay .pt-bo-err-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+pt-bottom-overlay .pt-bo-err-actions button {
+  border: 0;
+  cursor: pointer;
+  border-radius: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(217, 119, 6, 0.8);
+  color: #fef3c7;
+}
+
+pt-bottom-overlay .pt-bo-err-dismiss {
+  background: transparent !important;
+  color: rgba(254, 202, 202, 0.7) !important;
+  font-size: 1rem !important;
+  padding: 0.15rem 0.35rem !important;
+}
+
+pt-bottom-overlay svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+pt-bottom-overlay .pt-bo-play svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+pt-bottom-overlay .pt-bo-play .pt-bo-icon-play {
+  fill: currentColor;
+  stroke: none;
+  transform: translateX(1px);
+}

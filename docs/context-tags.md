@@ -27,7 +27,7 @@ Per content repo, next to chat config — e.g. `chat/topics.json`:
   "schema": "clevertree.chat-topics.v1",
   "irc_channel": "#pt",
   "topics": [
-    { "id": 0, "slug": "general", "title": "General", "href": "/chat" },
+    { "id": 0, "slug": "general", "title": "General", "href": "/" },
     { "id": 1, "slug": "nukes", "title": "Nuclear weapons", "href": "/science/nukes" }
   ]
 }
