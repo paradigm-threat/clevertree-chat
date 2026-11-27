@@ -70,7 +70,7 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`p
 ```bash
 npm run test:unit
 npm run test:e2e
-npm run test:e2e:a11y   # axe WCAG AA contrast on board (light + dark)
+npm run test:e2e:a11y   # axe WCAG AA contrast on board + IRC room (light + dark)
 cd android && ./gradlew :clevertree-room:assembleRelease :clevertree-room:test
 ```
 
