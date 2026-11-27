@@ -2,6 +2,7 @@ package chat.clevertree.room
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.view.ViewGroup
@@ -122,6 +123,9 @@ fun ClevertreeRoom(
                     .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(ctx))
                     .build()
             WebView(ctx).apply {
+                if ((ctx.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                    WebView.setWebContentsDebuggingEnabled(true)
+                }
                 layoutParams =
                     ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,

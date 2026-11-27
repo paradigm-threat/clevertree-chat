@@ -59,7 +59,17 @@ vm.runInContext(tagsJs, sandbox, { filename: "context-tags.js" });
 vm.runInContext(roomJs, sandbox, { filename: "clevertree-room.js" });
 assert.equal(typeof sandbox.CleverTreeRoom.mount, "function");
 assert.equal(typeof sandbox.CleverTreeRoom.pickMirror, "function");
+assert.equal(typeof sandbox.CleverTreeRoom.defaultMirrors, "function");
 assert.ok(Array.isArray(sandbox.CleverTreeRoom.BOT_NICKS));
+const mirrors = sandbox.CleverTreeRoom.defaultMirrors(
+  "https://api.clevertree.chat",
+  "#web"
+);
+assert.ok(mirrors.length >= 1, "default mirrors for #web");
+assert.ok(
+  mirrors.some((u) => /\/api\/chat\/ws\?topic=web/.test(u)),
+  mirrors.join(",")
+);
 assert.ok(sandbox.CleverTreeContextTags);
 assert.equal(
   typeof sandbox.CleverTreeContextTags.autoTag,
