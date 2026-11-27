@@ -32,7 +32,7 @@
       "default_channel": "#web",
       "channels": ["#web"],
       "topic_via": "domain_tag",
-      "notes": "Catch-all for non-product websites; attribution [[d:host]]"
+      "notes": "Universal room: default for unassigned users and generic embeds; attribution [[d:host]]"
     }
   },
   "product_hosts": {
