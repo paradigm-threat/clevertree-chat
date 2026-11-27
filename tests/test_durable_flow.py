@@ -458,10 +458,11 @@ class ExtensionSurfaceTests(unittest.TestCase):
         self.assertNotIn("demoMode", js)
         self.assertNotIn("btn-continue", html)
         self.assertNotIn("GUIDED", js)
-        self.assertIn("page_scope", js)
+        # Side panel mounts CleverTreeRoom via channel-route (domain/product map).
+        self.assertIn("CleverTreeChannelRoute", js)
+        self.assertIn("CleverTreeRoom", js)
         self.assertIn("domain", js)
-        self.assertIn("coachSeen", js)
-        self.assertIn("clevertree.coachSeen", js)
+        self.assertIn("room-root", html)
 
 
 if __name__ == "__main__":

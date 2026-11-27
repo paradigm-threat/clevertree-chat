@@ -33,9 +33,9 @@ class PublicLineTests(unittest.TestCase):
         self.assertEqual(
             PUBLIC_LINES,
             (
-                "A new way to debate.",
+                "A public room. A clearer conversation.",
                 "Don\u2019t get lost in the weeds.",
-                "Make your opinion finally heard.",
+                "People speak. SI curates.",
             ),
         )
         self.assertEqual(HERO, PUBLIC_LINES[0])
@@ -43,8 +43,9 @@ class PublicLineTests(unittest.TestCase):
         self.assertEqual(FILING, PUBLIC_LINES[2])
         home = (ROOT / "index.html").read_text()
         trial = (ROOT / "try" / "index.html").read_text()
-        self.assertIn(HERO, home)
-        self.assertIn(READER, home)
+        # Hero is split across a <br> on the homepage.
+        self.assertIn("A public room.", home)
+        self.assertIn("A clearer conversation.", home)
         self.assertIn(FILING, home)
         self.assertIn(READER, trial)
 
@@ -230,14 +231,24 @@ class UrlTests(unittest.TestCase):
         snippet = (ROOT / "fronts" / "snippet" / "embed.html").read_text()
         for needle in ("normalizeUrl", "utm_", "fbclid", "gclid", "co.uk"):
             self.assertIn(needle, script)
-        self.assertIn("normalizeUrl", snippet)
-        self.assertIn("empty", snippet.lower())
-        voice = (ROOT / "android" / "src" / "chat" / "clevertree" / "ClevertreeVoice.kt").read_text()
-        self.assertIn("fileTranscript", voice)
-        self.assertIn("sectionAudio", voice)
-        self.assertNotIn("git commit", voice.lower())
-        self.assertNotIn("Runtime.getRuntime", voice)
-        self.assertFalse(list((ROOT / "android").rglob("*.apk")))
+        # Snippet mounts the shared room + launcher (normalize lives in extension).
+        self.assertIn("clevertree-room.js", snippet)
+        self.assertIn("chat-launcher.js", snippet)
+        self.assertIn("ClevertreeChatLauncher", snippet)
+        voice_candidates = list((ROOT / "android").rglob("ClevertreeVoice.kt"))
+        self.assertTrue(voice_candidates, "ClevertreeVoice.kt missing")
+        voice_txt = voice_candidates[0].read_text()
+        self.assertIn("fileTranscript", voice_txt)
+        self.assertIn("sectionAudio", voice_txt)
+        self.assertNotIn("git commit", voice_txt.lower())
+        self.assertNotIn("Runtime.getRuntime", voice_txt)
+        # Ignore Gradle build outputs; source tree must not ship APKs.
+        shipped = [
+            p
+            for p in (ROOT / "android").rglob("*.apk")
+            if "build/" not in p.as_posix() and "/build/" not in ("/" + p.as_posix())
+        ]
+        self.assertFalse(shipped, shipped)
 
 
 class HardwareTests(unittest.TestCase):

@@ -63,6 +63,11 @@ assert.ok(
     !/wireChromeSwipe\(history\)/.test(roomJs),
   "swipes bind to SI/composer shells only — not scrolling history"
 );
+assert.ok(
+  /function keepComposerOpenInRow\s*\(/.test(roomJs) &&
+    /keepComposerOpenInRow\(\)/.test(roomJs),
+  "landscape/desktop must keep composer open when chrome collapses"
+);
 
 const roomCss = fs.readFileSync(
   path.join(root, "fronts/room/clevertree-room.css"),

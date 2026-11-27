@@ -1,7 +1,7 @@
-"""The three lines already printed on the product page."""
+"""Marketing lines shared by the product page and library assertions."""
 
-HERO = "A new way to debate."
+HERO = "A public room. A clearer conversation."
 READER = "Don\u2019t get lost in the weeds."
-FILING = "Make your opinion finally heard."
+FILING = "People speak. SI curates."
 
 PUBLIC_LINES = (HERO, READER, FILING)

@@ -165,9 +165,10 @@ test.describe("room composer chrome", () => {
     await expect(room).toHaveAttribute("data-chrome", "desktop");
     const history = page.locator('[data-role="history"]');
     await history.click({ position: { x: 40, y: 40 } });
+    /* Landscape/desktop keeps the composer expanded when the draft blurs. */
     await expect
       .poll(async () => (await composerExpanded(page)).expanded)
-      .toBe(false);
+      .toBe(true);
 
     async function measure(orient: "left" | "right") {
       return page.evaluate((o) => {
@@ -221,7 +222,8 @@ test.describe("room composer chrome", () => {
       const m = await measure(orient);
       expect(m, orient).toBeTruthy();
       expect(m!.siCollapsed).toBe(true);
-      expect(m!.composerCollapsed).toBe(true);
+      /* Landscape/desktop: composer stays expanded after history blur. */
+      expect(m!.composerCollapsed).toBe(false);
       expect(m!.gutterVisible).toBe(true);
       for (const key of ["si", "chat", "composer"] as const) {
         expect(
@@ -346,51 +348,61 @@ test.describe("room composer chrome", () => {
     await expect(si).toHaveClass(/si-collapsed/);
   });
 
-  test("landscape: drag down on SI / drag up on composer open chrome", async ({
-    page,
-  }) => {
+  test("landscape: opening SI keeps composer expanded", async ({ page }) => {
     await page.setViewportSize({ width: 844, height: 390 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(liveUrl());
     const history = page.locator('[data-role="history"]');
     const composer = page.locator('[data-role="composer"]');
     const si = page.locator('[data-role="si"]');
+    const titles = page.locator(".si-rail-titles");
     await expect(history).toBeVisible({ timeout: 15_000 });
 
     await history.click({ position: { x: 24, y: 40 } });
     await expect
       .poll(async () => (await composerExpanded(page)).expanded)
-      .toBe(false);
+      .toBe(true);
 
-    const siBox = await si.boundingBox();
-    expect(siBox).toBeTruthy();
-    const sx = siBox!.x + siBox!.width / 2;
-    const sy = siBox!.y + 24;
+    /* Open SI via titles (and shell swipe) — composer must stay expanded. */
+    await titles.click();
+    await expect
+      .poll(async () =>
+        si.evaluate((el) => el.classList.contains("si-expanded"))
+      )
+      .toBe(true);
+    await expect(composer).toHaveClass(/composer-expanded/);
+
+    await history.click({ position: { x: 24, y: 40 } });
+    await expect
+      .poll(async () =>
+        si.evaluate((el) => el.classList.contains("si-collapsed"))
+      )
+      .toBe(true);
+
+    const tBox = await titles.boundingBox();
+    expect(tBox).toBeTruthy();
+    const sx = tBox!.x + Math.min(40, tBox!.width / 2);
+    const sy = tBox!.y + tBox!.height / 2;
     await page.mouse.move(sx, sy);
     await page.mouse.down();
-    await page.mouse.move(sx, sy + 80, { steps: 10 });
+    await page.mouse.move(sx, sy + 90, { steps: 12 });
     await page.mouse.up();
     await expect
       .poll(async () =>
         si.evaluate((el) => el.classList.contains("si-expanded"))
       )
       .toBe(true);
+    await expect(composer).toHaveClass(/composer-expanded/);
 
     await history.click({ position: { x: 24, y: 40 } });
     await expect
       .poll(async () => (await composerExpanded(page)).expanded)
-      .toBe(false);
-
-    const coBox = await composer.boundingBox();
-    expect(coBox).toBeTruthy();
-    const cx = coBox!.x + coBox!.width / 2;
-    const cy = coBox!.y + Math.max(16, coBox!.height - 16);
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    await page.mouse.move(cx, cy - 80, { steps: 10 });
-    await page.mouse.up();
+      .toBe(true);
     await expect
-      .poll(async () => (await composerExpanded(page)).expanded)
+      .poll(async () =>
+        si.evaluate((el) => el.classList.contains("si-collapsed"))
+      )
       .toBe(true);
   });
 });
+
