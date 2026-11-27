@@ -24,6 +24,8 @@ See [`fronts/room/channel-policy.json`](../fronts/room/channel-policy.json) and 
 
 - **Paradigm Threat:** **one** channel `#pt` (`CLEVERTREE_IRC_CONSOLIDATE_PT=1`). Topics via trailing `[[t:N]]` from human `chat/topics.json` (`0` = general).
 - **Public web catch-all:** `#web` for every non-product site (extension default). Domain attribution `[[d:example.com]]` — not page path.
+- **SongWalker:** `#songwalker` (`songwalker.net`).
+- **SNESology:** `#snesology` (`snesology.org`).
 - **MyProblem public demo:** `#mp-general`; allowlist also `#ga-savannah-cat-rescue` (`/c/…`). See `channel-policy.json` `myproblem.demo_allowlist`.
 - **MyProblem collections:** typically one channel per collection (`CRAFT_CHANNELS`).
 - Product sites use a **header corner chat** button (dock or extension side panel) — no in-article scrolled chat.

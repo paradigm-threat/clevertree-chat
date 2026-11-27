@@ -12,6 +12,8 @@ const pol = JSON.parse(
 );
 assert.strictEqual(pol.repos["paradigm-threat"].default_channel, "#pt");
 assert.strictEqual(pol.repos["public-web"].default_channel, "#web");
+assert.strictEqual(pol.repos["songwalker"].default_channel, "#songwalker");
+assert.strictEqual(pol.repos["snesology"].default_channel, "#snesology");
 
 assert.strictEqual(Tags.tagTopic(0), "[[t:0]]");
 assert.strictEqual(Tags.tagDomain("www.Example.com"), "[[d:example.com]]");
@@ -38,5 +40,21 @@ assert.strictEqual(ct.title, "Clevertree Chat");
 const pt = Route.routeForUrl("https://paradigmthreat.net/science/nukes");
 assert.strictEqual(pt.channel, "#pt");
 assert.strictEqual(pt.topicId, 0);
+
+const sw = Route.routeForUrl("https://songwalker.net/");
+assert.strictEqual(sw.channel, "#songwalker");
+assert.strictEqual(sw.domain, "");
+assert.strictEqual(sw.title, "SongWalker");
+
+const snes = Route.routeForUrl("https://www.snesology.org/keyboard.html");
+assert.strictEqual(snes.channel, "#snesology");
+assert.strictEqual(snes.domain, "");
+
+const explicit = Route.routeForUrl("https://example.org/", {
+  channel: "#songwalker",
+  title: "SongWalker",
+});
+assert.strictEqual(explicit.channel, "#songwalker");
+assert.strictEqual(explicit.domain, "");
 
 console.log("test_context_tags.js ok");

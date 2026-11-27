@@ -157,8 +157,15 @@ class IrcBridge:
                 client.connect(timeout=25.0)
                 backoff = 2.0
                 log.info("IRC connected %s:%s as %s", self.host, self.port, client.nick)
-                # PT #pt, MyProblem craft rooms, public #web catch-all.
-                for topic in ("general", "mp-general", "ga-savannah-cat-rescue", "web"):
+                # PT #pt, MyProblem craft rooms, public #web, SongWalker, SNESology.
+                for topic in (
+                    "general",
+                    "mp-general",
+                    "ga-savannah-cat-rescue",
+                    "web",
+                    "songwalker",
+                    "snesology",
+                ):
                     self.ensure_channel(topic)
                 lobby = channel_for_topic(self.prefix, "")
                 client.join(lobby)

@@ -852,6 +852,8 @@ def list_known_channels() -> list[dict]:
         "#pt": "Paradigm Threat",
         "#mp-general": "MyProblem general",
         "#ga-savannah-cat-rescue": "Savannah Cat Rescue",
+        "#songwalker": "SongWalker",
+        "#snesology": "SNESology",
     }
     by_ch: dict[str, dict] = {}
 

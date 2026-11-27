@@ -460,6 +460,8 @@ CRAFT_CHANNELS: dict[str, str] = {
     "mp-general": "#mp-general",
     "ga-savannah-cat-rescue": "#ga-savannah-cat-rescue",
     "web": "#web",
+    "songwalker": "#songwalker",
+    "snesology": "#snesology",
 }
 
 PUBLIC_WEB_CHANNEL = "#web"
