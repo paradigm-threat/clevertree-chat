@@ -1,23 +1,9 @@
-# Relay · CleverTree Networker (extension)
+# Relay · Networker (legacy folder)
 
-**Canonical home:** this folder in `clevertree-chat`. MyProblem consumes CleverTree; do not fork a second chat UI under `myproblem/extensions/capture`.
+**Canonical extension:** [`../extension/`](../extension/) — Clevertree Chat (IRC + SI) on all sites.
 
-## Load unpacked
+Networker Gather / Track / Refresh lives behind **Options → Enable Networker mode** on that extension. Do not ship a second product extension from this folder.
 
-1. Chrome → `chrome://extensions` → Developer mode → **Load unpacked**
-2. Select `fronts/relay-extension`
-3. Open a social group tab → click the Relay icon → side panel
+Shared room UI: [`../room/`](../room/). Design kit: `design/clevertree-chat-kit/`.
 
-## Architecture
-
-| Piece | Role |
-|---|---|
-| `../room/clevertree-room.js` | Shared public IRC room (embed / page / sidepanel modes) |
-| `sidepanel.html` + `relay-chrome.css` | Always-on **Refresh** only — gather never inside the room |
-| `background.js` | Gather job state; host-tab messaging |
-
-Embeddable web chat uses the same room component **without** Refresh.
-
-## Design kits
-
-Prototypes and tokens: `design/relay-ui-kit/`, `design/clevertree-kit/`.
+This directory remains temporarily for gather host-tab scripts during cutover; load **`fronts/extension`** unpacked for day-to-day use.

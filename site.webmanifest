@@ -2,11 +2,11 @@
   "id": "/",
   "name": "Clevertree Chat",
   "short_name": "Cleverchat",
-  "description": "Standing debate boards. Queue posts offline; sync when you reconnect.",
-  "theme_color": "#1F4D3A",
-  "background_color": "#F4F1EA",
+  "description": "Public IRC debate board with an SI panel. One shared #web room.",
+  "theme_color": "#285C46",
+  "background_color": "#F2F4EF",
   "display": "standalone",
-  "start_url": "/chat/",
+  "start_url": "/chat",
   "scope": "/",
   "icons": [
     {

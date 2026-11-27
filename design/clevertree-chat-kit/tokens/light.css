@@ -1,0 +1,28 @@
+/**
+ * Living Commons — light theme pack.
+ * Activate with data-theme="light" (or system + prefers-color-scheme: light).
+ */
+:root,
+:root[data-theme="light"],
+:root[data-theme-pref="light"] {
+  color-scheme: light;
+  --canvas: #f2f4ef;
+  --irc: #ffffff;
+  --si: #e5ece5;
+  --card: #ffffff;
+  --subtle: #edf2ec;
+  --ink: #23352b;
+  --muted: #52665a;
+  --line: #c5d0c5;
+  --strong-line: #879c8b;
+  --action: #285c46;
+  --action-ink: #ffffff;
+  --action-soft: #dce9dd;
+  --focus: #28684c;
+  --success: #285c46;
+  --warning: #80571e;
+  --danger: #a33430;
+  --nick-alt: #486681;
+  --nick-warm: #805b34;
+  --shadow: #23352b1a;
+}

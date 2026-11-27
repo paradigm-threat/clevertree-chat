@@ -1,0 +1,2 @@
+/* Combined entry — prefer @import packs (base / light / dark) for swappable themes. */
+@import url("./index.css");

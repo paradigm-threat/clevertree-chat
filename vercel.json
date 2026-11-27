@@ -11,24 +11,66 @@
       "source": "/trees/",
       "destination": "/forest",
       "permanent": true
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/try/flock-cameras",
-      "destination": "/try"
     },
     {
-      "source": "/try/thc-legalization",
-      "destination": "/try"
+      "source": "/try",
+      "destination": "/chat",
+      "permanent": true
     },
     {
-      "source": "/chat/:path+",
-      "destination": "/chat"
+      "source": "/try/",
+      "destination": "/chat",
+      "permanent": true
     },
     {
-      "source": "/w/:path+",
-      "destination": "/w"
+      "source": "/try/:path*",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/w",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/w/",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/w/:path*",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/chat/flock-cameras",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/chat/thc-legalization",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/chat/5g",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/chat/geoengineering",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/chat/general",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/forest.html",
+      "destination": "/forest",
+      "permanent": true
     }
   ],
   "headers": [

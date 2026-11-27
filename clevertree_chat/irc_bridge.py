@@ -11,7 +11,14 @@ import uuid as uuidlib
 from pathlib import Path
 from typing import Any
 
-from clevertree_chat.irc_client import IrcClient, channel_for_topic, topic_for_channel
+from clevertree_chat.irc_client import (
+    IrcClient,
+    PUBLIC_WEB_CHANNEL,
+    channel_for_topic,
+    ensure_trailing_tag,
+    parse_context_tags,
+    topic_for_channel,
+)
 
 log = logging.getLogger("clevertree.irc")
 
@@ -78,8 +85,16 @@ class IrcBridge:
             self._joined.add(ch)
         return ch
 
-    def announce_submit(self, topic: str, body: str, author: str = "") -> None:
-        """Board/API submit → IRC PRIVMSG (skip if we originated from IRC)."""
+    def announce_submit(
+        self,
+        topic: str,
+        body: str,
+        author: str = "",
+        *,
+        topic_id: int | None = None,
+        domain: str = "",
+    ) -> None:
+        """Room/API submit → IRC PRIVMSG (skip if we originated from IRC)."""
         text = (body or "").strip()
         if not text:
             return
@@ -91,12 +106,22 @@ class IrcBridge:
         if not client or not client.ready:
             return
         ch = self.ensure_channel(topic)
+        tags = parse_context_tags(text)
+        if ch == PUBLIC_WEB_CHANNEL:
+            host = (domain or tags.get("domain") or "").strip()
+            if host:
+                text = ensure_trailing_tag(text, f"[[d:{host}]]")
+        else:
+            tid = topic_id if topic_id is not None else tags.get("topic_id")
+            if tid is None and (topic or "").strip().lower() in {"", "general", "lobby"}:
+                tid = 0
+            if tid is not None and tags.get("topic_id") is None:
+                text = ensure_trailing_tag(text, f"[[t:{tid}]]")
         label = (author or "").strip()
         wire = _irc_wire_body(text, author=label)
         out_fp = _fingerprint(topic, text)
         self._echo_ids.add(out_fp)
         client.privmsg(ch, wire)
-        # expire fingerprint shortly
         threading.Timer(30.0, lambda: self._echo_ids.discard(out_fp)).start()
 
     def _run(self) -> None:
@@ -116,8 +141,8 @@ class IrcBridge:
                 client.connect(timeout=25.0)
                 backoff = 2.0
                 log.info("IRC connected %s:%s as %s", self.host, self.port, client.nick)
-                # Default PT channel (consolidated) + MyProblem demo craft rooms.
-                for topic in ("general", "mp-general", "ga-savannah-cat-rescue"):
+                # PT #pt, MyProblem craft rooms, public #web catch-all.
+                for topic in ("general", "mp-general", "ga-savannah-cat-rescue", "web"):
                     self.ensure_channel(topic)
                 lobby = channel_for_topic(self.prefix, "")
                 client.join(lobby)

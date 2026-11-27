@@ -1,0 +1,7 @@
+/**
+ * Clevertree Chat room tokens — swappable theme packs.
+ * Preference: localStorage `clevertree.room.theme` = system | light | dark.
+ * Packs: themes/base.css + themes/light.css + themes/dark.css
+ * Design SoT: design/clevertree-chat-kit/tokens/
+ */
+@import url("./themes/index.css");

@@ -14,8 +14,8 @@ Unpacked zip download already ships from [clevertree.chat/extension](https://cle
 | Field | Text |
 |-------|------|
 | **Name** | Clevertree Chat |
-| **Summary** | Debate the site you’re on. One room per domain. Empty until you write. |
-| **Description** | Opens a side panel Debate board for the active tab’s whole site. Visitor and topic IDs come from api.clevertree.chat; posts are queued for batch SI, which alone permanently files accepted comments. No private standing exceptions. Prefer clevertree.chat/w/… if you do not want an extension. |
+| **Summary** | Public IRC debate board on any website — shared #web room, SI panel for curation. |
+| **Description** | Opens a side panel Clevertree Chat room for the site you are on. Non-product sites join the shared #web IRC channel with domain attribution (never page path). Product sites (e.g. Paradigm Threat) use their repo channel. The SI panel shows batch-curated workspace output (Groq/Bedrock). Networker tools stay in Options, off by default. |
 | **Category** | Social / Productivity |
 | **Language** | English |
 
@@ -23,25 +23,19 @@ Unpacked zip download already ships from [clevertree.chat/extension](https://cle
 
 | Permission | Why |
 |------------|-----|
-| `sidePanel` | Host the Debate board beside the page |
-| `storage` | Remember coach-seen + visitor UUID |
-| `tabs` / `activeTab` | Read the active tab URL to resolve the debate room |
-| Host `https://api.clevertree.chat/*` | Identify, resolve, submit, WebSocket |
+| `sidePanel` | Host the IRC + SI debate board beside the page |
+| `storage` | Networker flag + theme preference |
+| `tabs` | Read the active tab URL for channel routing / domain tag |
+| Host `https://api.clevertree.chat/*` | WebSocket + API |
 
 ## Upload steps
 
 1. Dashboard → **New item** → upload `clevertree-chat-extension.zip`.
 2. Fill store listing (copy above) + screenshots + icon.
-3. Privacy: single purpose (debate board); no remote code; data sent only to `api.clevertree.chat` for identify/resolve/submit.
+3. Privacy: single purpose (public IRC debate board); no remote code; data sent only to `api.clevertree.chat`.
 4. Submit for review. Expect 1–7 days for a first listing.
-5. After approval, update [extension/index.html](../extension/index.html) to link the Store URL and bump the “not on the Chrome Web Store yet” hint.
+5. After approval, update [extension/index.html](../extension/index.html) to link the Store URL.
 
 ## Confidence
 
-| Step | Confidence |
-|------|------------|
-| Zip pack + Load unpacked | High (automated) |
-| Dashboard upload + review pass | Medium (human + Google review) |
-| Auto-update via Store | High once listed |
-
-You cannot finish Store publication from CI alone — the developer account and review are human gates.
+High for side-panel MV3 listing if copy matches the IRC+#web behavior. Do not claim per-domain private debates or always-on Networker.

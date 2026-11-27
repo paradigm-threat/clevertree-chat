@@ -1,69 +1,42 @@
-#!/usr/bin/env node
-/**
- * Context tags + room component contracts (no browser).
- */
 const assert = require("assert");
 const path = require("path");
 const Tags = require(path.join(__dirname, "../fronts/room/context-tags.js"));
-const Room = require(path.join(__dirname, "../fronts/room/clevertree-room.js"));
+const Route = require(path.join(__dirname, "../fronts/room/channel-route.js"));
+const fs = require("fs");
 
-function testParse() {
-  const t =
-    "[[c:savannah-cat-rescue]] [[t:flock-cameras]] hello [[nd:z0m2zzlro/abc123]]";
-  const chips = Tags.parseTags(t);
-  assert.strictEqual(chips.length, 3);
-  assert.strictEqual(chips[0].kind, "c");
-  assert.strictEqual(chips[1].kind, "t");
-  assert.strictEqual(chips[2].kind, "nd");
-  assert.strictEqual(chips[2].group, "z0m2zzlro");
-  assert.strictEqual(chips[2].post, "abc123");
-  assert.strictEqual(Tags.stripTags(t), "hello");
-}
+const pol = JSON.parse(
+  fs.readFileSync(
+    path.join(__dirname, "../fronts/room/channel-policy.json"),
+    "utf8"
+  )
+);
+assert.strictEqual(pol.repos["paradigm-threat"].default_channel, "#pt");
+assert.strictEqual(pol.repos["public-web"].default_channel, "#web");
 
-function testAutoTag() {
-  const out = Tags.autoTag("hi", {
-    collection: "savannah-cat-rescue",
-    topic: "flock-cameras",
-    ndGroup: "z0m2zzlro",
-  });
-  assert.ok(out.indexOf("[[c:savannah-cat-rescue]]") === 0 || out.includes("[[c:"));
-  assert.ok(out.includes("[[t:flock-cameras]]"));
-  assert.ok(out.includes("[[ndg:z0m2zzlro]]"));
-  assert.ok(out.includes("hi"));
-}
+assert.strictEqual(Tags.tagTopic(0), "[[t:0]]");
+assert.strictEqual(Tags.tagDomain("www.Example.com"), "[[d:example.com]]");
+assert.ok(Tags.autoTag("hello", { topicId: 1 }).endsWith("[[t:1]]"));
+assert.ok(Tags.autoTag("hello", { domain: "news.ycombinator.com" }).endsWith("[[d:news.ycombinator.com]]"));
 
-function testRenderHidesRaw() {
-  const html = Tags.renderHtml("see [[nd:g1/p1]] please");
-  assert.ok(!html.includes("[[nd:"));
-  assert.ok(html.includes("ct-tag"));
-  assert.ok(html.includes("nextdoor.com"));
-}
+const html = Tags.renderHtml("hi [[d:example.com]]", {});
+assert.ok(html.indexOf("https://example.com/") >= 0);
+assert.ok(html.indexOf("example.com") >= 0);
 
-function testRoomNoGather() {
-  assert.strictEqual(typeof Room.mount, "function");
-  assert.ok(Room.isBotNick("clevertree-si"));
-  assert.ok(Room.isBotNick("clevertree-ai"));
-  assert.ok(!Room.isBotNick("mara_j"));
-  const m = Room.pickMirror(["a", "b", "c"], 1);
-  assert.strictEqual(m, "b");
-}
+const topics = [{ id: 0, slug: "general", title: "General", href: "/chat" }];
+const tHtml = Tags.renderHtml("x [[t:0]]", { topics: topics, siteOrigin: "https://paradigmthreat.net" });
+assert.ok(tHtml.indexOf("General") >= 0);
 
-function testChannelPolicy() {
-  const fs = require("fs");
-  const pol = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "../fronts/room/channel-policy.json"),
-      "utf8"
-    )
-  );
-  assert.strictEqual(pol.repos["paradigm-threat"].default_channel, "#pt");
-  assert.strictEqual(pol.visitor_uuid_for_chat, false);
-  assert.strictEqual(pol.anonymous_default, true);
-}
+const web = Route.routeForUrl("https://example.org/page");
+assert.strictEqual(web.channel, "#web");
+assert.strictEqual(web.domain, "example.org");
 
-testParse();
-testAutoTag();
-testRenderHidesRaw();
-testRoomNoGather();
-testChannelPolicy();
-console.log("test_context_tags.js: ok");
+const ct = Route.routeForUrl("https://clevertree.chat/chat");
+assert.strictEqual(ct.channel, "#web");
+assert.strictEqual(ct.domain, "");
+assert.strictEqual(ct.title, "Clevertree Chat");
+
+const pt = Route.routeForUrl("https://paradigmthreat.net/science/nukes");
+assert.strictEqual(pt.channel, "#pt");
+assert.strictEqual(pt.topicId, 0);
+
+console.log("test_context_tags.js ok");

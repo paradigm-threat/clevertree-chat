@@ -1,36 +1,37 @@
 # Clevertree Chat — browser extension
 
-MV3 Chromium side panel. Durable Debate board on `api.clevertree.chat`.
+MV3 side panel. **Debate board** = shared IRC room + SI panel. Works on **any website**.
 
-## What it does
+## Behavior
 
-- Opens a **side panel** when you click the toolbar icon.
-- Asks **https://api.clevertree.chat** to mint the visitor UUID (`action=identify`) and map the **whole site** (domain-level `page_scope`) to a topic (`action=resolve`). IDs are not generated in the extension.
-- Posts go through `/api/chat` into the **intake queue** (policy: [`docs/intake-queue.md`](../../docs/intake-queue.md)); batch SI alone permanently files into the comments SoT. Live updates use `/api/chat/ws` (and IRC when the host bridge is on).
-- Board stays **empty until you write**; new posts show as provisional until batch accepts.
-- Short skippable first-use coach (`clevertree.coachSeen`).
-- Toolbar links open live flock / THC boards (not scripted demos).
+- Default channel **`#web`** with trailing domain tag `[[d:example.com]]` (never page path).
+- Product hosts (e.g. paradigmthreat.net → `#pt`, myproblem.app → craft channels) via `channel-route.js`.
+- **Networker** (Gather / Track / Refresh) is **off by default**. Enable only in **Options**.
+- Theme: Options or room toggle; packs in `room/themes/` (system / light / dark).
 
-## Load unpacked
+## Load unpacked (ready to test)
 
-1. Chrome → `chrome://extensions`
-2. Enable **Developer mode**
-3. **Load unpacked** → select this folder (or unzip the download from https://clevertree.chat/extension)
-4. Pin Clevertree Chat; open the side panel from the toolbar icon
+Room UI must live **inside** this folder (`room/`). Chromium blocks `../room` outside the extension root (that caused the blank panel).
+
+```bash
+bash scripts/sync_extension_room.sh   # from repo root; also run by pack_extension.sh
+```
+
+1. Chrome → `chrome://extensions` → Developer mode → **Load unpacked**
+2. Select **`fronts/extension`** (this directory, after sync)
+3. If you already had it loaded: **Reload** the extension card
+4. Pin Clevertree Chat; open any website → toolbar icon → side panel
+5. On PT hosts expect **`#pt`**; elsewhere expect **`#web`** + domain chip
+6. **Extension options** for Networker / theme
+
+Zip download (same layout): `downloads/clevertree-chat-extension.zip` / https://clevertree.chat/downloads/clevertree-chat-extension.zip
 
 ## Files
 
 | File | Role |
 |------|------|
-| `manifest.json` | MV3 + side panel |
-| `background.js` | Open panel on action click |
-| `sidepanel.html` / `.css` / `.js` | Board UI |
-| `normalize-url.js` | Tab URL → debate path (domain collapse in sidepanel) |
-| `icons/` | Toolbar icons |
-
-## Tests
-
-```bash
-node tests/test_extension_normalize.js
-python3 -m unittest tests.test_irc_and_live -v
-```
+| `manifest.json` | MV3 + side panel + externally_connectable |
+| `background.js` | Open panel; `clevertree.chat.toggle` handshake |
+| `sidepanel.html` / `.js` / `.css` | Mounts shared room |
+| `options.html` / `.js` | Networker + theme |
+| `room/*` | Synced copy of `fronts/room` (IRC + SI UI) |

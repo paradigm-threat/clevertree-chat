@@ -4,9 +4,12 @@ Shared room chrome for web embed, full page, and Relay side panel.
 
 ## Themes (independent of host)
 
-- Storage key: `clevertree.room.theme` (`light` | `dark`; absent = follow `prefers-color-scheme`)
-- Applied on `.room` / `.ct-room` via `data-theme` + `color-scheme` — **not** on host `<html>`
-- Host sites (e.g. MyProblem) keep their own key (`myproblem.theme`) so site chrome and room chrome can disagree
-- Toggle lives in room header (`.top` + `.actions`); MyProblem embed may hide `.top`, so `.actions` remains the reachable control
+Swappable packs under [`themes/`](themes/) (IRC-client style — base + light + dark; more packs later):
 
-Sync copies into MyProblem at `public/chat-room/` after room UI changes.
+- Storage key: `clevertree.room.theme` — `system` (default / absent) | `light` | `dark`
+- `.room` gets `data-theme-pref` (stored) and `data-theme` (resolved light/dark) + `color-scheme` — **not** on host `<html>`
+- OS changes update the room live while pref is `system`
+- Host sites (e.g. MyProblem) keep their own key (`myproblem.theme`)
+- Design SoT: [`design/clevertree-chat-kit/`](../../design/clevertree-chat-kit/)
+
+Sync copies into MyProblem at `public/chat-room/` after room UI changes (include `themes/`).

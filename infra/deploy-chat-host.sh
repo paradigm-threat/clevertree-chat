@@ -45,6 +45,11 @@ cp "$ROOT/fronts/snippet/clevertree-board.js" "$ROOT/fronts/snippet/clevertree-b
 cp "$ROOT/fronts/room/"*.js "$ROOT/fronts/room/"*.css \
   "$ROOT/fronts/room/embed.html" "$ROOT/fronts/room/channel-policy.json" \
   "$STAGE/fronts/room/" 2>/dev/null || true
+mkdir -p "$STAGE/fronts/room/themes"
+cp -a "$ROOT/fronts/room/themes/." "$STAGE/fronts/room/themes/" 2>/dev/null || true
+mkdir -p "$STAGE/fixtures"
+cp "$ROOT/fixtures/pt-topics.json" "$STAGE/fixtures/" 2>/dev/null || true
+cp "$ROOT/schemas/chat-topics.v1.json" "$STAGE/" 2>/dev/null || true
 cp "$ROOT/fixtures/pt-review/"*.json "$STAGE/fixtures/pt-review/"
 cp "$ROOT/styles.css" "$ROOT/icon-128x128.png" "$ROOT/favicon.ico" "$ROOT/requirements.txt" "$STAGE/"
 # Historical Spot scripts stay in tree for reference; not used by product.

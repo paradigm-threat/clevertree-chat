@@ -4,56 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Clevertree Chat</title>
+  <link rel="stylesheet" href="room/tokens.css">
+  <link rel="stylesheet" href="room/clevertree-room.css">
   <link rel="stylesheet" href="sidepanel.css">
 </head>
-<body>
-  <div id="app" class="ct-ext">
-    <p class="ct-status" data-live="closed">Connecting…</p>
-    <header class="ct-head">
-      <div class="ct-brand">
-        <img src="icons/icon32.png" alt="" width="22" height="22">
-        <span>Clevertree Chat</span>
-        <span class="ct-badge" id="mode-badge" data-mode="page">Site</span>
-      </div>
-      <h1 class="ct-title" id="topic-title">This site</h1>
-      <p class="ct-page" id="page-chip" title="">—</p>
-      <p class="ct-meta" id="count-pill">0 perspectives · 0 points</p>
-    </header>
-
-    <div class="ct-toolbar">
-      <button type="button" class="ct-linkish" id="btn-refresh" title="Reload site topic">Refresh</button>
-      <button type="button" class="ct-linkish" id="btn-flock">Open flock board</button>
-      <button type="button" class="ct-linkish" id="btn-thc">Open THC board</button>
-    </div>
-
-    <aside class="ct-coach" id="coach-box" hidden>
-      <p class="ct-demo-kicker">First visit</p>
-      <h2>How this board works</h2>
-      <p>Post a point about this site. Clevertree organizes perspectives in the background — it does not vote or pick winners.</p>
-      <div class="ct-demo-actions">
-        <button type="button" class="ct-linkish" id="btn-coach-skip">Skip</button>
-      </div>
-    </aside>
-
-    <div class="ct-body">
-      <section class="ct-board" id="board"></section>
-      <section class="ct-activity">
-        <h2>Recent activity</h2>
-        <ul id="activity" class="ct-act-list"></ul>
-      </section>
-    </div>
-
-    <form class="ct-composer" id="composer">
-      <label class="ct-composer-label" for="body">Add your perspective</label>
-      <textarea id="body" name="body" rows="3" placeholder="What would you like to say?" required></textarea>
-      <div class="ct-composer-row">
-        <p class="ct-hint" id="composer-hint">One debate per site. Empty until you write. Soft tags may be revised by batch.</p>
-        <button type="submit" class="ct-post-btn" id="btn-post">Post</button>
-      </div>
-      <p class="ct-status-msg" id="status-msg" hidden></p>
-    </form>
-  </div>
-  <script src="normalize-url.js"></script>
+<body class="ct-ext-room">
+  <div id="room-root" class="room-root"></div>
+  <script src="room/context-tags.js"></script>
+  <script src="room/channel-route.js"></script>
+  <script src="room/clevertree-room.js"></script>
   <script src="sidepanel.js"></script>
 </body>
 </html>

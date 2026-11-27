@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clevertree Chat · Options</title>
+  <style>
+    body { font: 16px/1.45 "Source Sans 3", Lato, sans-serif; max-width: 36rem; margin: 2rem auto; padding: 0 1rem; color: #23352b; background: #f2f4ef; }
+    h1 { font-size: 1.35rem; }
+    label { display: flex; gap: 0.6rem; align-items: flex-start; margin: 1rem 0; }
+    .hint { color: #52665a; font-size: 0.9rem; }
+    .ok { color: #285c46; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Clevertree Chat options</h1>
+  <p class="hint">Appearance and Networker live here — not in the side panel — so casual chat stays calm.</p>
+  <label>
+    <input type="checkbox" id="networker">
+    <span>
+      <strong>Enable Networker mode</strong><br>
+      <span class="hint">Shows Gather, Track, and Refresh in the chat header. Off by default.</span>
+    </span>
+  </label>
+  <label>
+    Theme
+    <select id="theme">
+      <option value="system">System (OS light/dark)</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  </label>
+  <p class="ok" id="saved" hidden>Saved.</p>
+  <script src="options.js"></script>
+</body>
+</html>

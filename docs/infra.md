@@ -10,7 +10,7 @@ Cleverchat is an independent product repo. Other apps (including MyProblem) may 
 
 ## Spot GPU wake — abandoned
 
-Historical scripts `infra/spot-wake-comments.sh` / `infra/spot-decommission-comments.sh` targeted SJC A30. **Do not use for product.** Leave `CLEVERTREE_SPOT_WAKE=0`. Batch SI = Cursor (Phase 1) or automated CPU drain calling Groq/Bedrock/peers (Phase 2). Log and publicize `$/request` when provider calls land.
+Historical scripts `infra/spot-wake-comments.sh` / `infra/spot-decommission-comments.sh` targeted SJC A30. **Do not use for product.** Leave `CLEVERTREE_SPOT_WAKE=0`. **Batch SI = Groq / Bedrock / peers only** (Phase 1 Cursor drain; Phase 2 automated provider drain). No GPU batch servers. Log and publicize `$/request` when provider calls land.
 
 Curator commits use the service id `clevertree-chat-ai`. A person's name is never the author of a rewritten room. Each batch commit can be published to every local remote that serves the comments branch. The index and the files it points at are part of that commit.
 

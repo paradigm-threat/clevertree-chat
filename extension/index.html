@@ -1,122 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="system">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Debate extension — Clevertree Chat</title>
-  <meta name="description" content="Debate the page you’re on with the Clevertree Chat side panel. For Networkers who gather community tips, use Relay on myproblem.app/extension.">
-  <meta name="theme-color" content="#D4F3FB">
+  <title>Extension · Clevertree Chat</title>
+  <meta name="description" content="Chrome side panel for Clevertree Chat. Shared #web room on any website; product hosts map to their channel. Networker in Options.">
+  <meta name="theme-color" content="#F2F4EF">
   <link rel="canonical" href="https://clevertree.chat/extension">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Clevertree Chat">
-  <meta property="og:title" content="Debate extension — Clevertree Chat">
-  <meta property="og:description" content="Debate the page you’re on. Networkers who keep community tips moving use Relay on myproblem.app/extension.">
+  <meta property="og:title" content="Extension · Clevertree Chat">
+  <meta property="og:description" content="Keep the room beside the web. Shared #web IRC + SI panel.">
   <meta property="og:url" content="https://clevertree.chat/extension">
   <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://clevertree.chat/images/og-default.jpg">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
-    <script>
+  <script>
     try {
-      var t = localStorage.getItem("clevertree-theme");
-      if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+      var t = localStorage.getItem("ct-theme") || localStorage.getItem("clevertree.room.theme");
+      if (t === "dark" || t === "light" || t === "system") document.documentElement.dataset.theme = t;
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/assets/theme.css">
+  <link rel="stylesheet" href="/assets/site.css">
 </head>
-<body>
+<body class="page-extension">
   <a class="skip" href="#main">Skip to content</a>
-  <div class="wrap">
-    <header>
+  <header class="site-head">
+    <div class="wrap nav">
       <a class="wordmark" href="/">
-        <img src="/icon-128x128.png" alt="" width="32" height="32">
-        Clevertree Chat
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 79V21 M50 56L26 35 M26 35V23 M26 35H38 M50 43L73 22 M73 22H61 M73 22V34 M50 70L77 55 M77 55H65 M77 55V67" fill="none" stroke="currentColor" stroke-width="6.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Clevertree Chat</span>
       </a>
-      <div class="header-actions">
-        <button type="button" class="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">
-          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-          </svg>
-          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
-        </button>
-        <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
-          <span class="nav-toggle-bars" aria-hidden="true"></span>
-        </button>
-      </div>
-      <nav class="nav-links" id="site-nav" aria-label="Primary">
-        <a class="nav-try" href="/forest">Forest</a>
-        <a class="nav-try" href="/extension" aria-current="page">Extension</a>
-        <a class="nav-try" href="/dev">Dev</a>
-        <a class="nav-try" href="/try">See demo</a>
+      <nav aria-label="Primary">
+        <a href="/chat">Chat</a>
+        <a href="/extension" aria-current="page">Extension</a>
+        <a href="/dev">Dev</a>
       </nav>
-    </header>
-    <main id="main" class="try-page">
-      <p class="kicker">Chromium · MV3 · debate board</p>
-      <h1>Debate the site you’re on</h1>
-      <p class="lead-quiet">Side-panel for Clevertree debate. One board per domain. Empty until you write. This is <strong>not</strong> the Networker gather tool.</p>
-      <p>
-        The debate extension opens a simplified board for the active tab’s <strong>whole site</strong> (path collapsed). Visitor and topic IDs are issued by <code>api.clevertree.chat</code>; posts go through the same durable <code>/api/chat</code> path as the web demos.
-      </p>
-      <p style="margin-top:1.4rem">
-        <a class="button" href="/downloads/clevertree-chat-extension.zip" download="clevertree-chat-extension.zip">Download debate extension (.zip)</a>
-      </p>
-      <p class="hint" style="margin-top:0.9rem">
-        <strong>Want to be a Networker?</strong> The primary path is the unified <strong>Relay</strong> extension on
-        <a href="https://myproblem.app/extension">myproblem.app/extension</a>
-        — read-only gather from social groups you already visit, so tips keep moving. Not this debate zip.
-      </p>
-      <p class="hint" style="margin-top:0.9rem">
-        Version 0.2.0 · Chrome, Edge, Brave, and other Chromium browsers · not on the Chrome Web Store yet
-        (listing steps in <a href="https://github.com/paradigm-threat/clevertree-chat/blob/main/docs/chrome-web-store.md">docs/chrome-web-store.md</a>).
-        Prefer a link? Open any site at <a href="/w">clevertree.chat/w/…</a> — no extension required.
-      </p>
+      <button type="button" class="theme" data-theme-toggle aria-label="Switch theme">◐</button>
+    </div>
+  </header>
+  <main id="main">
+    <section class="wrap extension-hero">
+      <div>
+        <span class="kicker">CHROME SIDE PANEL</span>
+        <h1>Keep the room<br>beside the web.</h1>
+        <p>Open Clevertree Chat on any website. Ordinary sites share <code>#web</code>, with a domain chip for context. Product sites can mount their own channel.</p>
+        <div class="cta">
+          <a class="button primary" href="/downloads/clevertree-chat-extension.zip" download="clevertree-chat-extension.zip">Download .zip</a>
+          <a class="button secondary" href="#unpacked">Load unpacked ↓</a>
+        </div>
+        <small class="install-note">Chrome Web Store listing is optional — load unpacked works today. Networker stays in Options, off by default.</small>
+      </div>
+      <div class="browser">
+        <div class="browser-top"><span>● ● ●</span><span>example.org</span></div>
+        <div class="browser-body">
+          <div class="web-page">
+            <div class="skeleton"></div>
+            <div class="skeleton short"></div>
+            <div class="web-block"></div>
+          </div>
+          <div class="side-host">
+            <div class="domain"><code>example.org</code><small>Shared room</small></div>
+            <section class="room preview" aria-label="Room interface preview">
+              <header class="room-top">
+                <span class="room-brand">
+                  <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 79V21 M50 56L26 35 M26 35V23 M26 35H38 M50 43L73 22 M73 22H61 M73 22V34 M50 70L77 55 M77 55H65 M77 55V67" fill="none" stroke="currentColor" stroke-width="6.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <b>Clevertree Chat</b>
+                </span>
+                <div class="room-tools">
+                  <button type="button" data-theme-toggle aria-label="Switch theme">◐</button>
+                  <button type="button" data-investigate disabled>Investigate</button>
+                  <button type="button" data-panel aria-expanded="true" aria-label="Toggle SI panel">▥ <span>SI</span></button>
+                </div>
+              </header>
+              <div class="panes">
+                <section class="irc">
+                  <div class="pane-head">
+                    <div><strong class="mono">#web</strong><small>Public room</small></div>
+                    <span class="status">○ Room preview</span>
+                  </div>
+                  <div class="transcript">
+                    <div class="empty">
+                      <h3>Welcome to #web</h3>
+                      <p>Public conversation appears here.</p>
+                    </div>
+                  </div>
+                  <div class="composer">
+                    <textarea placeholder="Message #web…" disabled></textarea>
+                    <div class="composer-foot">
+                      <small>Messages are public.</small>
+                      <button type="button" disabled aria-label="Send">↑</button>
+                    </div>
+                  </div>
+                </section>
+                <aside class="si">
+                  <div class="pane-head"><div><strong>SI panel</strong><small>Curated from the conversation</small></div></div>
+                  <div class="si-body">
+                    <h3>Waiting for conversation</h3>
+                    <p>SI organizes public messages over time. It does not take sides.</p>
+                  </div>
+                </aside>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <section class="band" style="padding-top:2rem">
-        <h2>Install</h2>
-        <ol class="ext-steps">
-          <li>Download and unzip <code>clevertree-chat-extension.zip</code>.</li>
+    <section class="band" id="unpacked">
+      <div class="wrap split">
+        <div>
+          <span class="kicker">INSTALLATION</span>
+          <h2>Load unpacked.</h2>
+        </div>
+        <ol class="install-steps">
+          <li>Download and unzip <a href="/downloads/clevertree-chat-extension.zip">clevertree-chat-extension.zip</a>.</li>
           <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>).</li>
-          <li>Turn on <strong>Developer mode</strong>.</li>
-          <li>Click <strong>Load unpacked</strong> and select the <code>clevertree-chat-extension</code> folder.</li>
-          <li>Pin Clevertree Chat, then open the side panel from the toolbar icon.</li>
+          <li>Enable Developer mode → <strong>Load unpacked</strong> → select the <code>clevertree-chat-extension</code> folder.</li>
+          <li>Or from this repo: sync room assets (<code>bash scripts/sync_extension_room.sh</code>) then load <code>fronts/extension</code>.</li>
+          <li>Pin Clevertree Chat and open the side panel from the toolbar.</li>
         </ol>
-      </section>
-
-      <section class="band">
-        <h2>What you get</h2>
-        <ul class="ext-bullets">
-          <li>Normalized page URL → server topic id</li>
-          <li>Board stays empty until you post</li>
-          <li>Live durable boards for the tab you’re on (starter topics + any URL)</li>
-          <li>Talks to <a href="https://api.clevertree.chat/chat">api.clevertree.chat</a></li>
-        </ul>
-        <p class="hint" style="margin-top:1rem">
-          Web demos:
-          <a href="https://api.clevertree.chat/chat/flock-cameras">flock-cameras</a>
-          ·
-          <a href="https://api.clevertree.chat/chat/thc-legalization">thc-legalization</a>
-          ·
-          <a href="/try">See demo</a>
-        </p>
-      </section>
-    </main>
-        <footer>
-      <p><a href="/#si-different">We say SI (Super Intelligence, i.e. AI).</a> Developers! Help support this project. Also welcome anyone willing to use an LLM — which is everyone! <a href="/dev">Help build Cleverchat</a>.</p>
-    </footer>
-  </div>
-  <script src="/js/site-theme.js"></script>
-  <script src="/js/site-nav.js"></script>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <span>Clevertree Chat</span>
+      <a href="/forest">Forest manifesto</a>
+    </div>
+  </footer>
+  <script src="/assets/site.js"></script>
 </body>
 </html>

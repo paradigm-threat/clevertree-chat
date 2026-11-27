@@ -1,0 +1,54 @@
+/**
+ * Living Commons — dark theme pack (low-glare forest-neutral).
+ * Activate with data-theme="dark", or system + prefers-color-scheme: dark.
+ */
+:root[data-theme="dark"],
+:root[data-theme-pref="dark"] {
+  color-scheme: dark;
+  --canvas: #141e19;
+  --irc: #1a2520;
+  --si: #202f27;
+  --card: #26362d;
+  --subtle: #2c3c33;
+  --ink: #e6eee6;
+  --muted: #b0c1b5;
+  --line: #3d5144;
+  --strong-line: #768e7d;
+  --action: #a8d4b4;
+  --action-ink: #14291d;
+  --action-soft: #324c3b;
+  --focus: #b9e7c5;
+  --success: #a8d4b4;
+  --warning: #e5c38c;
+  --danger: #f3a59e;
+  --nick-alt: #a8c5e0;
+  --nick-warm: #d9bb91;
+  --shadow: #00000045;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme-pref="light"]),
+  :root[data-theme="system"],
+  :root[data-theme-pref="system"] {
+    color-scheme: dark;
+    --canvas: #141e19;
+    --irc: #1a2520;
+    --si: #202f27;
+    --card: #26362d;
+    --subtle: #2c3c33;
+    --ink: #e6eee6;
+    --muted: #b0c1b5;
+    --line: #3d5144;
+    --strong-line: #768e7d;
+    --action: #a8d4b4;
+    --action-ink: #14291d;
+    --action-soft: #324c3b;
+    --focus: #b9e7c5;
+    --success: #a8d4b4;
+    --warning: #e5c38c;
+    --danger: #f3a59e;
+    --nick-alt: #a8c5e0;
+    --nick-warm: #d9bb91;
+    --shadow: #00000045;
+  }
+}

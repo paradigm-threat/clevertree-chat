@@ -1,155 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="system">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Internet as a Forest — Clevertree Chat</title>
   <meta name="description" content="The internet should grow like a forest: organically, fairly, honestly, and auditable by the public. People will be the cloud.">
-  <meta name="theme-color" content="#6ad1ef">
+  <meta name="theme-color" content="#F2F4EF">
   <link rel="canonical" href="https://clevertree.chat/forest">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Clevertree Chat">
   <meta property="og:title" content="Internet as a Forest — Clevertree Chat">
-  <meta property="og:description" content="The internet should grow like a forest: organically, fairly, honestly, and auditable by the public. People will be the cloud.">
+  <meta property="og:description" content="The internet should grow like a forest: organically, fairly, honestly, and auditable by the public.">
   <meta property="og:url" content="https://clevertree.chat/forest">
   <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
-  <meta property="og:image:secure_url" content="https://clevertree.chat/images/og-default.jpg">
-  <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Clevertree.chat across green hills at sunrise. Knowledge grows like a tree.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://clevertree.chat/images/og-default.jpg">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
-    <script>
+  <script>
     try {
-      var t = localStorage.getItem("clevertree-theme");
-      if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+      var t = localStorage.getItem("ct-theme") || localStorage.getItem("clevertree.room.theme");
+      if (t === "dark" || t === "light" || t === "system") document.documentElement.dataset.theme = t;
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/assets/theme.css">
+  <link rel="stylesheet" href="/assets/site.css">
 </head>
-<body class="trees-body">
+<body class="page-forest">
   <a class="skip" href="#main">Skip to content</a>
-  <div class="trees-bg" aria-hidden="true"></div>
-  <div class="forest-horizon" id="forest" aria-label="Horizon forest"></div>
-  <div class="wrap trees-wrap">
-    <header>
+  <header class="site-head">
+    <div class="wrap nav">
       <a class="wordmark" href="/">
-        <img src="/icon-128x128.png" alt="" width="32" height="32">
-        Clevertree Chat
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 79V21 M50 56L26 35 M26 35V23 M26 35H38 M50 43L73 22 M73 22H61 M73 22V34 M50 70L77 55 M77 55H65 M77 55V67" fill="none" stroke="currentColor" stroke-width="6.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Clevertree Chat</span>
       </a>
-      <div class="header-actions">
-        <button type="button" class="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">
-          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-          </svg>
-          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
-        </button>
-        <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
-          <span class="nav-toggle-bars" aria-hidden="true"></span>
-        </button>
-      </div>
-      <nav class="nav-links" id="site-nav" aria-label="Primary">
-        <a class="nav-try" href="/forest" aria-current="page">Forest</a>
-        <a class="nav-try" href="/extension">Extension</a>
-        <a class="nav-try" href="/dev">Dev</a>
-        <a class="nav-try" href="/try">See demo</a>
+      <nav aria-label="Primary">
+        <a href="/chat">Chat</a>
+        <a href="/extension">Extension</a>
+        <a href="/dev">Dev</a>
       </nav>
-    </header>
-    <main id="main" class="trees-page">
-      <div class="trees-copy">
-        <p class="kicker">Forest</p>
-        <h1>Internet as a Forest</h1>
-        <p class="lead trees-lead">A forest grows itself. Roots trade water and sugar; fallen wood feeds the next stand. Crowns open where light arrives and thicken where it does not. Through drought, frost, and fire, the canopy adapts and finds a balance no single tree could hold alone.</p>
-        <p class="trees-bridge">That picture is the internet we didn’t get: a canopy of distinct trees on one hill, not ducts. The internet should be allowed to grow organically, without corporate constraints, and still follow rules that keep everything fair, honest, and auditable by the public.</p>
-        <p class="trees-actions">
-          <button type="button" class="regrow-btn" id="regrow" aria-label="Regrow forest" title="Regrow forest">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 3-6.7"/>
-              <path d="M3 4v5h5"/>
-            </svg>
-          </button>
-          <span class="hint trees-count" id="forest-count"></span>
-        </p>
+      <button type="button" class="theme" data-theme-toggle aria-label="Switch theme">◐</button>
+    </div>
+  </header>
+  <main id="main">
+    <article class="wrap prose section">
+      <span class="kicker">FOREST</span>
+      <h1>Internet as a Forest</h1>
+      <p class="lead">A forest grows itself. Roots trade water and sugar; fallen wood feeds the next stand. Crowns open where light arrives and thicken where it does not. Through drought, frost, and fire, the canopy adapts and finds a balance no single tree could hold alone.</p>
+      <p>That picture is the internet we didn’t get: a canopy of distinct trees on one hill, not ducts. The internet should be allowed to grow organically, without corporate constraints, and still follow rules that keep everything fair, honest, and auditable by the public.</p>
 
-        <div class="trees-narrative">
-          <section class="band">
-            <h2>It never grew like this</h2>
-            <p>The internet as we know it today did not grow organically. It is even more constrained than a bonsai tree. And we never got to see its true potential.</p>
-            <p>That potential is right around the corner because of SI (Super Intelligence, i.e. AI). SI is the better word for what this software is and does: accessibility — making things easy for humans who exist today, including the sick and the disabled — not inventing a new kind of thinking life form. Accessibility kept getting lost in the for-profit, monopolized software industry. Even companies like Apple that seemed to care, and had a head start, abandoned it after a while.</p>
-          </section>
-
-          <section class="band">
-            <h2>It channeled</h2>
-            <p>The internet we have did not grow at all. It channeled. It became a series of channels like television that corporations can control, predict, and lock down with intellectual property — and most importantly, block competition. Competition would mean facing their own product quality and raising a bar they set as low as it could go. They don’t even care how products are discarded; that’s why we have the big landfills. If governments changed a few things we’d have better products, but governments were never interested.</p>
-            <p>So we got a channeled, constrained internet. It hasn’t grown like a forest. It has grown like interlocking ducts — like in the movie <cite>Brazil</cite> — and became unmanageable.</p>
-          </section>
-
-          <section class="band">
-            <h2>What they sold vs what SI is</h2>
-            <p>They tried to sell us on the idea that we needed AI to manage all of it. SI will help clean that mess up. But the real nature of SI is to make your dreams, your ideas, your thoughts come alive with minimal human effort — without tedious typing and good posture at a workable computer. The future is now a choice between having the corporations manage every last thing in our lives, or doing it ourselves with our own tools, our own SI, home grown, home run. Why Relay’s Spot batch SI differs from always-on cloud AIs: <a href="/#si-different">Why is this SI different from other SIs?</a></p>
-          </section>
-
-          <section class="band">
-            <h2>One or two of us</h2>
-            <p>Clevertree Chat, like the rest of our products, is going to use SI to compete with the corporations. Now we have the abilities they have with all their people — and we can do what they can do with just one or two of us. Two at least: you need human feedback that will never be replaceable. With two or more you can make a product better than what the corporations put out. Faster. Without a salary. Without overhead. Scatter it on the free internet.</p>
-            <p>Of course the internet is not free yet. It’s locked down, and competing on advertising alone is extremely hard. A lot of this waits until the internet opens enough for the individual to be heard. We’re taking a major step toward that by changing the way people debate.</p>
-          </section>
-
-          <section class="band">
-            <h2>Everyone talking, no one listening</h2>
-            <p>A debate can rage with thousands lobbing the pro and anti-establishment positions back and forth, and a third voice — a third opinion that was always there — might never enter the conversation. Lost in the flood of comments and threads. Downvoted, shadow-banned, hidden from the average person on the page.</p>
-            <p>The Fox News message board is a perfect example. It ran for decades. If you ever tried to use it, you’d see a huge flow of comments. Make a comment and it’s gone within seconds. Everyone was talking and no one was listening.</p>
-            <p>Clevertree Chat aims to let that one person enter the conversation and be heard — simply because they are providing a unique perspective the SI curator has not already filed. SI organizes the map so a human flood cannot bury that voice; it does not vote, pick winners, or take sides. That’s what will change the debate.</p>
-          </section>
-
-          <section class="band">
-            <h2>People will be the cloud</h2>
-            <p>There is no doubt we’re going to move in this direction now. Bold, based vision sees nothing but outrage and chaos. And it failed to prove it has what it takes to be part of the final internet.</p>
-            <p>In the next version, people will be the cloud — and we are all the cloud we’ll ever need.</p>
-          </section>
-        </div>
+      <div class="band">
+        <h2>It never grew like this</h2>
+        <p>The internet as we know it today did not grow organically. It is even more constrained than a bonsai tree. And we never got to see its true potential.</p>
+        <p>That potential is right around the corner because of SI (Super Intelligence, i.e. AI). SI is the better word for what this software is and does: accessibility — making things easy for humans who exist today, including the sick and the disabled — not inventing a new kind of thinking life form.</p>
       </div>
-    </main>
-        <footer>
-      <p><a href="/#si-different">We say SI (Super Intelligence, i.e. AI).</a> Developers! Help support this project. Also welcome anyone willing to use an LLM — which is everyone! <a href="/dev">Help build Cleverchat</a>.</p>
-    </footer>
-  </div>
-  <script src="/js/grow-hill-tree.js"></script>
-  <script src="/js/forest-horizon.js"></script>
-  <script>
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const forest = document.getElementById("forest");
-    const countEl = document.getElementById("forest-count");
 
-    function plant() {
-      const n = plantForestHorizon(forest, { reduce: reduce });
-      countEl.textContent = n + " trees";
-    }
+      <div class="band">
+        <h2>It channeled</h2>
+        <p>The internet we have did not grow at all. It channeled. It became a series of channels like television that corporations can control, predict, and lock down with intellectual property — and most importantly, block competition.</p>
+        <p>So we got a channeled, constrained internet. It hasn’t grown like a forest. It has grown like interlocking ducts — like in the movie <cite>Brazil</cite> — and became unmanageable.</p>
+      </div>
 
-    document.getElementById("regrow").addEventListener("click", plant);
-    function watchMq(mq, fn) {
-      if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
-      else if (typeof mq.addListener === "function") mq.addListener(fn);
-    }
-    watchMq(window.matchMedia(FOREST_MOBILE_MQ || "(max-width: 460px)"), plant);
-    watchMq(window.matchMedia("(prefers-color-scheme: dark)"), plant);
-    window.addEventListener("clevertree-themechange", plant);
-    plant();
-  </script>
-  <script src="/js/site-theme.js"></script>
-  <script src="/js/site-nav.js"></script>
-  <script src="/js/site-pwa.js"></script>
+      <div class="band">
+        <h2>What they sold vs what SI is</h2>
+        <p>They tried to sell us on the idea that we needed AI to manage all of it. SI will help clean that mess up. But the real nature of SI is to make your dreams, your ideas, your thoughts come alive with minimal human effort. The future is now a choice between having the corporations manage every last thing in our lives, or doing it ourselves with our own tools, our own SI, home grown, home run.</p>
+      </div>
+
+      <div class="band">
+        <h2>One or two of us</h2>
+        <p>Clevertree Chat, like the rest of our products, is going to use SI to compete with the corporations. Now we have the abilities they have with all their people — and we can do what they can do with just one or two of us. Two at least: you need human feedback that will never be replaceable.</p>
+      </div>
+
+      <div class="band">
+        <h2>Everyone talking, no one listening</h2>
+        <p>A debate can rage with thousands lobbing the pro and anti-establishment positions back and forth, and a third voice — a third opinion that was always there — might never enter the conversation. Lost in the flood of comments and threads.</p>
+        <p>Clevertree Chat aims to let that one person enter the conversation and be heard — simply because they are providing a unique perspective the SI curator has not already filed. SI organizes so a human flood cannot bury that voice; it does not vote, pick winners, or take sides.</p>
+      </div>
+
+      <div class="band">
+        <h2>People will be the cloud</h2>
+        <p>In the next version, people will be the cloud — and we are all the cloud we’ll ever need.</p>
+      </div>
+
+      <p style="margin-top:2rem">
+        <a class="button primary" href="/chat">Open chat →</a>
+        <a class="button secondary" href="/dev" style="margin-left:0.5rem">Help build it</a>
+      </p>
+    </article>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <span>Clevertree Chat</span>
+      <a href="/">Home</a>
+    </div>
+  </footer>
+  <script src="/assets/site.js"></script>
 </body>
 </html>

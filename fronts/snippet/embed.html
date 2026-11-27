@@ -2,61 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clevertree Chat — embed Debate board</title>
-  <link rel="stylesheet" href="/fronts/snippet/clevertree-board.css">
-  <style>
-    body {
-      margin: 0;
-      font-family: Georgia, serif;
-      background: #f7f3ea;
-      color: #0f2a1c;
-    }
-    main {
-      max-width: 48rem;
-      margin: 0 auto;
-      padding: 2rem 1.2rem 3rem;
-    }
-    pre {
-      overflow: auto;
-      background: #fff;
-      border: 1px solid rgba(15, 42, 28, 0.14);
-      border-radius: 0.6rem;
-      padding: 0.9rem 1rem;
-      font-size: 0.85rem;
-    }
-  </style>
+  <title>Clevertree Chat embed</title>
+  <link rel="stylesheet" href="../room/tokens.css">
+  <link rel="stylesheet" href="../room/clevertree-room.css">
 </head>
 <body>
-  <main>
-    <h1>Embed Clevertree Debate board</h1>
-    <p>
-      Live durable boards on the Intake host. The board stays <strong>empty</strong> until someone writes.
-      Point <code>data-api-base</code> at the chat host for WebSocket updates. Any-URL boards (extension) normalize
-      with <code>normalizeUrl</code> in <code>fronts/extension/normalize-url.js</code> before <code>resolve</code>.
-    </p>
-    <pre>&lt;link rel="stylesheet" href="https://api.clevertree.chat/fronts/snippet/clevertree-board.css"&gt;
-&lt;div
-  data-clevertree-board
-  data-api="chat"
-  data-api-base="https://api.clevertree.chat"
-  data-topic="thc-legalization"
-&gt;&lt;/div&gt;
-&lt;script src="https://api.clevertree.chat/fronts/snippet/clevertree-board.js"&gt;&lt;/script&gt;</pre>
-    <p>
-      Live boards:
-      <a href="https://api.clevertree.chat/chat/thc-legalization">thc-legalization</a>
-      ·
-      <a href="https://api.clevertree.chat/chat/flock-cameras">flock-cameras</a>.
-    </p>
-    <div
-      data-clevertree-board
-      data-api="chat"
-      data-topic="flock-cameras"
-      style="margin-top:1.5rem"
-    ></div>
-  </main>
-  <script src="/fronts/snippet/clevertree-outbox.js"></script>
-  <script src="/fronts/snippet/clevertree-board.js"></script>
+  <p>Use the shared room + launcher. Example:</p>
+  <pre>&lt;script src="/fronts/room/context-tags.js"&gt;&lt;/script&gt;
+&lt;script src="/fronts/room/channel-route.js"&gt;&lt;/script&gt;
+&lt;script src="/fronts/room/clevertree-room.js"&gt;&lt;/script&gt;
+&lt;script src="/fronts/room/chat-launcher.js"&gt;&lt;/script&gt;
+&lt;script&gt;ClevertreeChatLauncher.mountButton(null, { topicId: 0 });&lt;/script&gt;</pre>
+  <script src="../room/context-tags.js"></script>
+  <script src="../room/channel-route.js"></script>
+  <script src="../room/clevertree-room.js"></script>
+  <script src="../room/chat-launcher.js"></script>
+  <script>
+    ClevertreeChatLauncher.mountButton(null, { channel: "#web", title: "Public web" });
+  </script>
 </body>
 </html>

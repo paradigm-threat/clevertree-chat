@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Clevertree Chat",
-  "version": "0.2.0",
-  "description": "Debate the site you're on. One debate per domain. Empty until you write.",
+  "version": "0.3.2",
+  "description": "Public IRC debate board on any website. Shared #web room, or product channels when you are on Clevertree sites.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -21,16 +21,54 @@
   "side_panel": {
     "default_path": "sidepanel.html"
   },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": [
-    "sidePanel",
-    "storage",
-    "tabs",
-    "activeTab"
-  ],
+  "permissions": ["sidePanel", "storage", "tabs"],
   "host_permissions": [
-    "https://api.clevertree.chat/*"
-  ]
+    "https://api.clevertree.chat/*",
+    "wss://api.clevertree.chat/*",
+    "https://*.relaygateway.net/*",
+    "wss://*.relaygateway.net/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://clevertree.chat/*",
+        "https://*.clevertree.chat/*",
+        "https://clevertree.net/*",
+        "https://*.clevertree.net/*",
+        "https://myproblem.app/*",
+        "https://*.myproblem.app/*",
+        "https://paradigmthreat.net/*",
+        "https://*.paradigmthreat.net/*",
+        "https://quizgate.app/*",
+        "https://*.quizgate.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["inject-id.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://clevertree.chat/*",
+      "https://*.clevertree.chat/*",
+      "https://clevertree.net/*",
+      "https://*.clevertree.net/*",
+      "https://myproblem.app/*",
+      "https://*.myproblem.app/*",
+      "https://paradigmthreat.net/*",
+      "https://*.paradigmthreat.net/*",
+      "https://quizgate.app/*",
+      "https://*.quizgate.app/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ]
+  }
 }

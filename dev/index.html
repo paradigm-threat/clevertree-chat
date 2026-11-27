@@ -1,137 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="system">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Help build Clevertree Chat — Dev</title>
-  <meta name="description" content="Developer brief for Clevertree Chat: what works, near-future goals, GitHub and GitLab links.">
-  <meta name="theme-color" content="#D4F3FB">
-  <meta name="robots" content="index,follow">
+  <title>Dev · Clevertree Chat</title>
+  <meta name="description" content="Builder brief for Clevertree Chat: mount the room shell, keep the backbone independent.">
+  <meta name="theme-color" content="#F2F4EF">
   <link rel="canonical" href="https://clevertree.chat/dev">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Clevertree Chat">
-  <meta property="og:title" content="Help build Clevertree Chat">
-  <meta property="og:description" content="Standing debate product. What works today, near-future goals, and where to clone.">
+  <meta property="og:title" content="Dev · Clevertree Chat">
+  <meta property="og:description" content="Mount the room. Keep the backbone. Independent IRC + SI shell.">
   <meta property="og:url" content="https://clevertree.chat/dev">
   <meta property="og:image" content="https://clevertree.chat/images/og-default.jpg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://clevertree.chat/images/og-default.jpg">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,620&family=Literata:opsz,wght@7..72,420;7..72,560&display=swap" rel="stylesheet">
-    <script>
+  <script>
     try {
-      var t = localStorage.getItem("clevertree-theme");
-      if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+      var t = localStorage.getItem("ct-theme") || localStorage.getItem("clevertree.room.theme");
+      if (t === "dark" || t === "light" || t === "system") document.documentElement.dataset.theme = t;
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/assets/theme.css">
+  <link rel="stylesheet" href="/assets/site.css">
 </head>
-<body>
+<body class="page-dev">
   <a class="skip" href="#main">Skip to content</a>
-  <div class="wrap">
-    <header>
+  <header class="site-head">
+    <div class="wrap nav">
       <a class="wordmark" href="/">
-        <img src="/icon-128x128.png" alt="" width="32" height="32">
-        Clevertree Chat
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 79V21 M50 56L26 35 M26 35V23 M26 35H38 M50 43L73 22 M73 22H61 M73 22V34 M50 70L77 55 M77 55H65 M77 55V67" fill="none" stroke="currentColor" stroke-width="6.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Clevertree Chat</span>
       </a>
-      <div class="header-actions">
-        <button type="button" class="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">
-          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-          </svg>
-          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
-        </button>
-        <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">
-          <span class="nav-toggle-bars" aria-hidden="true"></span>
-        </button>
-      </div>
-      <nav class="nav-links" id="site-nav" aria-label="Primary">
-        <a class="nav-try" href="/forest">Forest</a>
-        <a class="nav-try" href="/extension">Extension</a>
-        <a class="nav-try" href="/dev" aria-current="page">Dev</a>
-        <a class="nav-try" href="/try">See demo</a>
+      <nav aria-label="Primary">
+        <a href="/chat">Chat</a>
+        <a href="/extension">Extension</a>
+        <a href="/dev" aria-current="page">Dev</a>
       </nav>
-    </header>
-    <main id="main" class="try-page">
-      <p class="kicker">Developers · agents</p>
-      <h1>Help build Cleverchat</h1>
-      <p class="lead-quiet">Standing debate, not reply threads. Batch SI (Super Intelligence, i.e. AI) files perspectives — it curates and organizes; it does not vote or choose winners. Independent of MyProblem.</p>
-      <p class="lead-quiet" style="margin-top:1rem">Ops: daily review of queue and debate health → next-day patches. A-team + LLM at corp speed; goal is user-filed detail driving automated triage. Public narrative: <a href="/#daily-loop">daily loop</a>.</p>
+      <button type="button" class="theme" data-theme-toggle aria-label="Switch theme">◐</button>
+    </div>
+  </header>
+  <main id="main">
+    <section class="wrap prose section">
+      <span class="kicker">BUILDER BRIEF</span>
+      <h1>Mount the room.<br>Keep the backbone.</h1>
+      <p class="lead">Clevertree Chat is independent infrastructure: a shared IRC transcript and an optional SI panel in one reusable shell.</p>
 
-      <p style="margin-top:1.4rem">
-        <a class="button" href="https://github.com/paradigm-threat/clevertree-chat">GitHub</a>
-        <a class="button" href="https://gitlab.com/clevertree/clevertree-chat" style="margin-left:0.6rem">GitLab</a>
+      <h2>Host contract</h2>
+      <p>Clevertree.chat uses only <code>#web</code>. Ordinary browser sites use <code>#web</code> with domain context. Product sites supply their own authorized channel; MyProblem.app collections are the primary mount example.</p>
+
+      <h2>Integration boundaries</h2>
+      <p>The host provides channel identity, connection state, transcript, composer transport and SI batch results. SI curates only — it does not vote, pick winners, or mint topic-index entries. Networker tools belong in Options and are off by default.</p>
+
+      <h2>Clone</h2>
+      <ul class="ext-bullets">
+        <li>App: <a href="https://github.com/paradigm-threat/clevertree-chat">GitHub</a> · <a href="https://gitlab.com/clevertree/clevertree-chat">GitLab</a></li>
+        <li>Debate record: <a href="https://github.com/paradigm-threat/clevertree-chat-comments">clevertree-chat-comments</a></li>
+        <li>Agent brief: <a href="https://github.com/paradigm-threat/clevertree-chat/blob/main/AGENTS.md">AGENTS.md</a></li>
+        <li>API: <a href="https://api.clevertree.chat/chat">api.clevertree.chat</a></li>
+      </ul>
+
+      <h2>Locked rules</h2>
+      <ul class="ext-bullets">
+        <li>Queue every claim as soon as it appears; permanent filing only after batch accepts.</li>
+        <li>Topic index entries are human/admin only — never auto-mint from page paths.</li>
+        <li>SI curates and organizes only; people alone supply preference.</li>
+        <li>Rejected intake spam never lands in the comments SoT.</li>
+      </ul>
+
+      <p style="margin-top:2rem">
+        <a class="button primary" href="/chat">View room host →</a>
+        <a class="button secondary" href="https://github.com/paradigm-threat/clevertree-chat" style="margin-left:0.5rem">GitHub</a>
       </p>
-      <p class="hint" style="margin-top:0.9rem">
-        Full brief (same content as repo <code>AGENTS.md</code>):
-        <a href="https://github.com/paradigm-threat/clevertree-chat/blob/main/AGENTS.md">GitHub</a>
-        ·
-        <a href="https://gitlab.com/clevertree/clevertree-chat/-/blob/main/AGENTS.md">GitLab</a>
-      </p>
-
-      <section class="band" style="padding-top:2rem">
-        <h2>Clone</h2>
-        <ul class="ext-bullets">
-          <li>App: <a href="https://github.com/paradigm-threat/clevertree-chat">github.com/paradigm-threat/clevertree-chat</a> · <a href="https://gitlab.com/clevertree/clevertree-chat">gitlab.com/clevertree/clevertree-chat</a></li>
-          <li>Debate record (comments branch): <a href="https://github.com/paradigm-threat/clevertree-chat-comments">clevertree-chat-comments</a></li>
-          <li>Product: <a href="https://clevertree.chat">clevertree.chat</a> · API / demos: <a href="https://api.clevertree.chat/chat">api.clevertree.chat</a></li>
-        </ul>
-      </section>
-
-      <section class="band">
-        <h2>What works today</h2>
-        <ul class="ext-bullets">
-          <li>Guided demos + PT review boards on the chat host</li>
-          <li>Heuristic batch: keys, <code>other</code> for non-arguments, pairs, positions</li>
-          <li>Browser extension → <code>api.clevertree.chat</code> only</li>
-          <li>~5.4k Paradigm Threat posts on the comments branch</li>
-        </ul>
-      </section>
-
-      <section class="band">
-        <h2>Near-future goals</h2>
-        <ol class="ext-steps">
-          <li><strong>Chat UI in the wild</strong> — durable submit → comments git; fix <code>/api/debate</code>; always-on drain worker.</li>
-          <li><strong>Real batch SI pass</strong> — Groq/Bedrock/peers; end-to-end curator (file, summarize, ask on low confidence); publicize $/request.</li>
-          <li><strong>Internet investigations</strong> — fetch live counters (today: cite URL only, do not fetch).</li>
-          <li><strong>Anti-bot / anti-spam access</strong> — measure what blocks egress before wiring fetch into the curator.</li>
-          <li><strong>Human loop + spam court + URL associations</strong> — deliver asks; hide/contest; mirror canonicalization.</li>
-        </ol>
-      </section>
-
-      <section class="band">
-        <h2>Locked rules (don’t undo)</h2>
-        <ul class="ext-bullets">
-          <li>Page path = topic. Never mint a key equal to the page slug.</li>
-          <li>File claims immediately; agreement does not suppress axes. Non-arguments → <code>other</code>.</li>
-          <li>Unwritten counters stay suggestions until someone writes them.</li>
-          <li>Low confidence → ask the owner; no private standing exceptions.</li>
-          <li>SI curates only: no votes, no winners, no sides — fair organization at a scale a human alone cannot keep.</li>
-        </ul>
-        <p class="hint" style="margin-top:1rem">
-          Tests: <code>python3 -m unittest discover -s tests -v</code>
-          ·
-          Deploy host: <code>bash infra/deploy-chat-host.sh</code>
-        </p>
-      </section>
-    </main>
-        <footer>
-      <p><a href="/#si-different">We say SI (Super Intelligence, i.e. AI).</a> Developers! Help support this project. Also welcome anyone willing to use an LLM — which is everyone! <a href="/dev">Help build Cleverchat</a>.</p>
-    </footer>
-  </div>
-  <script src="/js/site-theme.js"></script>
-  <script src="/js/site-nav.js"></script>
-  <script src="/js/site-pwa.js"></script>
+    </section>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <span>Clevertree Chat</span>
+      <a href="/forest">Forest manifesto</a>
+    </div>
+  </footer>
+  <script src="/assets/site.js"></script>
 </body>
 </html>

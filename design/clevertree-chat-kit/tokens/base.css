@@ -1,0 +1,26 @@
+/**
+ * Theme-agnostic tokens (typography, space, motion).
+ * Palettes live in light.css / dark.css — swap or add packs later like IRC clients.
+ */
+:root {
+  --font-ui: "Source Sans 3", Lato, Aptos, "Trebuchet MS", sans-serif;
+  --font-editorial: "IBM Plex Serif", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "DejaVu Sans Mono", monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
+  --motion-normal: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-normal: 0ms;
+  }
+}

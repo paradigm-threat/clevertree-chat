@@ -183,12 +183,14 @@ def _split_irc(line: str) -> tuple[str, str, str]:
     return prefix, rest0[:space2], rest0[space2 + 1 :]
 
 
-# Craft / collection rooms: explicit channel names (repo + collection), not #pt-<topic>.
-# Prefer loading more from fronts/room/channel-policy.json / collection JSON at deploy.
+# Craft / collection rooms + public catch-all. Prefer channel-policy.json at deploy.
 CRAFT_CHANNELS: dict[str, str] = {
     "mp-general": "#mp-general",
     "ga-savannah-cat-rescue": "#ga-savannah-cat-rescue",
+    "web": "#web",
 }
+
+PUBLIC_WEB_CHANNEL = "#web"
 
 
 def _pt_consolidated() -> bool:
@@ -215,6 +217,8 @@ def channel_for_topic(prefix: str, topic: str) -> str:
     if t in CRAFT_CHANNELS:
         return CRAFT_CHANNELS[t]
     p = "".join(ch for ch in (prefix or "pt").lower() if ch.isalnum())[:8] or "pt"
+    if t == "web":
+        return PUBLIC_WEB_CHANNEL
     if p == "pt" and _pt_consolidated():
         return f"#{p}"
     if not t or t in {"lobby", "home"}:
@@ -225,7 +229,8 @@ def channel_for_topic(prefix: str, topic: str) -> str:
 def topic_for_channel(prefix: str, channel: str) -> str | None:
     """Inverse of channel_for_topic. Returns None if channel is not ours.
 
-    Consolidated #pt maps to general; finer topic comes from [[t:]] in the message body.
+    Consolidated #pt maps to general; finer topic comes from [[t:N]] in the body.
+    #web maps to topic slug ``web``; domain comes from [[d:]] in the body.
     """
     ch_norm = normalize_channel(channel)
     for topic, craft_ch in CRAFT_CHANNELS.items():
@@ -233,6 +238,8 @@ def topic_for_channel(prefix: str, channel: str) -> str | None:
             return topic
     p = "".join(ch for ch in (prefix or "pt").lower() if ch.isalnum())[:8] or "pt"
     ch = ch_norm.lstrip("#")
+    if ch == "web":
+        return "web"
     if ch == p:
         return "general"
     if p == "pt" and _pt_consolidated():
@@ -245,3 +252,37 @@ def topic_for_channel(prefix: str, channel: str) -> str | None:
         slug = ch[len(head) :]
         return slug or "general"
     return None
+
+
+def parse_context_tags(text: str) -> dict[str, Any]:
+    """Extract trailing/wire context tags from a PRIVMSG body."""
+    import re
+
+    out: dict[str, Any] = {"topic_id": None, "domain": None, "collection": None, "raw": []}
+    for m in re.finditer(r"\[\[(t|d|c):([^\]]+)\]\]", text or "", flags=re.I):
+        kind, body = m.group(1).lower(), m.group(2).strip()
+        out["raw"].append(m.group(0))
+        if kind == "t":
+            try:
+                out["topic_id"] = int(body)
+            except ValueError:
+                out["topic_id"] = body
+        elif kind == "d":
+            host = body.lower().replace("https://", "").replace("http://", "").split("/")[0]
+            if host.startswith("www."):
+                host = host[4:]
+            out["domain"] = host
+        elif kind == "c":
+            out["collection"] = body
+    return out
+
+
+def ensure_trailing_tag(text: str, tag: str) -> str:
+    """Append ``tag`` at end if missing."""
+    body = (text or "").rstrip()
+    tag = (tag or "").strip()
+    if not tag:
+        return body
+    if tag in body:
+        return body
+    return f"{body} {tag}".strip() if body else tag
