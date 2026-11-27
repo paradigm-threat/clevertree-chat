@@ -1,6 +1,6 @@
 {
   "schema": "clevertree.channel-policy.v1",
-  "notes": "Per-repo channel topology. One IRC channel can host many topics via context tags. #web is the public catch-all.",
+  "notes": "Per-repo channel topology. One IRC channel can host many topics via context tags. #web is the universal channel — same room as clevertree.chat/chat and the Clevertree Chat app default.",
   "repos": {
     "paradigm-threat": {
       "hosts": ["paradigmthreat.net", "www.paradigmthreat.net", "old.paradigmthreat.net"],
@@ -32,7 +32,7 @@
       "default_channel": "#web",
       "channels": ["#web"],
       "topic_via": "domain_tag",
-      "notes": "Universal room: default for unassigned users and generic embeds; attribution [[d:host]]"
+      "notes": "Universal room (#web): Clevertree Chat website + app + unassigned embeds; attribution [[d:host]] for non-product hosts"
     }
   },
   "product_hosts": {

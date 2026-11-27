@@ -33,8 +33,8 @@ private fun ClevertreeApp() {
         remember {
             ClevertreeRoomConfig(
                 apiBase = ClevertreeRoomConfig.DEFAULT_API_BASE,
-                channel = ClevertreeRoomConfig.UNIVERSAL_CHANNEL,
-                title = "Clevertree",
+                channel = ClevertreeRoomConfig.UNIVERSAL_CHANNEL, // #web = clevertree.chat/chat
+                title = "Clevertree Chat",
             )
         }
     ClevertreeRoom(

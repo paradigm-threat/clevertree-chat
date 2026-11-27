@@ -1,6 +1,7 @@
 /**
  * Map active-tab host → IRC channel + attribution context.
- * Product hosts → repo channel; everyone else → #web + [[d:domain]].
+ * Product hosts → repo channel; Clevertree Chat site + everyone else →
+ * universal #web (same channel as https://clevertree.chat/chat) + [[d:domain]] when needed.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {

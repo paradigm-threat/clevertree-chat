@@ -164,9 +164,10 @@
             title: opts.title,
           })
         : {
-            channel: opts.channel || "#mp-general",
-            title: opts.title || "Public help",
-            topicId: opts.topicId != null ? opts.topicId : 0,
+            // Universal = Clevertree Chat website room (#web)
+            channel: opts.channel || "#web",
+            title: opts.title || "Clevertree Chat",
+            topicId: opts.topicId != null ? opts.topicId : null,
             domain: opts.domain || "",
           };
     var ctx = {};

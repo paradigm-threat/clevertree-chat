@@ -46,10 +46,13 @@ data class ClevertreeRoomConfig(
 
     companion object {
         const val DEFAULT_API_BASE = "https://api.clevertree.chat"
-        /** Universal room — default for unassigned users and generic embeds. */
+        /**
+         * Universal room — same IRC channel as https://clevertree.chat/chat.
+         * Default for the Clevertree Chat app and unassigned / generic embeds.
+         */
         const val DEFAULT_CHANNEL = "#web"
         const val UNIVERSAL_CHANNEL = DEFAULT_CHANNEL
-        const val DEFAULT_TITLE = "Clevertree"
+        const val DEFAULT_TITLE = "Clevertree Chat"
         const val ASSET_LIVE_HTML = "clevertree-room/live.html"
 
         /** Domain used by androidx WebViewAssetLoader (do not change). */

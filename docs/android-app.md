@@ -4,9 +4,9 @@ Standalone APK (`:clevertree-app`) built on the embeddable [`clevertree-room`](.
 
 ## Product shape
 
-- Fullscreen universal room (`#web`) — same UI as web.
+- Fullscreen **universal room `#web`** — the **same channel** as [clevertree.chat/chat](https://clevertree.chat/chat).
 - **No separate onboarding.** The room composer starts **expanded** (most of the screen) with suggestion chips / placeholder asks; after the first send it collapses to the bottom bar; tap to expand again.
-- Assigned product embeds (Paradigm Threat `#pt`, MyProblem `#mp-general`, …) stay channel-policy driven; the app default is universal.
+- Assigned product embeds (Paradigm Threat `#pt`, MyProblem `#mp-general`, …) stay channel-policy driven; Clevertree Chat site + app always use `#web`.
 
 ## Build
 
