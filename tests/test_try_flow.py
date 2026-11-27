@@ -71,9 +71,9 @@ class TryFlowTests(unittest.TestCase):
         drained = self.service.drain("flock-cameras", self.visitor)
         self.assertFalse(drained["booted"])
         self.assertFalse(drained["cloud_api_called"])
-        self.assertIn("createCloudspace", drained["wake"])
-        self.assertIn("gpu.vs2.xlargeplusplus-sjc", drained["wake"])
-        self.assertIn("deleteCloudspace", drained["decommission"])
+        # Spot wake scripts are decommissioned (Linode pub1 is the chat path).
+        self.assertIn("Spot decommissioned", drained["wake"])
+        self.assertIn("Spot decommissioned", drained["decommission"])
         placed = self.comments()
         self.assertEqual(len(placed), 1)
         self.assertEqual(placed[0]["starting"], "uncategorized")

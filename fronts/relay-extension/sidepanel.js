@@ -5,6 +5,76 @@
 (function () {
   "use strict";
 
+  // Prefer real MV3 chrome; otherwise a local preview stub (never assign window.chrome —
+  // Cursor/Electron often expose a non-writable empty chrome object).
+  var ext =
+    typeof chrome !== "undefined" &&
+    chrome.runtime &&
+    chrome.runtime.sendMessage &&
+    chrome.storage &&
+    chrome.storage.local
+      ? chrome
+      : null;
+  if (!ext) {
+    var _store = {};
+    try {
+      _store = JSON.parse(sessionStorage.getItem("relay_preview_store") || "{}") || {};
+    } catch (e) {}
+    function persistStore() {
+      try {
+        sessionStorage.setItem("relay_preview_store", JSON.stringify(_store));
+      } catch (e2) {}
+    }
+    var listeners = [];
+    ext = {
+      runtime: {
+        sendMessage: function (msg, cb) {
+          if (msg && msg.type === "GATHER_START") {
+            try {
+              window.parent.postMessage(
+                { type: "RELAY_GATHER", collectionId: msg.collectionId },
+                "*"
+              );
+            } catch (e3) {}
+            setTimeout(function () {
+              listeners.forEach(function (fn) {
+                fn({
+                  type: "GATHER_STATE",
+                  phase: "complete",
+                  lastSuccessfulRefreshAt: new Date().toISOString(),
+                });
+              });
+            }, 1800);
+          }
+          if (typeof cb === "function") cb({});
+        },
+        onMessage: {
+          addListener: function (fn) {
+            listeners.push(fn);
+          },
+        },
+      },
+      storage: {
+        local: {
+          get: function (keys, cb) {
+            var out = {};
+            (Array.isArray(keys) ? keys : Object.keys(keys || {})).forEach(function (k) {
+              if (_store[k] != null) out[k] = _store[k];
+            });
+            cb(out);
+          },
+          set: function (obj, cb) {
+            Object.keys(obj || {}).forEach(function (k) {
+              _store[k] = obj[k];
+            });
+            persistStore();
+            if (typeof cb === "function") cb();
+          },
+        },
+      },
+    };
+  }
+
   var DEFAULTS = {
     collectionId: "savannah-cat-rescue",
     title: "Savannah Cat Rescue",
@@ -58,26 +128,42 @@
   }
 
   function loadCollection(cb) {
+    var done = false;
+    function finish(j) {
+      if (done) return;
+      done = true;
+      if (j) {
+        if (j.irc_channel) DEFAULTS.channel = j.irc_channel;
+        if (j.name) DEFAULTS.title = j.name;
+        if (j.id) DEFAULTS.collectionId = j.id;
+      }
+      cb();
+    }
     var url = "https://myproblem.app/collections/" + DEFAULTS.collectionId + ".json";
+    var timer = setTimeout(function () {
+      finish(null);
+    }, 2500);
     fetch(url)
       .then(function (r) {
         return r.ok ? r.json() : null;
       })
       .then(function (j) {
-        if (j) {
-          if (j.irc_channel) DEFAULTS.channel = j.irc_channel;
-          if (j.name) DEFAULTS.title = j.name;
-          if (j.id) DEFAULTS.collectionId = j.id;
-        }
-        cb();
+        clearTimeout(timer);
+        finish(j);
       })
       .catch(function () {
-        cb();
+        clearTimeout(timer);
+        finish(null);
       });
   }
 
   function mountRoom() {
     var root = document.getElementById("room-root");
+    if (!root || typeof CleverTreeRoom === "undefined") {
+      console.error("Relay: CleverTreeRoom missing");
+      return;
+    }
+    try {
     roomApi = CleverTreeRoom.mount(root, {
       mode: "sidepanel",
       channel: DEFAULTS.channel,
@@ -110,24 +196,30 @@
         },
       ],
       onTrack: function (tracked) {
-        chrome.runtime.sendMessage({ type: "TRACK_GROUP", tracked: tracked });
+        ext.runtime.sendMessage({ type: "TRACK_GROUP", tracked: tracked });
       },
       onSend: function (text) {
-        chrome.runtime.sendMessage({ type: "ROOM_OUTBOX", text: text });
+        ext.runtime.sendMessage({ type: "ROOM_OUTBOX", text: text });
       },
     });
+    } catch (err) {
+      console.error("Relay: room mount failed", err);
+    }
   }
 
   refreshBtn.addEventListener("click", function () {
     if (gatherPhase === "gathering") return;
     gatherPhase = "gathering";
     setRefreshUi();
-    chrome.runtime.sendMessage({ type: "GATHER_START", collectionId: DEFAULTS.collectionId }, function () {
-      /* state pushed via GATHER_STATE */
-    });
+    ext.runtime.sendMessage(
+      { type: "GATHER_START", collectionId: DEFAULTS.collectionId },
+      function () {
+        /* state pushed via GATHER_STATE */
+      }
+    );
   });
 
-  chrome.runtime.onMessage.addListener(function (msg) {
+  ext.runtime.onMessage.addListener(function (msg) {
     if (!msg || !msg.type) return;
     if (msg.type === "GATHER_STATE") {
       gatherPhase = msg.phase || gatherPhase;
@@ -135,6 +227,9 @@
       if (msg.phase === "complete" || msg.phase === "fresh") {
         gatherPhase = "fresh";
         lastRefreshAt = new Date().toISOString();
+        try {
+          ext.storage.local.set({ relay_last_refresh_at: lastRefreshAt });
+        } catch (e) {}
       }
       if (msg.phase === "failed" || msg.phase === "interrupted") {
         gatherPhase = "idle";
@@ -146,12 +241,21 @@
     }
   });
 
-  chrome.storage.local.get(["relay_last_refresh_at"], function (data) {
+  ext.storage.local.get(["relay_last_refresh_at"], function (data) {
     if (data.relay_last_refresh_at) lastRefreshAt = data.relay_last_refresh_at;
     setRefreshUi();
   });
 
+  // Mount ASAP so preview works even if collection fetch stalls;
+  // reload defaults when collection JSON arrives.
+  mountRoom();
+  setRefreshUi();
   loadCollection(function () {
+    if (roomApi && roomApi.destroy) {
+      try {
+        roomApi.destroy();
+      } catch (e) {}
+    }
     mountRoom();
     setRefreshUi();
   });

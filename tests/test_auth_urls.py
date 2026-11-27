@@ -241,39 +241,30 @@ class UrlTests(unittest.TestCase):
 
 
 class HardwareTests(unittest.TestCase):
-    def test_spot_scripts_default_dry_run_no_api(self):
-        """Unset CLEVERTREE_SPOT_WAKE → echo only; no network even if curl is in the script."""
+    def test_spot_scripts_refuse_decommissioned(self):
+        """Spot scripts always refuse — Linode pub1 replaced Rackspace Spot for chat."""
         wake = ROOT / "infra" / "spot-wake-comments.sh"
         stop = ROOT / "infra" / "spot-decommission-comments.sh"
         env = {k: v for k, v in os.environ.items() if k not in {
             "CLEVERTREE_SPOT_WAKE", "RACKSPACE_SPOT_TOKEN", "CLEVERTREE_SPOT_TOKEN",
         }}
-        wake_out = subprocess.run(
-            ["bash", str(wake)], check=True, capture_output=True, text=True, env=env
-        ).stdout
-        stop_out = subprocess.run(
-            ["bash", str(stop)], check=True, capture_output=True, text=True, env=env
-        ).stdout
-        self.assertIn("createCloudspace", wake_out)
-        self.assertIn("createSpotNodePool", wake_out)
-        self.assertIn("gpu.vs2.xlargeplusplus-sjc", wake_out)
-        self.assertIn("paradigmthreat", wake_out)
-        self.assertIn("us-west-sjc-1", wake_out)
-        self.assertIn("0.15", wake_out)
-        self.assertIn("WAKE_REQUESTED=0", wake_out)
-        self.assertIn("API_CALLED=0", wake_out)
-        self.assertIn("deleteSpotNodePool", stop_out)
-        self.assertIn("deleteCloudspace", stop_out)
-        self.assertIn("paradigmthreat", stop_out)
-        self.assertIn("API_CALLED=0", stop_out)
-        # Wake requested without token still soft-fails dry-run
+        wake_run = subprocess.run(
+            ["bash", str(wake)], check=False, capture_output=True, text=True, env=env
+        )
+        stop_run = subprocess.run(
+            ["bash", str(stop)], check=False, capture_output=True, text=True, env=env
+        )
+        self.assertEqual(wake_run.returncode, 1)
+        self.assertEqual(stop_run.returncode, 1)
+        self.assertIn("Spot decommissioned", wake_run.stderr)
+        self.assertIn("Spot decommissioned", stop_run.stderr)
         env_wake = dict(env)
         env_wake["CLEVERTREE_SPOT_WAKE"] = "1"
         gated = subprocess.run(
-            ["bash", str(wake)], check=True, capture_output=True, text=True, env=env_wake
-        ).stdout
-        self.assertIn("WAKE_REQUESTED=1", gated)
-        self.assertIn("API_CALLED=0", gated)
+            ["bash", str(wake)], check=False, capture_output=True, text=True, env=env_wake
+        )
+        self.assertEqual(gated.returncode, 1)
+        self.assertIn("Spot decommissioned", gated.stderr)
 
 
 if __name__ == "__main__":

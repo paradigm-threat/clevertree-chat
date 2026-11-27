@@ -132,13 +132,14 @@ class GaugeWakeGateTests(unittest.TestCase):
             self.assertFalse(spot_wake_enabled())
 
     def test_measure_records_wake_requested(self):
+        """Spot is decommissioned: env may request wake, but scripts refuse — no API call."""
         with tempfile.TemporaryDirectory() as tmp:
             debate = _FakeDebate(Path(tmp))
             with mock.patch.dict(os.environ, {"CLEVERTREE_SPOT_WAKE": "1"}, clear=False):
                 note = measure_batch(debate)
             self.assertTrue(note["wake_requested"])
             self.assertFalse(note["cloud_api_called"])
-            self.assertIn("WAKE_REQUESTED=1", note["wake"])
+            self.assertIn("Spot decommissioned", note["wake"])
 
 
 if __name__ == "__main__":
