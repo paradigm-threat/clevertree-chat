@@ -3,20 +3,14 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * Website rooms via /chat/w/<host>/… — empty until first comment.
- * Marketing /w on clevertree.chat is the same board widget + resolve API.
+ * Website rooms via /chat/w/<host>/… — SoT empty until first comment (API).
+ * Page shell is the shared CleverTreeRoom (#web); board widget is retired.
  */
 test.describe("website URL room", () => {
-  test("resolve does not create SoT; board empty then first post appears", async ({
+  test("resolve does not create SoT; room shell loads; first API post creates topic", async ({
     page,
     request,
   }) => {
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem("clevertree.coachSeen", "1");
-      } catch (_) {}
-    });
-
     const slug = `pw-${Date.now()}`;
     const href = `https://example.com/${slug}/`;
 
@@ -46,39 +40,22 @@ test.describe("website URL room", () => {
     }
 
     await page.goto(`/chat/w/example.com/${slug}`);
-    const root = page.locator("[data-clevertree-board]");
-    await expect(root).toBeVisible({ timeout: 15_000 });
-    await expect(root.getByText(/0 perspectives/i).first()).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(root.locator("[data-live]").first()).toBeVisible({ timeout: 15_000 });
+    const room = page.locator(".room, .ct-room").first();
+    await expect(room).toBeVisible({ timeout: 15_000 });
+    await expect(room.locator('[data-role="draft"]')).toBeVisible({ timeout: 15_000 });
 
-    const dock = root.locator("[data-open-composer]");
-    const wide = root.locator("textarea#ct-body-wide");
-    if (!(await wide.isVisible().catch(() => false)) && (await dock.count())) {
-      await dock.first().click();
-    }
-    const body = root.locator("[data-draft-body]").first();
-    await expect(body).toBeVisible({ timeout: 15_000 });
     const marker = `e2e website ${Date.now()}`;
-    await body.fill(`${marker} — first point for this URL room.`);
-
-    const submitPromise = page.waitForResponse(
-      (res) =>
-        res.url().includes("/api/chat") &&
-        res.request().method() === "POST" &&
-        res.status() === 200,
-      { timeout: 30_000 },
-    );
-    await root.locator("[data-composer] button[type='submit']").first().click();
-    await submitPromise;
-
-    // Prefer the filed board article (outbox may briefly mirror the same body).
-    await expect(
-      root.locator("[data-activity], article, .ct-post").getByText(marker, { exact: false }).first(),
-    ).toBeVisible({
-      timeout: 30_000,
+    const filed = await request.post("/api/chat", {
+      data: {
+        action: "submit",
+        topic: resolvedBody.topic,
+        visitor: resolvedBody.visitor,
+        body: `${marker} — first point for this URL room.`,
+      },
     });
+    expect(filed.status()).toBe(200);
+    const filedBody = await filed.json();
+    expect(filedBody.comment_id || filedBody.id).toBeTruthy();
 
     if (commentsRoot) {
       const topic = resolvedBody.topic as string;

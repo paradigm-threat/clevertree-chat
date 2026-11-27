@@ -21,9 +21,8 @@ if str(ROOT) not in sys.path:
 
 from clevertree_chat.demos import DEFAULT_TOPIC, get_demo, is_guided, known_topics  # noqa: E402
 from clevertree_chat.pt_seed import REVIEW_TITLES, REVIEW_TOPICS, apply_payload, load_page_payload  # noqa: E402
+from clevertree_chat.public import FILING  # noqa: E402
 from clevertree_chat.urls import normalize_url  # noqa: E402
-
-FILING = "Make your opinion finally heard."
 
 GUIDED_TITLES = {
     "flock-cameras": "Should cities use camera networks?",

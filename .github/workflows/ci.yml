@@ -55,7 +55,27 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          SM=""
+          for cand in \
+            "$SDK/cmdline-tools/latest/bin/sdkmanager" \
+            "$SDK/cmdline-tools/20.0/bin/sdkmanager" \
+            "$SDK/cmdline-tools/16.0/bin/sdkmanager"; do
+            if [ -x "$cand" ]; then SM="$cand"; break; fi
+          done
+          if [ -z "$SM" ]; then
+            SM="$(ls -1 "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | tail -1 || true)"
+          fi
+          if [ -z "$SM" ] || [ ! -x "$SM" ]; then
+            echo "sdkmanager not found under $SDK" >&2
+            exit 1
+          fi
+          yes | "$SM" --licenses >/tmp/android-licenses.log || true
+          "$SM" "platforms;android-36" "build-tools;36.0.0" "platform-tools" || true
       - name: Assemble + unit tests
         working-directory: android
         run: ./gradlew :clevertree-room:assembleRelease :clevertree-room:test --stacktrace

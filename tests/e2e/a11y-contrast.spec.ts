@@ -1,21 +1,42 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-async function dismissCoach(page: Page) {
-  await page.addInitScript(() => {
+/**
+ * ADA contrast for the marketing /chat page room mount.
+ * Embed shell contrast lives in a11y-room-contrast.spec.ts.
+ */
+
+async function openChatRoom(page: Page, theme: "light" | "dark") {
+  await page.emulateMedia({ colorScheme: theme });
+  await page.addInitScript((t) => {
     try {
-      localStorage.setItem("clevertree.coachSeen", "1");
+      localStorage.setItem("clevertree.room.theme", t);
+      localStorage.setItem("ct-theme", t);
+      document.documentElement.setAttribute("data-theme", t);
     } catch (_) {}
+  }, theme);
+  await page.goto("/chat");
+  const room = page.locator(".room, .ct-room").first();
+  await expect(room).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-role="send"]')).toBeVisible({
+    timeout: 15_000,
   });
+  if (theme === "dark") {
+    await page.evaluate(() => {
+      const el = document.querySelector(".room, .ct-room");
+      if (el) {
+        el.setAttribute("data-theme", "dark");
+        el.setAttribute("data-theme-pref", "dark");
+      }
+      document.documentElement.setAttribute("data-theme", "dark");
+    });
+  }
+  return room;
 }
 
 async function expectNoSeriousContrast(page: Page, label: string) {
-  const root = page.locator("[data-clevertree-board]");
-  await expect(root).toBeVisible({ timeout: 15_000 });
-  await expect(root.locator("[data-live]").first()).toBeVisible({ timeout: 15_000 });
-
   const results = await new AxeBuilder({ page })
-    .include("[data-clevertree-board]")
+    .include(".room, .ct-room")
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
 
@@ -41,38 +62,14 @@ async function expectNoSeriousContrast(page: Page, label: string) {
   }
 }
 
-test.describe("board a11y contrast", () => {
-  test("starter topic board meets WCAG AA contrast (light)", async ({ page }) => {
-    await dismissCoach(page);
-    await page.emulateMedia({ colorScheme: "light" });
-    await page.goto("/chat/flock-cameras");
-    await expectNoSeriousContrast(page, "light flock board");
+test.describe("chat page room a11y contrast", () => {
+  test("chat room meets WCAG AA contrast (light)", async ({ page }) => {
+    await openChatRoom(page, "light");
+    await expectNoSeriousContrast(page, "light /chat room");
   });
 
-  test("website URL room meets WCAG AA contrast (light)", async ({ page }) => {
-    await dismissCoach(page);
-    await page.emulateMedia({ colorScheme: "light" });
-    await page.goto(`/chat/w/example.com/a11y-${Date.now()}`);
-    await expectNoSeriousContrast(page, "light website room");
-  });
-
-  test("starter topic board meets WCAG AA contrast (dark)", async ({ page }) => {
-    await dismissCoach(page);
-    await page.emulateMedia({ colorScheme: "dark" });
-    await page.addInitScript(() => {
-      document.documentElement.setAttribute("data-theme", "dark");
-    });
-    await page.goto("/chat/flock-cameras");
-    await expectNoSeriousContrast(page, "dark flock board");
-  });
-
-  test("website URL room meets WCAG AA contrast (dark)", async ({ page }) => {
-    await dismissCoach(page);
-    await page.emulateMedia({ colorScheme: "dark" });
-    await page.addInitScript(() => {
-      document.documentElement.setAttribute("data-theme", "dark");
-    });
-    await page.goto(`/chat/w/example.com/a11y-dark-${Date.now()}`);
-    await expectNoSeriousContrast(page, "dark website room");
+  test("chat room meets WCAG AA contrast (dark)", async ({ page }) => {
+    await openChatRoom(page, "dark");
+    await expectNoSeriousContrast(page, "dark /chat room");
   });
 });

@@ -15,6 +15,7 @@ from clevertree_chat.classify import classify, rename_allowed
 from clevertree_chat.engine import Debate
 from clevertree_chat.keys import assert_short_key, slugify
 from clevertree_chat.names import ALLOWLIST, empty_index, generated_name, issue_id
+from clevertree_chat.public import FILING
 from clevertree_chat.repo import git_commit_command
 from clevertree_chat.rules import default_rules, default_rules_text, parse_rules
 
@@ -256,7 +257,7 @@ class FilingTests(DebateCase):
         self.assertEqual(result["key"], "uncategorized")
         self.assertEqual(result["starting"], "uncategorized")
         self.assertFalse(result["can_override"])
-        self.assertEqual(result["filing_line"], "Make your opinion finally heard.")
+        self.assertEqual(result["filing_line"], FILING)
         self.assertEqual(self.keys("demo", "flock-cameras"), ["uncategorized"])
         self.assertNotIn("legal", self.keys("demo", "flock-cameras"))
         self.assertNotIn("national-security", self.keys("demo", "flock-cameras"))

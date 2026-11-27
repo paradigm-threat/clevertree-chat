@@ -79,4 +79,19 @@ assert.ok(
   "sanity: white-on-mint is a known fail; tests should keep rejecting it"
 );
 
+// Bot avatar / ROOM AI tag must use the same dark-on-mint pair (not white-on-mint).
+assert.ok(
+  /\.room\s+\.av\.bot\{[^}]*color:\s*var\(--ct-action-ink/i.test(css) ||
+    /\[data-theme="dark"\][^{]*\.av\.bot[\s\S]{0,160}ct-action-ink/i.test(css),
+  "Dark bot avatar should use --ct-action-ink on --ct-action"
+);
+assert.ok(
+  /\[data-theme="dark"\][^{]*\.tag[\s\S]{0,160}ct-tag-bg/i.test(css),
+  "Dark ROOM AI tag should use --ct-tag-bg"
+);
+assert.ok(
+  contrast("#e6eee6", "#324c3b") >= 4.5,
+  `dark tag ink/tag-bg contrast ${contrast("#e6eee6", "#324c3b").toFixed(2)} must be ≥ 4.5`
+);
+
 console.log("test_room_ada_contrast.js: ok");

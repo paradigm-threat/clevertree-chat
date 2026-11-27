@@ -70,7 +70,14 @@
     (function () {
       var root = document.getElementById("room-root");
       if (!root || !window.CleverTreeRoom) return;
-      var API = "https://api.clevertree.chat";
+      // Marketing host needs the API origin; api host + local e2e stay same-origin.
+      var h = location.hostname;
+      var sameOrigin =
+        h === "api.clevertree.chat" || h === "127.0.0.1" || h === "localhost";
+      var API = sameOrigin ? location.origin : "https://api.clevertree.chat";
+      var wsProto = location.protocol === "https:" ? "wss:" : "ws:";
+      var localWs = wsProto + "//" + location.host + "/api/chat/ws?topic=web";
+      var prodWs = "wss://api.clevertree.chat/api/chat/ws?topic=web";
       CleverTreeRoom.mount(root, {
         mode: "page",
         channel: "#web",
@@ -78,11 +85,10 @@
         context: {},
         showNetworker: false,
         apiBase: API,
-        wsUrl: "wss://api.clevertree.chat/api/chat/ws?topic=web",
-        mirrors: [
-          "wss://api.clevertree.chat/api/chat/ws?topic=web",
-          "wss://pub1.relaygateway.net/chat/ws?topic=web"
-        ],
+        wsUrl: sameOrigin ? localWs : prodWs,
+        mirrors: sameOrigin
+          ? [localWs]
+          : [prodWs, "wss://pub1.relaygateway.net/chat/ws?topic=web"],
         nick: "you"
       });
     })();

@@ -20,7 +20,7 @@ Phase 1 is the tests. Real arguments, including ones like Flock cameras, run unt
 
 **Any URL → debate (architecture locked):** normalize the tab URL, open a topic only when someone writes, then let batch associate mirrors and related pages — and classify homes as topic or person. See [`docs/url-pages-and-associations.md`](docs/url-pages-and-associations.md) and [`docs/person-space.md`](docs/person-space.md). **Browser extension:** download at [`/extension`](https://clevertree.chat/extension) (MV3 side panel). Captures the tab URL into a simplified Debate board (empty until typed); talks to `api.clevertree.chat`.
 
-Public lines on the page: “A new way to debate.” “Don’t get lost in the weeds.” “Make your opinion finally heard.”
+Public lines on the page: “A public room. A clearer conversation.” “Don’t get lost in the weeds.” “People speak. SI curates.”
 
 ## One post, the keys it fits
 
