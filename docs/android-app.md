@@ -4,8 +4,8 @@ Standalone APK (`:clevertree-app`) built on the embeddable [`clevertree-room`](.
 
 ## Product shape
 
-- **Home / first run:** universal room (`#web`) live transcript **above** one large text field + Submit.
-- **After submit (or Skip):** full room UI on the same channel.
+- Fullscreen universal room (`#web`) — same UI as web.
+- **No separate onboarding.** The room composer starts **expanded** (most of the screen) with suggestion chips / placeholder asks; after the first send it collapses to the bottom bar; tap to expand again.
 - Assigned product embeds (Paradigm Threat `#pt`, MyProblem `#mp-general`, …) stay channel-policy driven; the app default is universal.
 
 ## Build
@@ -28,4 +28,4 @@ adb install -r android/clevertree-app/build/outputs/apk/debug/clevertree-app-deb
 
 ## MyProblem
 
-MyProblem no longer ships a standalone APK. Web embeds Clevertree Chat; problem-solving is a Clevertree feature. Archived MyProblem APK source: git tag `archive/android-testmode-2026-11-27` on the myproblem repo.
+MyProblem no longer ships a standalone APK. Web embeds Clevertree Chat. Archived MyProblem APK: git tag `archive/android-testmode-2026-11-27` on the myproblem repo.

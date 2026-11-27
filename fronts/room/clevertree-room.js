@@ -352,9 +352,17 @@
       '<div class="body"><main class="chat">' +
       '<div class="history" data-role="history" role="log" aria-label="Public IRC channel messages">' +
       '<div class="stream" data-role="stream"></div></div>' +
-      '<footer class="composer"><div class="compose-inner">' +
+      '<footer class="composer" data-role="composer">' +
+      '<div class="compose-inner">' +
       '<div class="public"><strong>You\'re posting publicly.</strong> Messages go to this IRC room. Anyone may see or save them. Media is covered until AI review.</div>' +
-      '<div class="composebox"><textarea data-role="draft" aria-label="Message to public room" placeholder="Message this public room…"></textarea>' +
+      '<div class="composebox" data-role="composebox">' +
+      '<textarea data-role="draft" aria-label="Message to public room" placeholder="Help me with a problem… · Help me find something… · What\'s the latest news on something… · What\'s going on in town…"></textarea>' +
+      '<div class="compose-suggestions" data-role="suggestions" role="group" aria-label="Suggestions">' +
+      '<button type="button" class="suggest" data-suggest="Help me with a problem">Help me with a problem</button>' +
+      '<button type="button" class="suggest" data-suggest="Help me find something">Help me find something</button>' +
+      '<button type="button" class="suggest" data-suggest="What\'s the latest news on something">What\'s the latest news on something</button>' +
+      '<button type="button" class="suggest" data-suggest="What\'s going on in town">What\'s going on in town</button>' +
+      "</div>" +
       '<div class="tools">' +
       '<input type="file" data-role="file-input" hidden accept="image/*,video/*,audio/*,.pdf,text/*,.txt,.md,.json,.csv,.xml,.yaml,.yml" />' +
       '<button type="button" class="tool" data-role="attach" title="Attach file">Attach</button>' +
@@ -548,7 +556,80 @@
     var history = $(el, '[data-role="history"]');
     var draft = $(el, '[data-role="draft"]');
     var sendBtn = $(el, '[data-role="send"]');
+    var composerEl = $(el, '[data-role="composer"]');
+    var composeBox = $(el, '[data-role="composebox"]');
+    var suggestionsEl = $(el, '[data-role="suggestions"]');
     var investigateBtn = $(el, '[data-role="investigate"]');
+    var COMPOSER_EXPANDED_KEY = "clevertree.room.composerExpanded";
+    var PLACEHOLDER_EXPANDED =
+      "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…";
+    var PLACEHOLDER_COLLAPSED = "Ask something…";
+
+    function readComposerExpanded() {
+      try {
+        var raw = localStorage.getItem(COMPOSER_EXPANDED_KEY);
+        if (raw === null || raw === undefined || raw === "") return true;
+        return raw === "1" || raw === "true";
+      } catch (e) {
+        return true;
+      }
+    }
+
+    function writeComposerExpanded(on) {
+      try {
+        localStorage.setItem(COMPOSER_EXPANDED_KEY, on ? "1" : "0");
+      } catch (e) {}
+    }
+
+    function setComposerExpanded(on) {
+      if (!composerEl) return;
+      composerEl.classList.toggle("composer-expanded", !!on);
+      composerEl.classList.toggle("composer-collapsed", !on);
+      composerEl.setAttribute("data-expanded", on ? "true" : "false");
+      if (draft) {
+        draft.placeholder = on ? PLACEHOLDER_EXPANDED : PLACEHOLDER_COLLAPSED;
+        if (on) {
+          try {
+            draft.focus();
+          } catch (e) {}
+        }
+      }
+      writeComposerExpanded(!!on);
+    }
+
+    setComposerExpanded(readComposerExpanded());
+
+    if (suggestionsEl) {
+      suggestionsEl.addEventListener("click", function (ev) {
+        var btn = ev.target && ev.target.closest
+          ? ev.target.closest("[data-suggest]")
+          : null;
+        if (!btn || !draft) return;
+        var text = btn.getAttribute("data-suggest") || "";
+        if (!text) return;
+        setComposerExpanded(true);
+        draft.value = text;
+        draft.focus();
+        try {
+          draft.setSelectionRange(text.length, text.length);
+        } catch (e) {}
+      });
+    }
+
+    if (composeBox) {
+      composeBox.addEventListener("click", function () {
+        if (composerEl && composerEl.classList.contains("composer-collapsed")) {
+          setComposerExpanded(true);
+        }
+      });
+    }
+    if (draft) {
+      draft.addEventListener("focus", function () {
+        if (composerEl && composerEl.classList.contains("composer-collapsed")) {
+          setComposerExpanded(true);
+        }
+      });
+    }
     var connEl = $(el, '[data-role="conn"]');
     var mirrorEl = $(el, '[data-role="mirror"]');
     var overlay = $(el, '[data-role="overlay"]');
@@ -996,12 +1077,14 @@
     sendBtn.onclick = function () {
       var text = draft.value.trim();
       if (!text) {
+        setComposerExpanded(true);
         draft.focus();
         return;
       }
       confirmPublic(function () {
         postLocal(text);
         draft.value = "";
+        setComposerExpanded(false);
       });
     };
 
@@ -1012,6 +1095,7 @@
         confirmPublic(function () {
           postLocal(cmd);
           draft.value = "";
+          setComposerExpanded(false);
         });
       };
     }

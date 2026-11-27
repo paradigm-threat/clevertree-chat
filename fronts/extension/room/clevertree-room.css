@@ -62,6 +62,23 @@ body.ct-room-page .room{height:100dvh;min-height:460px}
 .room .full-si-body{font-size:14px;line-height:1.5;margin-top:8px;white-space:normal}
 .room[data-theme="dark"] .copy-clamp:after{background:linear-gradient(transparent,var(--ct-canvas,#152019))}
 
+/* Expandable ask composer: big on first use, compact after send; click to expand again */
+.room .composer.composer-expanded{flex:1 1 auto;min-height:42%;display:flex;flex-direction:column;justify-content:stretch}
+.room .composer.composer-expanded .compose-inner{flex:1;display:flex;flex-direction:column;min-height:0}
+.room .composer.composer-expanded .composebox{flex:1;display:flex;flex-direction:column;min-height:0;padding:12px 12px 10px}
+.room .composer.composer-expanded .composebox textarea{flex:1;min-height:8rem;height:auto;font-size:17px;line-height:1.45;padding:6px 4px}
+.room .composer.composer-expanded .compose-suggestions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.room .composer.composer-collapsed .compose-suggestions{display:none}
+.room .compose-suggestions .suggest{border:1px solid var(--ct-control-border,#9eafa3);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800;color:var(--green);background:var(--green2);min-height:36px}
+.room .compose-suggestions .suggest:hover{background:var(--white);border-color:var(--green)}
+.room .composer.composer-collapsed .composebox{cursor:text}
+.room[data-theme="dark"] .compose-suggestions .suggest{background:rgba(95,212,164,.12);border-color:rgba(95,212,164,.35);color:#9BE7C4}
+@media(max-width:700px){
+  .room .composer.composer-expanded{min-height:48%}
+  .room .composer.composer-expanded .composebox textarea{min-height:7rem;font-size:16px}
+  .room .compose-suggestions .suggest{font-size:11px;padding:6px 10px}
+}
+
 /* Media upload composer + review covers */
 .room .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
 .room .tools .tool{border:1px solid var(--ct-control-border,#9eafa3);border-radius:7px;padding:6px 10px;min-height:36px;background:var(--ct-sage,#e8f0e9);color:var(--ink)}
