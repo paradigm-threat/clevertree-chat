@@ -101,10 +101,14 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="0.1.0"
+          # GitHub Packages rejects re-PUT of the same Maven version (409).
+          # Tags keep a clean semver; main publishes a unique sha build.
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="0.1.0-${GITHUB_SHA:0:7}"
           fi
+          echo "Publishing clevertree-room:$VERSION"
           ./gradlew :clevertree-room:publishReleasePublicationToGitHubPackagesRepository \
             -Pclevertree.room.version="$VERSION" \
             --stacktrace
