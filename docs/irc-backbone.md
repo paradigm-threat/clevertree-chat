@@ -28,6 +28,20 @@ See [`fronts/room/channel-policy.json`](../fronts/room/channel-policy.json) and 
 - **MyProblem collections:** typically one channel per collection (`CRAFT_CHANNELS`).
 - Product sites use a **header corner chat** button (dock or extension side panel) — no in-article scrolled chat.
 
+## SI rail chrome (TOPIC + pin METADATA)
+
+Live title/subtitle come from **IRC only** — no parallel git pin list:
+
+| UI | Protocol | Notes |
+|--|--|--|
+| **Title** | Channel `TOPIC` | Seeded once from `channel-policy.json` when TOPIC is empty; then Ergo owns it |
+| **Subtitle / pin** | `METADATA` key `clevertree/pin-msgid` → PRIVMSG `msgid` + history | Body resolved from the wire cache / CHATHISTORY |
+| Empty SI panel | Show pinned PRIVMSG until SoT sections exist | Also passed into SI batch context |
+
+WS fans `topic.update` / `pin.update` (and the same fields on `hello`). Shared mount: [`fronts/room/clevertree-room.js`](../fronts/room/clevertree-room.js). Both CEs — `<clevertree-room>` and `<clevertree-chat-dock>` in [`clevertree-ces.js`](../fronts/room/clevertree-ces.js) — defer to that mount after hello.
+
+**Who may set TOPIC / pin:** Ergo channel ops and the bridge nick (`clevertree-si`) / SI automation only. **Anonymous room users cannot.** Host actions: `action=set_topic` / `action=set_pin` with `CLEVERTREE_IRC_OPS_TOKEN` or allowlisted ops visitor.
+
 ## Sync rules
 
 - Human `PRIVMSG` → intake (anonymous nick; no chat visitor UUID required for room UX).

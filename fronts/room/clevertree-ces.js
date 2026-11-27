@@ -4,6 +4,11 @@
  *
  *   <clevertree-room channel="#pt" topic-id="0"></clevertree-room>
  *   <clevertree-chat-dock channel="#pt" api-base="https://api.clevertree.chat"></clevertree-chat-dock>
+ *
+ * SI rail title/subtitle come from IRC TOPIC + pin METADATA via the shared
+ * CleverTreeRoom mount (hello / topic.update / pin.update). The optional
+ * `title` attribute is only a pre-hello seed until TOPIC arrives — do not
+ * treat it as a parallel live SoT.
  */
 (function (global) {
   "use strict";
@@ -72,6 +77,7 @@
     this._api = Room.mount(this, {
       mode: attr(this, "mode", "page"),
       channel: channel,
+      /* Seed only until IRC TOPIC arrives on hello / topic.update. */
       title: attr(this, "title", "Clevertree Chat"),
       context: { topicId: topicId },
       apiBase: apiBase,
@@ -83,6 +89,10 @@
       showNetworker: false,
       showGather: false,
     });
+  };
+
+  ClevertreeRoomEl.prototype.getApi = function () {
+    return this._api || null;
   };
 
   /* ---------- <clevertree-chat-dock> ---------- */
@@ -160,6 +170,7 @@
   ClevertreeChatDockEl.prototype._buildOpts = function () {
     return {
       channel: attr(this, "channel", "#pt"),
+      /* Seed only; live SI title comes from IRC TOPIC after mount. */
       title: attr(this, "title", "Paradigm Threat"),
       topicId: numAttr(this, "topic-id", 0),
       apiBase: attr(this, "api-base", "https://api.clevertree.chat"),
@@ -167,6 +178,10 @@
       dock: "fullscreen",
       noFab: true,
     };
+  };
+
+  ClevertreeChatDockEl.prototype.getApi = function () {
+    return this._ctl || null;
   };
 
   ClevertreeChatDockEl.prototype.open = function (extra) {

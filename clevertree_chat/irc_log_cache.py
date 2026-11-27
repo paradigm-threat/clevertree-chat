@@ -143,6 +143,17 @@ def recent(topic: str, *, limit: int | None = None) -> list[dict[str, Any]]:
     return out
 
 
+def find_by_msgid(topic: str, msgid: str) -> dict[str, Any] | None:
+    """Look up a cached line by IRC msgid (newest match wins)."""
+    mid = (msgid or "").strip()
+    if not mid:
+        return None
+    for row in reversed(recent(topic, limit=RING_MAX_LINES)):
+        if str(row.get("msgid") or "") == mid:
+            return row
+    return None
+
+
 def append_line(
     topic: str,
     *,
@@ -151,6 +162,7 @@ def append_line(
     source: str = "web",
     nick: str = "",
     channel: str = "",
+    msgid: str = "",
 ) -> dict[str, Any] | None:
     """Append one chat line to ring + current JSONL segment. Returns the row."""
     text = (body or "").strip()
@@ -169,6 +181,9 @@ def append_line(
         "source": (source or "web").strip() or "web",
         "_epoch": time.time(),
     }
+    mid = (msgid or "").strip()
+    if mid:
+        row["msgid"] = mid
     line = json.dumps({k: v for k, v in row.items() if k != "_epoch"}, separators=(",", ":"))
     raw = (line + "\n").encode("utf-8")
 

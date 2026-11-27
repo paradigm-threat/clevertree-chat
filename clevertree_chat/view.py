@@ -40,6 +40,9 @@ def build_view(debate, *, page: str, topic: str, focus: str = "", visitor: str =
         "notices": _notices(debate, page, mine),
         "visitor": _visitor_row(debate, visitor, names, mine),
         "created": False,
+        # Live title/subtitle come from IRC TOPIC + METADATA (irc_chrome), not git.
+        "title": "",
+        "subtitle": "",
     }
 
 
@@ -57,6 +60,8 @@ def _empty(topic: str, focus: str) -> dict:
         "notices": [],
         "visitor": {"name": "", "chosen": False},
         "created": False,
+        "title": "",
+        "subtitle": "",
     }
 
 

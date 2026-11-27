@@ -112,6 +112,18 @@ def _build_messages(topic: str, focus: str) -> list[dict[str, str]]:
         "(organize recent channel: topics/axes, open counters, abuse/fraud risk, "
         "and one SI ask)"
     )
+    pin_block = "(none)"
+    try:
+        from clevertree_chat import irc_chrome
+
+        pin = (irc_chrome.snapshot_for_hello(topic) or {}).get("pin")
+        if isinstance(pin, dict) and (pin.get("body") or "").strip():
+            pin_block = (
+                f"msgid={pin.get('msgid') or '?'} "
+                f"<{pin.get('nick') or '?'}> {str(pin.get('body') or '').strip()}"
+            )
+    except Exception:
+        pass
     system = (
         "You are Clevertree SI for a public IRC channel. Curate only — no votes, "
         "no winners, no sides. Prefer fairness and organization over persuasion.\n"
@@ -120,6 +132,8 @@ def _build_messages(topic: str, focus: str) -> list[dict[str, str]]:
         "Hurdles: (missing counters, unclear claims, low-confidence spots)\n"
         "Abuse: (none | spam | scam/fraud | harassment — one line why; do not invent)\n"
         "Ask: (at most one SI ask for the owner/channel)\n"
+        "The channel's IRC pinned message (if any) is primary context for empty SI "
+        "panels and channel framing — treat it as standing headline input.\n"
         "Ignore emoji-only noise. Do not invent standing exceptions or private rules. "
         "CPU abuse cues below are hints only — confirm from the lines. "
         "Output ONLY the four headings and their lines — no chain-of-thought, "
@@ -127,6 +141,7 @@ def _build_messages(topic: str, focus: str) -> list[dict[str, str]]:
     )
     user = (
         f"Channel topic: {topic}\n"
+        f"IRC pinned message: {pin_block}\n"
         f"Investigate focus: {focus_line}\n\n"
         f"CPU abuse cues (hint):\n{cue_block}\n\n"
         f"Recent channel lines (oldest→newest):\n{context or '(empty)'}\n"

@@ -311,6 +311,13 @@ class ChatHandler(SimpleHTTPRequestHandler):
                         media_reviews[url] = st
             except Exception:
                 media_reviews = {}
+            chrome = {}
+            try:
+                from clevertree_chat import irc_chrome
+
+                chrome = irc_chrome.snapshot_for_hello(topic)
+            except Exception:
+                chrome = {}
             send_raw(
                 json.dumps(
                     {
@@ -320,6 +327,9 @@ class ChatHandler(SimpleHTTPRequestHandler):
                         "activity": activity_from_view(view, visitor),
                         "chat_history": history,
                         "media_reviews": media_reviews,
+                        "channel": chrome.get("channel") or "",
+                        "topic_text": chrome.get("topic_text") or "",
+                        "pin": chrome.get("pin"),
                     }
                 )
             )

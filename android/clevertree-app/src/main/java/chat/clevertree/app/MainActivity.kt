@@ -1,12 +1,12 @@
 package chat.clevertree.app
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -21,6 +21,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Keep adjustResize so IME insets are delivered to the WebView listener.
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         setContent {
             ClevertreeApp()
         }
@@ -37,13 +39,14 @@ private fun ClevertreeApp() {
                 title = "Clevertree Chat",
             )
         }
+    // Top status bar only here; bottom nav + IME padding is applied on the
+    // WebView itself (see ClevertreeRoom) so the page height shrinks correctly.
     ClevertreeRoom(
         config = config,
         modifier =
             Modifier
                 .fillMaxSize()
                 .background(CtBg)
-                .statusBarsPadding()
-                .navigationBarsPadding(),
+                .statusBarsPadding(),
     )
 }

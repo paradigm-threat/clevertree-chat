@@ -14,6 +14,8 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,6 +133,8 @@ fun ClevertreeRoom(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
+                isFocusable = true
+                isFocusableInTouchMode = true
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.allowFileAccess = true
@@ -164,7 +168,13 @@ fun ClevertreeRoom(
                 loadUrl(url)
             }
         },
-        modifier = modifier.fillMaxSize(),
+        // Compose owns system-bar/IME insets (WebView listeners often never fire
+        // under AndroidView). nav + ime ⇒ room sits above keyboard when it opens.
+        modifier =
+            modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .imePadding(),
         update = { webView ->
             if (webView.url != url) {
                 webView.loadUrl(url)

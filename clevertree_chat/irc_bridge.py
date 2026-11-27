@@ -64,6 +64,7 @@ class IrcBridge:
         self._thread: threading.Thread | None = None
         self._echo_ids: set[str] = set()  # recent outbound fingerprints to skip echo
         self._joined: set[str] = set()
+        self._seeded_topics: set[str] = set()
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
@@ -83,7 +84,20 @@ class IrcBridge:
         if client and client.ready and ch not in self._joined:
             client.join(ch)
             self._joined.add(ch)
+            self._seed_topic_once(topic, ch)
         return ch
+
+    def _seed_topic_once(self, topic: str, channel: str) -> None:
+        key = (topic or "").strip().lower()
+        if key in self._seeded_topics:
+            return
+        self._seeded_topics.add(key)
+        try:
+            from clevertree_chat import irc_chrome
+
+            irc_chrome.seed_topic_if_empty(topic, channel)
+        except Exception as exc:
+            log.debug("TOPIC seed skipped: %s", exc)
 
     def announce_submit(
         self,
@@ -136,6 +150,8 @@ class IrcBridge:
                     real="Cleverchat durable bridge",
                     tls=self.tls,
                     on_privmsg=self._on_privmsg,
+                    on_topic=self._on_topic,
+                    on_metadata=self._on_metadata,
                 )
                 self._client = client
                 client.connect(timeout=25.0)
@@ -147,6 +163,7 @@ class IrcBridge:
                 lobby = channel_for_topic(self.prefix, "")
                 client.join(lobby)
                 self._joined.add(lobby)
+                self._seed_topic_once("general", lobby)
                 while not self._stop.is_set() and client.ready:
                     time.sleep(1.0)
                 client.close()
@@ -154,14 +171,32 @@ class IrcBridge:
                 log.warning("IRC bridge reconnect: %s", exc)
             self._client = None
             self._joined.clear()
+            self._seeded_topics.clear()
             if self._stop.wait(backoff):
                 break
             backoff = min(backoff * 1.5, 60.0)
 
-    def _on_privmsg(self, msg: dict[str, str]) -> None:
+    def _on_topic(self, ev: dict[str, Any]) -> None:
+        try:
+            from clevertree_chat import irc_chrome
+
+            irc_chrome.on_bridge_topic(ev)
+        except Exception as exc:
+            log.debug("topic handler: %s", exc)
+
+    def _on_metadata(self, ev: dict[str, Any]) -> None:
+        try:
+            from clevertree_chat import irc_chrome
+
+            irc_chrome.on_bridge_metadata(ev)
+        except Exception as exc:
+            log.debug("metadata handler: %s", exc)
+
+    def _on_privmsg(self, msg: dict[str, Any]) -> None:
         nick = (msg.get("nick") or "").strip()
         target = msg.get("target") or ""
         text = (msg.get("text") or "").strip()
+        msgid = (msg.get("msgid") or "").strip()
         if not text or not target.startswith("#"):
             return
         client = self._client
@@ -171,6 +206,23 @@ class IrcBridge:
         # Never act on bridge / AI bot traffic (incl. nick collision suffixes stripped loosely)
         base_nick = nick_l.split("_")[0] if nick_l else ""
         if nick_l in self._bot_nicks or base_nick in self._bot_nicks:
+            # Still cache msgid for pin resolution when bots speak.
+            topic_bot = topic_for_channel(self.prefix, target)
+            if topic_bot and msgid:
+                try:
+                    from clevertree_chat import irc_log_cache
+
+                    irc_log_cache.append_line(
+                        topic_bot,
+                        body=text,
+                        visitor="",
+                        source="irc",
+                        nick=nick,
+                        channel=target,
+                        msgid=msgid,
+                    )
+                except Exception:
+                    pass
             return
         # Skip CTCP
         if text.startswith("\x01"):
@@ -178,6 +230,21 @@ class IrcBridge:
         topic = topic_for_channel(self.prefix, target)
         if not topic:
             return
+        # Cache wire line + msgid for pin resolution
+        try:
+            from clevertree_chat import irc_log_cache
+
+            irc_log_cache.append_line(
+                topic,
+                body=text,
+                visitor="",
+                source="irc",
+                nick=nick,
+                channel=target,
+                msgid=msgid,
+            )
+        except Exception:
+            pass
         # Owner answer → fold into rules / KB (not a debate post)
         lower = text.lower()
         if lower.startswith("!answer ") or lower.startswith("si answer:"):
@@ -219,19 +286,7 @@ class IrcBridge:
         focus = investigate.parse_command(text)
         if focus is None:
             return
-        # Echo the command into the ring so humans see who asked (not a debate claim).
-        try:
-            from clevertree_chat import irc_log_cache
-
-            irc_log_cache.append_line(
-                topic,
-                body=text.strip(),
-                visitor="",
-                source="irc",
-                nick=nick,
-            )
-        except Exception:
-            pass
+        # Wire line already cached in _on_privmsg (with msgid when present).
         result = investigate.request_investigate(
             topic,
             focus=focus,

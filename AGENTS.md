@@ -74,7 +74,7 @@ npm run test:e2e:a11y   # axe WCAG AA contrast on board + IRC room (light + dark
 cd android && ./gradlew :clevertree-room:assembleRelease :clevertree-room:test
 ```
 
-PR CI (GitHub Actions + GitLab CI): unit, durable E2E, ADA contrast, and Android room AAR gates.
+PR CI is **GitHub Actions only** (`.github/workflows/ci.yml`): unit, durable E2E, ADA contrast, and Android room AAR gates. GitLab CI/CD is disabled for this project (forge mirror only).
 
 ## Related
 

@@ -291,15 +291,47 @@ def view_topic(topic: str, visitor: str = "", focus: str = "") -> dict:
     page = _pages.get(topic) or {}
     view = dict(view)
     view["guided"] = False
+    page_title = page.get("title") or STARTER_TITLES.get(topic, topic)
     view["page"] = {
         "url": page.get("url") or "",
         "normalized": page.get("normalized") or topic,
-        "title": page.get("title") or STARTER_TITLES.get(topic, topic),
+        "title": page_title,
     }
     visitor_row = dict(view.get("visitor") or {})
     visitor_row.setdefault("uuid", visitor or "")
     view["visitor"] = visitor_row
+    _apply_room_chrome(topic, view, fallback_title=str(page_title or "Public IRC room"))
     return view
+
+
+def _apply_room_chrome(topic: str, view: dict, *, fallback_title: str) -> None:
+    """SI rail chrome from IRC TOPIC + pin METADATA (via irc_chrome cache)."""
+    from clevertree_chat.irc_client import channel_for_topic
+
+    try:
+        from clevertree_chat import irc_chrome
+
+        chrome = irc_chrome.snapshot_for_hello(topic)
+    except Exception:
+        chrome = {}
+    topic_text = str(chrome.get("topic_text") or "").strip()
+    pin = chrome.get("pin") if isinstance(chrome.get("pin"), dict) else None
+    pin_body = str((pin or {}).get("body") or "").strip()
+    try:
+        ch = channel_for_topic("ct", topic)
+    except Exception:
+        ch = f"#{topic}" if topic else "#web"
+    # Title = IRC TOPIC (fallback only when TOPIC not yet known).
+    title = topic_text or (fallback_title or "").strip()
+    if not title or title == (topic or "").strip():
+        title = "Public IRC room" if (topic or "").strip() in {"", "web"} else title or ch
+    # Subtitle = pinned PRIVMSG body, else #channel.
+    subtitle = pin_body or ch
+    view["title"] = title
+    view["subtitle"] = subtitle
+    view["topic_text"] = topic_text
+    view["pin"] = pin
+    view["channel"] = chrome.get("channel") or ch
 
 
 def _idempotency_path() -> Path:
@@ -508,6 +540,38 @@ def dispatch(
             "topic": topic,
             "chat_history": irc_log_cache.recent(topic, limit=lim),
         }
+
+    if action in {"irc_chrome", "channel_chrome"}:
+        from clevertree_chat import irc_chrome
+
+        return 200, {"ok": True, "topic": topic, **irc_chrome.snapshot_for_hello(topic)}
+
+    if action in {"set_topic", "irc_set_topic"}:
+        from clevertree_chat import irc_chrome
+
+        return 200, irc_chrome.privileged_set_topic(
+            topic,
+            str(payload.get("topic_text") or payload.get("text") or ""),
+            actor={
+                "visitor": str(payload.get("visitor") or ""),
+                "nick": str(payload.get("nick") or ""),
+                "token": str(payload.get("ops_token") or payload.get("token") or ""),
+            },
+        )
+
+    if action in {"set_pin", "irc_set_pin"}:
+        from clevertree_chat import irc_chrome
+
+        return 200, irc_chrome.privileged_set_pin(
+            topic,
+            str(payload.get("msgid") or ""),
+            body=str(payload.get("body") or ""),
+            actor={
+                "visitor": str(payload.get("visitor") or ""),
+                "nick": str(payload.get("nick") or ""),
+                "token": str(payload.get("ops_token") or payload.get("token") or ""),
+            },
+        )
 
     if action == "drain_irc_logs":
         results = drain_irc_log_jobs(limit=int(payload.get("limit") or 20))
@@ -887,6 +951,7 @@ def fanout_submit(
     *,
     source: str = "web",
     nick: str = "",
+    msgid: str = "",
 ) -> None:
     """Broadcast post.live after a successful submit; mirror to IRC when bridged."""
     view = body.get("view") or view_topic(topic, visitor)
@@ -894,18 +959,21 @@ def fanout_submit(
     starting = body.get("starting") or "uncategorized"
     text = body.get("body") or ""
     author = (view.get("visitor") or {}).get("name") or "Visitor"
-    try:
-        from clevertree_chat import irc_log_cache
+    # IRC bridge already appended the wire line (+ msgid) before submit.
+    if source != "irc":
+        try:
+            from clevertree_chat import irc_log_cache
 
-        irc_log_cache.append_line(
-            topic,
-            body=str(text),
-            visitor=str(visitor or ""),
-            source=source,
-            nick=nick or str(author),
-        )
-    except Exception:
-        pass
+            irc_log_cache.append_line(
+                topic,
+                body=str(text),
+                visitor=str(visitor or ""),
+                source=source,
+                nick=nick or str(author),
+                msgid=msgid,
+            )
+        except Exception:
+            pass
     # Channel media → ASR queue (no tip mint). Drain posts transcript when keys exist.
     try:
         from clevertree_chat import channel_asr

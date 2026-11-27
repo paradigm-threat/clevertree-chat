@@ -1,6 +1,6 @@
-# GitHub Actions (.github/workflows/ci.yml) is the primary CI gate.
-# GitLab CI disabled — quota / moving off GitLab runners. Re-enable by restoring
-# the previous unit + e2e_a11y jobs if needed.
+# GitHub Actions (.github/workflows/ci.yml) is the only CI gate for this project.
+# GitLab CI/CD is disabled at the project (builds_access_level=disabled).
+# This file stays as a hard no-op so a re-enable of project CI cannot revive jobs.
 workflow:
   rules:
     - when: never
