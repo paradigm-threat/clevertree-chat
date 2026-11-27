@@ -153,4 +153,77 @@ test.describe("room composer chrome", () => {
       data: "true",
     });
   });
+
+  test("landscape: columns fill height; menu FAB in outer corner", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1100, height: 640 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(liveUrl());
+    const room = page.locator(".room, .ct-room").first();
+    await expect(room).toBeVisible({ timeout: 15_000 });
+    const history = page.locator('[data-role="history"]');
+    await history.click({ position: { x: 40, y: 40 } });
+    await expect
+      .poll(async () => (await composerExpanded(page)).expanded)
+      .toBe(false);
+
+    async function measure(orient: "left" | "right") {
+      return page.evaluate((o) => {
+        const roomEl = document.querySelector(".room") as HTMLElement | null;
+        if (roomEl) roomEl.setAttribute("data-orient", o);
+        const body = document.querySelector(".room .body") as HTMLElement | null;
+        const si = document.querySelector(
+          '[data-role="si"]'
+        ) as HTMLElement | null;
+        const chat = document.querySelector(".room .chat") as HTMLElement | null;
+        const composer = document.querySelector(
+          '[data-role="composer"]'
+        ) as HTMLElement | null;
+        const fab = document.querySelector(
+          '[data-role="menu-fab"]'
+        ) as HTMLElement | null;
+        const titles = document.querySelector(
+          ".si-rail-titles"
+        ) as HTMLElement | null;
+        if (!body || !si || !chat || !composer || !fab || !titles) return null;
+        const cs = getComputedStyle(body);
+        const contentH =
+          body.clientHeight -
+          parseFloat(cs.paddingTop) -
+          parseFloat(cs.paddingBottom);
+        const fabR = fab.getBoundingClientRect();
+        const titlesR = titles.getBoundingClientRect();
+        return {
+          contentH,
+          si: si.getBoundingClientRect().height,
+          chat: chat.getBoundingClientRect().height,
+          composer: composer.getBoundingClientRect().height,
+          siCollapsed: si.classList.contains("si-collapsed"),
+          composerCollapsed: composer.classList.contains("composer-collapsed"),
+          fabLeftOfTitles: fabR.left < titlesR.left,
+          fabRightOfTitles: fabR.right > titlesR.right,
+          orient: o,
+        };
+      }, orient);
+    }
+
+    for (const orient of ["left", "right"] as const) {
+      const m = await measure(orient);
+      expect(m, orient).toBeTruthy();
+      expect(m!.siCollapsed).toBe(true);
+      expect(m!.composerCollapsed).toBe(true);
+      for (const key of ["si", "chat", "composer"] as const) {
+        expect(
+          Math.abs(m![key] - m!.contentH),
+          `${orient} ${key} ${m![key]} vs content ${m!.contentH}`
+        ).toBeLessThanOrEqual(2);
+      }
+      if (orient === "left") {
+        expect(m!.fabLeftOfTitles, "left: FAB outer/left").toBe(true);
+      } else {
+        expect(m!.fabRightOfTitles, "right: FAB outer/right").toBe(true);
+      }
+    }
+  });
 });
