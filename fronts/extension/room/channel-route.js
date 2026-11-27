@@ -36,6 +36,10 @@
     "snesology.org": 1,
     "www.snesology.org": 1,
   };
+  var FB_HOSTS = {
+    "flashbackrepository.org": 1,
+    "www.flashbackrepository.org": 1,
+  };
 
   function normalizeHost(host) {
     var h = String(host || "")
@@ -132,6 +136,15 @@
         topicId: null,
         domain: "",
         repo: "snesology",
+      };
+    }
+    if (FB_HOSTS[domain] || FB_HOSTS["www." + domain]) {
+      return {
+        channel: "#flashback",
+        title: "Flashback Repository",
+        topicId: null,
+        domain: "",
+        repo: "flashback",
       };
     }
     return {

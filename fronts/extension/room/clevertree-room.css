@@ -106,6 +106,18 @@ body.ct-room-page .room{height:var(--room-viewport-height);min-height:460px}
 .room .head .channel-option code{font:12px/1.3 var(--mono);font-weight:700;color:var(--green)}
 .room .head .channel-option-title{font-size:12px;color:var(--muted)}
 .room .head .channel-menu-empty{padding:12px;font-size:12px;color:var(--muted)}
+.room .head .channel-menu-search-wrap{padding:8px 10px 6px;position:sticky;top:0;background:inherit;z-index:1}
+.room .head .channel-menu-search{
+  width:100%;box-sizing:border-box;border:1px solid var(--border, #3B414B);border-radius:8px;
+  padding:8px 10px;font:13px/1.3 inherit;background:var(--surface, #1B1E24);color:inherit
+}
+.room .head .channel-menu-section-label{
+  padding:8px 12px 4px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)
+}
+.room .head .channel-menu-sep{
+  height:0;margin:6px 10px;border:0;border-top:1px solid var(--border, #3B414B)
+}
+.room .head .channel-option-site code{color:var(--fb-accent, var(--green, #E7BC70))}
 /* Menu button sits in the SI rail header (not floating). */
 .room .menu-fab{
   position:relative;
@@ -366,6 +378,38 @@ body.ct-room-page .room{height:var(--room-viewport-height);min-height:460px}
 .room .si-strip-body .ai-section{margin-top:8px}
 .room .si-strip-body .ai-section h3{margin:0 0 4px;font-size:13px}
 .room .si-strip-body .ai-pairs ul{margin:4px 0 0;padding-left:1.1em}
+/* SI tabs: Browse + detail tabs (Flashback) */
+.room .si-strip-body[hidden],.room .si-tabs[hidden],.room .si-pane[hidden]{display:none!important}
+.room .si-panel.si-collapsed .si-tabs{display:none}
+.room .si-tabs{
+  flex:none;display:flex;gap:4px;overflow-x:auto;
+  padding:0 10px;border-bottom:1px solid var(--line);
+  -webkit-overflow-scrolling:touch;
+}
+.room .si-tab{
+  display:inline-flex;align-items:stretch;flex:0 0 auto;max-width:200px;min-width:0;
+  border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;
+  background:color-mix(in srgb,var(--paper) 70%,transparent);
+}
+.room .si-tab.active{background:var(--white);border-color:var(--green)}
+.room .si-tab-btn{
+  min-height:34px;padding:4px 10px;font-size:12px;font-weight:800;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+.room .si-tab-close{padding:0 8px;font-size:16px;line-height:1;color:var(--muted)}
+.room .si-pane{padding-top:8px}
+.room .si-pane h1,.room .si-pane h2,.room .si-pane h3{margin:12px 0 6px;line-height:1.25}
+.room .si-pane h1{font-size:17px}
+.room .si-pane h2{font-size:15px}
+.room .si-pane h3{font-size:14px}
+.room .si-pane p{margin:6px 0}
+.room .si-pane img{max-width:100%;height:auto}
+.room .si-pane pre{overflow:auto;padding:8px;border-radius:6px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.room .si-pane blockquote{margin:6px 0;padding-left:10px;border-left:3px solid var(--line);color:var(--muted)}
+.room .si-detail-head{display:flex;gap:10px;align-items:flex-start}
+.room .si-detail-head img{width:64px;aspect-ratio:2/3;object-fit:cover;border-radius:4px;flex:none}
+.room .si-detail-head h2{margin:0;font-size:15px}
+.room .si-detail-year{margin:2px 0 0;color:var(--muted);font-size:12px}
 .room .channel-link,
 .room button.channel-link{
   display:inline;
@@ -936,3 +980,10 @@ body.ct-room-page .room{height:var(--room-viewport-height);min-height:460px}
 .room .media-file-link{display:inline-block;padding:8px 10px;border:1px solid var(--ct-media-border,#bdc9bd);border-radius:7px;background:var(--white)}
 .room .video-unmute{margin-top:6px;font-size:12px;text-decoration:underline;color:var(--green)}
 .room .media-video-clear video{background:#000;border-radius:7px}
+
+.room .starter-chips{display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px 0}
+.room .starter-chip{
+  appearance:none;border:1px solid var(--fb-accent, var(--green, #E7BC70));border-radius:999px;
+  background:transparent;color:inherit;font:12px/1.3 inherit;padding:6px 12px;cursor:pointer;min-height:36px
+}
+.room .starter-chip:hover{background:color-mix(in srgb, var(--fb-accent, #E7BC70) 18%, transparent)}

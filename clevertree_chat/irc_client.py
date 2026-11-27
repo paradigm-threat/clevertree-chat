@@ -584,6 +584,19 @@ def policy_title_for_channel(channel: str) -> str:
                 continue
             if normalize_channel(str(meta.get("irc_channel") or "")) == ch:
                 return str(meta.get("title") or "").strip()
+    # Repo-level seed_topic (e.g. flashback) for default/listed channels.
+    for _key, repo in repos.items():
+        if not isinstance(repo, dict):
+            continue
+        seed = str(repo.get("seed_topic") or "").strip()
+        if not seed:
+            continue
+        listed = repo.get("channels")
+        names = [repo.get("default_channel")]
+        if isinstance(listed, list):
+            names.extend(listed)
+        if any(normalize_channel(str(n or "")) == ch for n in names if n):
+            return seed
     if ch == "#web":
         return "Clevertree Chat"
     if ch == "#pt":

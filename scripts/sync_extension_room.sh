@@ -10,6 +10,7 @@ mkdir -p "$DST/themes"
 cp "$SRC/tokens.css" "$SRC/clevertree-room.css" "$SRC/clevertree-room.js" \
   "$SRC/context-tags.js" "$SRC/channel-route.js" "$SRC/chat-launcher.js" \
   "$SRC/clevertree-ces.js" "$SRC/channel-policy.json" \
+  "$SRC/media-controller.js" "$SRC/ct-builtins.js" \
   "$DST/"
 cp -a "$SRC/themes/." "$DST/themes/"
 echo "Synced $SRC → $DST"

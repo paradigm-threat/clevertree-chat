@@ -1,19 +1,55 @@
 {
   "schema": "clevertree.channel-policy.v1",
-  "notes": "Per-repo channel topology. One IRC channel can host many topics via context tags. #web is the universal channel — same room as clevertree.chat/chat and the Clevertree Chat app default.",
+  "notes": "Per-repo channel topology. One IRC channel can host many topics via context tags. #web is the universal channel \u2014 same room as clevertree.chat/chat and the Clevertree Chat app default. | product_hosts/website_default_channels refreshed from relay-master catalog. | product_hosts/website_default_channels refreshed from relay-master catalog.",
   "repos": {
+    "flashback": {
+      "hosts": [
+        "flashbackrepository.org",
+        "www.flashbackrepository.org"
+      ],
+      "default_channel": "#flashback",
+      "channels": [
+        "#flashback"
+      ],
+      "theme_path": "hooks/client/chat-theme/",
+      "lobby_playlist_path": "hooks/client/lobby/lobby.playlist.json",
+      "si_markdown_path": "hooks/client/si/panel.md",
+      "seed_topic": "Welcome to the Flashback Repository. Ask about a movie you want to watch, or how to watch it \u2014 or use the SI panel to browse the movies.",
+      "placeholder": "I'd like to watch \u2026",
+      "starters": [
+        "I'd like to watch \u2026",
+        "Where can I find \u2026?",
+        "What's showing tonight?",
+        "Who's watching right now?",
+        "Tell me about the edit of \u2026",
+        "Can I request \u2026?"
+      ],
+      "notes": "Flashback lobby \u2014 catalog default in relay-master; House Lights theme from tip"
+    },
     "paradigm-threat": {
-      "hosts": ["paradigmthreat.net", "www.paradigmthreat.net", "old.paradigmthreat.net"],
+      "hosts": [
+        "paradigmthreat.net",
+        "www.paradigmthreat.net",
+        "old.paradigmthreat.net"
+      ],
       "default_channel": "#pt",
-      "channels": ["#pt"],
+      "channels": [
+        "#pt"
+      ],
       "topic_via": "context_tags",
       "topics_url": "/chat/topics.json",
       "consolidate_from_prefix": "#pt-"
     },
     "myproblem": {
-      "hosts": ["myproblem.app", "www.myproblem.app"],
+      "hosts": [
+        "myproblem.app",
+        "www.myproblem.app"
+      ],
       "default_channel": "#mp-general",
-      "demo_allowlist": ["mp-general", "ga-savannah-cat-rescue"],
+      "demo_allowlist": [
+        "mp-general",
+        "ga-savannah-cat-rescue"
+      ],
       "channels": {
         "mp-general": {
           "irc_channel": "#mp-general",
@@ -30,41 +66,128 @@
     },
     "public-web": {
       "default_channel": "#web",
-      "channels": ["#web"],
+      "channels": [
+        "#web"
+      ],
       "topic_via": "domain_tag",
       "notes": "Universal room (#web): Clevertree Chat website + app + unassigned embeds; attribution [[d:host]] for non-product hosts"
     },
     "songwalker": {
-      "hosts": ["songwalker.net", "www.songwalker.net"],
+      "hosts": [
+        "songwalker.net",
+        "www.songwalker.net"
+      ],
       "default_channel": "#songwalker",
-      "channels": ["#songwalker"],
-      "notes": "SongWalker product room — dedicated IRC channel"
+      "channels": [
+        "#songwalker"
+      ],
+      "notes": "SongWalker product room \u2014 dedicated IRC channel"
     },
     "snesology": {
-      "hosts": ["snesology.org", "www.snesology.org"],
+      "hosts": [
+        "snesology.org",
+        "www.snesology.org"
+      ],
       "default_channel": "#snesology",
-      "channels": ["#snesology"],
-      "notes": "SNESology product room — dedicated IRC channel"
+      "channels": [
+        "#snesology"
+      ],
+      "notes": "SNESology product room \u2014 dedicated IRC channel"
     }
   },
   "product_hosts": {
-    "clevertree.chat": { "repo": "public-web", "channel": "#web" },
-    "www.clevertree.chat": { "repo": "public-web", "channel": "#web" },
-    "clevertree.net": { "repo": "public-web", "channel": "#web" },
-    "www.clevertree.net": { "repo": "public-web", "channel": "#web" },
-    "quizgate.app": { "repo": "public-web", "channel": "#web" },
-    "www.quizgate.app": { "repo": "public-web", "channel": "#web" },
-    "api.clevertree.chat": { "repo": "public-web", "channel": "#web" },
-    "songwalker.net": { "repo": "songwalker", "channel": "#songwalker" },
-    "www.songwalker.net": { "repo": "songwalker", "channel": "#songwalker" },
-    "snesology.org": { "repo": "snesology", "channel": "#snesology" },
-    "www.snesology.org": { "repo": "snesology", "channel": "#snesology" }
+    "clevertree.chat": {
+      "repo": "public-web",
+      "channel": "#web"
+    },
+    "www.clevertree.chat": {
+      "repo": "public-web",
+      "channel": "#web"
+    },
+    "clevertree.net": {
+      "repo": "clevertree-site",
+      "channel": "#web"
+    },
+    "www.clevertree.net": {
+      "repo": "clevertree-site",
+      "channel": "#web"
+    },
+    "quizgate.app": {
+      "repo": "public-web",
+      "channel": "#web"
+    },
+    "www.quizgate.app": {
+      "repo": "public-web",
+      "channel": "#web"
+    },
+    "api.clevertree.chat": {
+      "repo": "public-web",
+      "channel": "#web"
+    },
+    "flashbackrepository.org": {
+      "repo": "fan-edits",
+      "channel": "#flashback"
+    },
+    "www.flashbackrepository.org": {
+      "repo": "fan-edits",
+      "channel": "#flashback"
+    },
+    "paradigmthreat.net": {
+      "repo": "paradigm-threat-files",
+      "channel": "#pt"
+    },
+    "www.paradigmthreat.net": {
+      "repo": "paradigm-threat-files",
+      "channel": "#pt"
+    },
+    "myproblem.app": {
+      "repo": "myproblem",
+      "channel": "#mp-general"
+    },
+    "www.myproblem.app": {
+      "repo": "myproblem",
+      "channel": "#mp-general"
+    },
+    "songwalker.net": {
+      "repo": "songwalker",
+      "channel": "#songwalker"
+    },
+    "www.songwalker.net": {
+      "repo": "songwalker",
+      "channel": "#songwalker"
+    },
+    "snesology.org": {
+      "repo": "snesology",
+      "channel": "#snesology"
+    },
+    "www.snesology.org": {
+      "repo": "snesology",
+      "channel": "#snesology"
+    },
+    "relay.clevertree.net": {
+      "repo": "clevertree-site",
+      "channel": "#web"
+    },
+    "relay.paradigmthreat.net": {
+      "repo": "paradigm-threat-files",
+      "channel": "#pt"
+    }
   },
+  "website_default_channels": [
+    "#web",
+    "#flashback",
+    "#mp-general",
+    "#pt",
+    "#snesology",
+    "#songwalker",
+    "#ga-savannah-cat-rescue"
+  ],
   "mirrors": [
     "pub1.relaygateway.net",
     "mesh1.relaygateway.net",
     "mesh2.relaygateway.net"
   ],
   "anonymous_default": true,
-  "visitor_uuid_for_chat": false
+  "visitor_uuid_for_chat": false,
+  "catalog_source": "/home/ari/dev/relay/relay-master/catalog/irc-channels.json"
 }

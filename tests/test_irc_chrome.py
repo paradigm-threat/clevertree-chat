@@ -25,6 +25,13 @@ class PolicyTitleTests(unittest.TestCase):
     def test_pt_seed(self) -> None:
         self.assertEqual(policy_title_for_channel("#pt"), "Paradigm Threat")
 
+    def test_flashback_seed(self) -> None:
+        self.assertTrue(
+            policy_title_for_channel("#flashback").startswith(
+                "Welcome to the Flashback Repository."
+            )
+        )
+
 
 class ChromeAuthTests(unittest.TestCase):
     def test_anonymous_forbidden(self) -> None:

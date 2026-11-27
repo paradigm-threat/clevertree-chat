@@ -205,6 +205,10 @@
         opts.wsUrl ||
         mirrors[0],
       mirrors: mirrors,
+      placeholder: opts.placeholder,
+      placeholderCollapsed: opts.placeholderCollapsed,
+      starters: opts.starters,
+      channelThemeUrl: opts.channelThemeUrl,
     });
   }
 

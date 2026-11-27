@@ -295,10 +295,10 @@
             '<div class="media media-video media-video-clear" data-media-key="' +
             key +
             '" data-review="clear">' +
-            '<video controls muted autoplay playsinline loop preload="metadata" data-role="room-video" src="' +
+            /* Chat media never autoplays — user presses play (single-active via MediaController). */
+            '<video controls playsinline preload="metadata" data-role="room-video" src="' +
             url +
             '"></video>' +
-            '<button type="button" class="video-unmute" data-role="unmute-video">Click for sound</button>' +
             "</div>";
         } else {
           html +=
@@ -454,6 +454,43 @@
     }
   }
 
+  var roomScriptLoads = {};
+
+  /** Inject a room-sibling script once (resolved from roomAssetUrl). */
+  function loadRoomScript(name, isReady) {
+    if (isReady && isReady()) return Promise.resolve();
+    if (roomScriptLoads[name]) return roomScriptLoads[name];
+    roomScriptLoads[name] = new Promise(function (resolve) {
+      try {
+        var s = document.createElement("script");
+        s.src = roomAssetUrl(name);
+        s.async = false;
+        s.onload = function () {
+          resolve();
+        };
+        s.onerror = function () {
+          delete roomScriptLoads[name];
+          resolve();
+        };
+        (document.head || document.documentElement).appendChild(s);
+      } catch (e) {
+        resolve();
+      }
+    });
+    return roomScriptLoads[name];
+  }
+
+  /** SI built-ins: media-controller.js then ct-builtins.js (skipped if already script-tagged). */
+  function loadSiBuiltins() {
+    return loadRoomScript("media-controller.js", function () {
+      return !!window.ClevertreeMediaController;
+    }).then(function () {
+      return loadRoomScript("ct-builtins.js", function () {
+        return !!window.ClevertreeSiMarkdown;
+      });
+    });
+  }
+
   function shellHtml(opts) {
     var ch = esc(opts.channel || "#web");
     var title = esc(opts.title || "Public room");
@@ -535,6 +572,8 @@
       ch +
       "</p>" +
       "</div></header>" +
+      '<div class="si-tabs" data-role="si-tabs" role="tablist" aria-label="SI tabs" hidden></div>' +
+      '<div class="si-strip-body si-tab-panes" data-role="si-panes" hidden></div>' +
       '<div class="si-strip-body" data-role="ai-body"></div>' +
       "</aside>" +
       '<div class="panel-gutter" data-role="gutter-si" role="separator" aria-orientation="vertical" aria-label="Resize SI panel" hidden></div>' +
@@ -653,6 +692,15 @@
       "</div>";
     stream.appendChild(art);
     wireMediaControls(art);
+    try {
+      var SP = typeof ClevertreeStreamPlayback !== "undefined" ? ClevertreeStreamPlayback : null;
+      if (SP && typeof SP.enhanceAnchor === "function") {
+        var anchors = art.querySelectorAll("a[href]");
+        for (var ai = 0; ai < anchors.length; ai++) {
+          SP.enhanceAnchor(anchors[ai], null);
+        }
+      }
+    } catch (eStream) {}
     if (clamp && roomRoot) {
       var btn = art.querySelector('[data-role="expand-msg"]');
       if (btn) {
@@ -781,8 +829,16 @@
     var siTitle = $(el, '[data-role="si-title"]');
     /* Menu button lives in the SI rail header (not floating). */
     var PLACEHOLDER_EXPANDED =
+      (opts && opts.placeholder) ||
       "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…";
-    var PLACEHOLDER_COLLAPSED = "Ask something…";
+    var PLACEHOLDER_COLLAPSED =
+      (opts && opts.placeholderCollapsed) ||
+      (opts && opts.placeholder
+        ? String(opts.placeholder).replace(/…$/, "…")
+        : "Ask something…");
+    if (opts && opts.placeholder && opts.channel === "#flashback") {
+      PLACEHOLDER_COLLAPSED = "Ask for a film…";
+    }
 
     var CHROME_MS = 340;
     var CHROME_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
@@ -1558,6 +1614,44 @@
     }
     loadChannelCatalog().catch(function () {});
 
+    // Per-repo starter chips (populate draft; never auto-send)
+    try {
+      var starters = opts.starters;
+      if ((!starters || !starters.length) && opts.channel === "#flashback") {
+        starters = [
+          "I'd like to watch …",
+          "Where can I find …?",
+          "What's showing tonight?",
+          "Who's watching right now?",
+          "Tell me about the edit of …",
+          "Can I request …?",
+        ];
+      }
+      if (starters && starters.length && composerEl && !composerEl.querySelector("[data-role=starter-chips]")) {
+        var chipRow = document.createElement("div");
+        chipRow.className = "starter-chips";
+        chipRow.setAttribute("data-role", "starter-chips");
+        starters.forEach(function (label) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "starter-chip";
+          b.textContent = label;
+          b.onclick = function () {
+            if (!draft) return;
+            draft.value = label;
+            applyComposerClass(true);
+            try {
+              draft.focus();
+            } catch (e) {}
+          };
+          chipRow.appendChild(b);
+        });
+        var draftWrap = draft && draft.parentNode;
+        if (draftWrap) draftWrap.insertBefore(chipRow, draft);
+        else composerEl.insertBefore(chipRow, composerEl.firstChild);
+      }
+    } catch (eStarters) {}
+
     if (history) {
       var historyScrollHideTimer = null;
       history.addEventListener(
@@ -1674,37 +1768,138 @@
       channelSwitchBtn.classList.toggle("open", !!open);
     }
 
+    function isWebsiteDefaultChannel(ch) {
+      var n = normalizeChannelName(ch);
+      for (var i = 0; i < WEBSITE_DEFAULT_CHANNELS.length; i++) {
+        if (WEBSITE_DEFAULT_CHANNELS[i] === n) return true;
+      }
+      return false;
+    }
+
+    function partitionChannelRows(rows) {
+      var top = [];
+      var bottom = [];
+      var seen = {};
+      (rows || []).forEach(function (row) {
+        var ch = normalizeChannelName(row.channel || row.name || row);
+        if (seen[ch]) return;
+        seen[ch] = 1;
+        var item =
+          typeof row === "string"
+            ? { channel: ch, title: ch }
+            : {
+                channel: ch,
+                title: row.title || row.label || ch,
+                websiteDefault: !!row.websiteDefault || isWebsiteDefaultChannel(ch),
+              };
+        if (item.websiteDefault) top.push(item);
+        else bottom.push(item);
+      });
+      top.sort(function (a, b) {
+        return (
+          WEBSITE_DEFAULT_CHANNELS.indexOf(a.channel) -
+          WEBSITE_DEFAULT_CHANNELS.indexOf(b.channel)
+        );
+      });
+      return { top: top, bottom: bottom };
+    }
+
+    function channelOptionHtml(row, current) {
+      var ch = normalizeChannelName(row.channel || row.name || row);
+      var title = row.title || row.label || "";
+      var active = ch === current ? " active" : "";
+      return (
+        '<button type="button" class="channel-option' +
+        active +
+        (row.websiteDefault ? " channel-option-site" : "") +
+        '" role="option" data-channel="' +
+        esc(ch) +
+        '" aria-selected="' +
+        (ch === current ? "true" : "false") +
+        '"><code>' +
+        esc(ch) +
+        "</code>" +
+        (title
+          ? '<span class="channel-option-title">' + esc(title) + "</span>"
+          : "") +
+        "</button>"
+      );
+    }
+
+    var channelMenuFilter = "";
+
     function renderChannelMenu(list) {
       if (!channelMenu) return;
       var rows = Array.isArray(list) ? list : [];
+      state._channelCatalog = rows;
       if (!rows.length) {
         channelMenu.innerHTML =
           '<div class="channel-menu-empty">No channels listed</div>';
         return;
       }
-      var current = normalizeChannelName(opts.channel);
-      channelMenu.innerHTML = rows
-        .map(function (row) {
+      var q = String(channelMenuFilter || "")
+        .trim()
+        .toLowerCase();
+      var filtered = rows;
+      if (q) {
+        filtered = rows.filter(function (row) {
           var ch = normalizeChannelName(row.channel || row.name || row);
-          var title = row.title || row.label || "";
-          var active = ch === current ? " active" : "";
-          return (
-            '<button type="button" class="channel-option' +
-            active +
-            '" role="option" data-channel="' +
-            esc(ch) +
-            '" aria-selected="' +
-            (ch === current ? "true" : "false") +
-            '"><code>' +
-            esc(ch) +
-            "</code>" +
-            (title
-              ? '<span class="channel-option-title">' + esc(title) + "</span>"
-              : "") +
-            "</button>"
-          );
-        })
-        .join("");
+          var title = String(row.title || row.label || "").toLowerCase();
+          return ch.toLowerCase().indexOf(q) >= 0 || title.indexOf(q) >= 0;
+        });
+      }
+      var parts = partitionChannelRows(filtered);
+      var current = normalizeChannelName(opts.channel);
+      var html =
+        '<div class="channel-menu-search-wrap">' +
+        '<input type="search" class="channel-menu-search" data-role="channel-search" placeholder="Search channels…" aria-label="Search channels" value="' +
+        esc(channelMenuFilter) +
+        '" />' +
+        "</div>";
+      if (!parts.top.length && !parts.bottom.length) {
+        html += '<div class="channel-menu-empty">No matching channels</div>';
+      } else {
+        if (parts.top.length) {
+          html +=
+            '<div class="channel-menu-section-label">Website channels</div>';
+          html += parts.top
+            .map(function (row) {
+              return channelOptionHtml(row, current);
+            })
+            .join("");
+        }
+        if (parts.top.length && parts.bottom.length) {
+          html += '<div class="channel-menu-sep" role="separator"></div>';
+        }
+        if (parts.bottom.length) {
+          html +=
+            '<div class="channel-menu-section-label">Other channels</div>';
+          html += parts.bottom
+            .map(function (row) {
+              return channelOptionHtml(row, current);
+            })
+            .join("");
+        }
+      }
+      channelMenu.innerHTML = html;
+      var search = channelMenu.querySelector('[data-role="channel-search"]');
+      if (search) {
+        search.oninput = function () {
+          channelMenuFilter = search.value || "";
+          renderChannelMenu(state._channelCatalog || rows);
+          var again = channelMenu.querySelector('[data-role="channel-search"]');
+          if (again) {
+            again.focus();
+            try {
+              var len = again.value.length;
+              again.setSelectionRange(len, len);
+            } catch (e) {}
+          }
+        };
+        search.onclick = function (ev) {
+          ev.stopPropagation();
+        };
+      }
       var btns = channelMenu.querySelectorAll("[data-channel]");
       for (var i = 0; i < btns.length; i++) {
         btns[i].onclick = function (ev) {
@@ -1716,34 +1911,61 @@
       }
     }
 
+    /** Catalog website defaults — appear above separator in channel picker. */
+    var WEBSITE_DEFAULT_CHANNELS = [
+      "#web",
+      "#flashback",
+      "#pt",
+      "#mp-general",
+      "#songwalker",
+      "#snesology",
+    ];
+
     function fallbackChannelCatalog() {
       return [
         {
           channel: "#web",
           topic: "web",
-          title: "Clevertree Chat · public web",
+          title: "Universal Web",
+          websiteDefault: true,
         },
-        { channel: "#pt", topic: "general", title: "Paradigm Threat" },
+        {
+          channel: "#flashback",
+          topic: "flashback",
+          title: "Flashback Repository",
+          websiteDefault: true,
+        },
+        {
+          channel: "#pt",
+          topic: "general",
+          title: "Paradigm Threat",
+          websiteDefault: true,
+        },
         {
           channel: "#mp-general",
           topic: "mp-general",
           title: "MyProblem general",
+          websiteDefault: true,
+        },
+        {
+          channel: "#songwalker",
+          topic: "songwalker",
+          title: "SongWalker",
+          websiteDefault: true,
+        },
+        {
+          channel: "#snesology",
+          topic: "snesology",
+          title: "SNESology",
+          websiteDefault: true,
         },
         {
           channel: "#ga-savannah-cat-rescue",
           topic: "ga-savannah-cat-rescue",
           title: "Savannah Cat Rescue",
         },
-        {
-          channel: "#songwalker",
-          topic: "songwalker",
-          title: "SongWalker",
-        },
-        {
-          channel: "#snesology",
-          topic: "snesology",
-          title: "SNESology",
-        },
+        { channel: "#logs", topic: "logs", title: "Fleet logs" },
+        { channel: "#relay", topic: "relay", title: "Relay ops" },
       ];
     }
 
@@ -1786,10 +2008,22 @@
         var polRes = await fetch(policyUrl, { cache: "no-store" });
         if (polRes.ok) {
           var policy = await polRes.json();
+          var wdc = policy && policy.website_default_channels;
+          if (Array.isArray(wdc) && wdc.length) {
+            WEBSITE_DEFAULT_CHANNELS = wdc.map(normalizeChannelName);
+          }
           var repos = (policy && policy.repos) || {};
           Object.keys(repos).forEach(function (rk) {
             var repo = repos[rk] || {};
-            if (repo.default_channel) absorb([repo.default_channel]);
+            if (repo.default_channel) {
+              absorb([
+                {
+                  channel: repo.default_channel,
+                  title: repo.title || repo.default_channel,
+                  websiteDefault: true,
+                },
+              ]);
+            }
             var channels = repo.channels;
             if (Array.isArray(channels)) absorb(channels);
             else if (channels && typeof channels === "object") {
@@ -1808,6 +2042,10 @@
                 }
               });
             }
+          });
+          // Mark catalog defaults after absorb
+          merged.forEach(function (row) {
+            if (isWebsiteDefaultChannel(row.channel)) row.websiteDefault = true;
           });
         }
       } catch (e) {}
@@ -1905,6 +2143,7 @@
       state.connected = false;
       restoreChannelDraft(ch);
       clearSiPanel();
+      siInitForChannel();
       renderSeed();
       setConnUi("Switching…", ch);
       setComposerExpanded(true);
@@ -2063,6 +2302,309 @@
         siteOrigin: opts.siteOrigin || "",
       }
     );
+
+    /* ---- SI tab strip: Browse + detail tabs (Flashback chat-first browsing) ----
+     * Enabled when the channel is #flashback or channel-policy sets
+     * si_markdown_path for the repo. Browse = <siteOrigin>/<si_markdown_path>
+     * rendered with ClevertreeSiMarkdown; ct-carousel-open spawns a detail tab. */
+    var siTabsEl = $(el, '[data-role="si-tabs"]');
+    var siPanesEl = $(el, '[data-role="si-panes"]');
+    var si = { on: false, token: 0, origin: "", tabs: [], active: "", unsubMedia: null };
+    var siPolicyPromise = null;
+
+    function siLoadPolicy() {
+      if (!siPolicyPromise) {
+        siPolicyPromise = fetch(roomAssetUrl("channel-policy.json"), { cache: "no-store" })
+          .then(function (r) {
+            return r.ok ? r.json() : {};
+          })
+          .catch(function () {
+            return {};
+          });
+      }
+      return siPolicyPromise;
+    }
+
+    function siRepoForChannel(policy, ch) {
+      var repos = (policy && policy.repos) || {};
+      var keys = Object.keys(repos);
+      for (var i = 0; i < keys.length; i++) {
+        var repo = repos[keys[i]] || {};
+        if (repo.default_channel && normalizeChannelName(repo.default_channel) === ch) {
+          return repo;
+        }
+        if (Array.isArray(repo.channels)) {
+          for (var j = 0; j < repo.channels.length; j++) {
+            if (normalizeChannelName(repo.channels[j]) === ch) return repo;
+          }
+        }
+      }
+      return null;
+    }
+
+    /** opts.siteOrigin, else page origin when hosted on a repo host, else repo host. */
+    function siSiteOrigin(repo, ch) {
+      if (opts.siteOrigin) return String(opts.siteOrigin).replace(/\/+$/, "");
+      var hosts = (repo && repo.hosts) || [];
+      try {
+        if (hosts.indexOf(location.hostname) >= 0) return location.origin;
+      } catch (e) {}
+      if (hosts.length) return "https://" + hosts[0];
+      if (ch === "#flashback") return "https://flashbackrepository.org";
+      return "";
+    }
+
+    function siFindTab(id) {
+      for (var i = 0; i < si.tabs.length; i++) {
+        if (si.tabs[i].id === id) return si.tabs[i];
+      }
+      return null;
+    }
+
+    function siStopMediaIn(rootEl) {
+      var mc = window.ClevertreeMediaController;
+      if (mc && rootEl && typeof mc.stopWithin === "function") mc.stopWithin(rootEl);
+    }
+
+    function siReset() {
+      si.token++;
+      if (si.unsubMedia) {
+        try {
+          si.unsubMedia();
+        } catch (e) {}
+        si.unsubMedia = null;
+      }
+      if (siPanesEl) {
+        siStopMediaIn(siPanesEl);
+        siPanesEl.innerHTML = "";
+        siPanesEl.hidden = true;
+      }
+      if (siTabsEl) {
+        siTabsEl.innerHTML = "";
+        siTabsEl.hidden = true;
+      }
+      si.tabs = [];
+      si.active = "";
+      si.on = false;
+      if (aiBody) aiBody.hidden = false;
+    }
+
+    function siActivate(id) {
+      var target = siFindTab(id) || siFindTab("browse");
+      if (!target) return;
+      si.active = target.id;
+      for (var i = 0; i < si.tabs.length; i++) {
+        var t = si.tabs[i];
+        var on = t === target;
+        t.pane.hidden = !on;
+        t.wrap.classList.toggle("active", on);
+        t.btn.setAttribute("aria-selected", on ? "true" : "false");
+        t.btn.tabIndex = on ? 0 : -1;
+      }
+      try {
+        target.wrap.scrollIntoView({ block: "nearest", inline: "nearest" });
+      } catch (e) {}
+    }
+
+    function siAddTab(id, title, closable) {
+      var pane = document.createElement("div");
+      pane.className = "si-pane";
+      pane.setAttribute("role", "tabpanel");
+      pane.setAttribute("data-si-tab", id);
+      pane.setAttribute("data-ct-site-origin", si.origin);
+      pane.hidden = true;
+      var wrap = document.createElement("span");
+      wrap.className = "si-tab";
+      wrap.setAttribute("role", "presentation");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "si-tab-btn";
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", "false");
+      btn.title = title;
+      btn.textContent = title;
+      wrap.appendChild(btn);
+      var tab = { id: id, title: title, pane: pane, wrap: wrap, btn: btn };
+      btn.onclick = function (ev) {
+        ev.stopPropagation();
+        siActivate(id);
+      };
+      if (closable) {
+        var close = document.createElement("button");
+        close.type = "button";
+        close.className = "si-tab-close";
+        close.setAttribute("aria-label", "Close " + title);
+        close.textContent = "×";
+        close.onclick = function (ev) {
+          ev.stopPropagation();
+          siCloseTab(id);
+        };
+        wrap.appendChild(close);
+      }
+      si.tabs.push(tab);
+      siTabsEl.appendChild(wrap);
+      siPanesEl.appendChild(pane);
+      return tab;
+    }
+
+    /** Close a detail tab: stop its media, fall back to Browse. */
+    function siCloseTab(id) {
+      if (id === "browse") return;
+      var tab = siFindTab(id);
+      if (!tab) return;
+      siStopMediaIn(tab.pane);
+      si.tabs.splice(si.tabs.indexOf(tab), 1);
+      if (tab.wrap.parentNode) tab.wrap.parentNode.removeChild(tab.wrap);
+      if (tab.pane.parentNode) tab.pane.parentNode.removeChild(tab.pane);
+      if (si.active === id) siActivate("browse");
+    }
+
+    /** Resolve relative img/a URLs in rendered README against the README URL. */
+    function siRebaseUrls(rootEl, base) {
+      var nodes = rootEl.querySelectorAll("img[src], a[href]");
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        var attr = n.tagName === "IMG" ? "src" : "href";
+        var raw = n.getAttribute(attr) || "";
+        if (!raw || /^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(raw)) continue;
+        try {
+          n.setAttribute(attr, new URL(raw, base).toString());
+          if (attr === "href") {
+            n.setAttribute("target", "_blank");
+            n.setAttribute("rel", "noopener noreferrer");
+          }
+        } catch (e) {}
+      }
+    }
+
+    function siUpgrade(rootEl) {
+      var b = window.ClevertreeBuiltins;
+      if (b && typeof b.upgrade === "function") b.upgrade(rootEl);
+    }
+
+    function siOpenDetail(d) {
+      d = d || {};
+      var title = String(d.title || "Details");
+      var id = String(d.readme || "t:" + title);
+      var existing = siFindTab(id);
+      if (existing) {
+        siActivate(id);
+        return;
+      }
+      var tab = siAddTab(id, title, true);
+      var head = document.createElement("div");
+      head.className = "si-detail-head";
+      if (d.poster) {
+        var img = document.createElement("img");
+        img.alt = "";
+        img.src = d.poster;
+        head.appendChild(img);
+      }
+      var cap = document.createElement("div");
+      var h = document.createElement("h2");
+      h.textContent = title;
+      cap.appendChild(h);
+      if (d.year) {
+        var yr = document.createElement("p");
+        yr.className = "si-detail-year";
+        yr.textContent = String(d.year);
+        cap.appendChild(yr);
+      }
+      head.appendChild(cap);
+      var body = document.createElement("div");
+      body.className = "si-detail-body";
+      body.textContent = d.readme ? "Loading…" : "";
+      tab.pane.appendChild(head);
+      tab.pane.appendChild(body);
+      siActivate(id);
+      if (!d.readme) return;
+      var token = si.token;
+      fetch(d.readme, { credentials: "omit", cache: "no-cache" })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.text();
+        })
+        .then(function (md) {
+          if (token !== si.token || !tab.pane.parentNode) return;
+          body.innerHTML = window.ClevertreeSiMarkdown.render(md);
+          siRebaseUrls(body, d.readme);
+          siUpgrade(body);
+        })
+        .catch(function () {
+          if (token !== si.token || !tab.pane.parentNode) return;
+          body.textContent = "Couldn't load details.";
+        });
+    }
+
+    function siEnable(origin, md) {
+      si.on = true;
+      si.origin = origin;
+      siTabsEl.hidden = false;
+      siPanesEl.hidden = false;
+      if (aiBody) aiBody.hidden = true;
+      var browse = siAddTab("browse", "Browse", false);
+      browse.pane.className += " si-pane-browse";
+      browse.pane.innerHTML = window.ClevertreeSiMarkdown.render(md);
+      siRebaseUrls(browse.pane, origin + "/");
+      siActivate("browse");
+      siUpgrade(browse.pane);
+      var mc = window.ClevertreeMediaController;
+      if (mc && typeof mc.subscribe === "function") {
+        si.unsubMedia = mc.subscribe(function (ev) {
+          if (ev.type !== "load") return;
+          /* Chat media yields to SI media (one active at a time). */
+          var vids = stream ? stream.querySelectorAll("audio,video") : [];
+          for (var i = 0; i < vids.length; i++) {
+            try {
+              vids[i].pause();
+            } catch (e) {}
+          }
+          if (ev.owner && ev.owner.scrollIntoView) {
+            try {
+              ev.owner.scrollIntoView({ block: "nearest" });
+            } catch (e2) {}
+          }
+        });
+      }
+    }
+
+    /** Re-evaluate SI Browse for the current channel (boot + channel switch). */
+    function siInitForChannel() {
+      siReset();
+      if (!siPanesEl || !siTabsEl) return;
+      var token = si.token;
+      var ch = normalizeChannelName(opts.channel);
+      siLoadPolicy().then(function (policy) {
+        if (token !== si.token || state.destroyed) return;
+        var repo = siRepoForChannel(policy, ch);
+        var path =
+          opts.siMarkdownPath ||
+          (repo && repo.si_markdown_path) ||
+          (ch === "#flashback" ? "hooks/client/si/panel.md" : "");
+        if (!path) return;
+        var origin = siSiteOrigin(repo, ch);
+        if (!origin) return;
+        var url = origin + "/" + String(path).replace(/^\/+/, "");
+        return Promise.all([
+          loadSiBuiltins(),
+          fetch(url, { credentials: "omit", cache: "no-cache" }).then(function (r) {
+            return r.ok ? r.text() : null;
+          }),
+        ]).then(function (res) {
+          var md = res[1];
+          if (token !== si.token || state.destroyed) return;
+          if (md == null || !window.ClevertreeSiMarkdown) return;
+          siEnable(origin, md);
+        });
+      }).catch(function () {});
+    }
+
+    if (siPanesEl) {
+      siPanesEl.addEventListener("ct-carousel-open", function (ev) {
+        siOpenDetail(ev.detail);
+      });
+    }
+    state.siCleanup = siReset;
 
     function clearSiPanel() {
       state.view = null;
@@ -2805,7 +3347,19 @@
     setTrackUi();
     setAiUi();
     renderSeed();
+    siInitForChannel();
     connect();
+
+    /* Chat media never autoplays; when the user plays it, SI media yields. */
+    el.addEventListener(
+      "play",
+      function (ev) {
+        var t = ev.target;
+        var mc = window.ClevertreeMediaController;
+        if (mc && t && t.closest && t.closest('[data-role="stream"]')) mc.stop();
+      },
+      true
+    );
 
     /* Keep composer above the soft keyboard; follow visualViewport when the
      * host overlays IME without resizing (and when interactive-widget helps). */
@@ -2961,6 +3515,7 @@
       },
       destroy: function () {
         state.destroyed = true;
+        if (state.siCleanup) state.siCleanup();
         stopCapture();
         if (state.holdComposerTimer) {
           clearTimeout(state.holdComposerTimer);

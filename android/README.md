@@ -15,4 +15,6 @@ cd android
 
 Docs: [`docs/android-room.md`](../docs/android-room.md) · [`docs/android-app.md`](../docs/android-app.md).
 
+**SI built-ins:** `ct-carousel`, `ct-video`, and `ct-playlist` are web custom elements (`fronts/room/ct-builtins.js` + `media-controller.js`). Native WebView uses the same room JS for now; there are no native stubs yet.
+
 The legacy stub path `android/src/chat/clevertree/ClevertreeVoice.kt` moved into `:clevertree-room` (`chat.clevertree.ClevertreeVoice`).

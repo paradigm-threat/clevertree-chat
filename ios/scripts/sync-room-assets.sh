@@ -25,6 +25,8 @@ FILES=(
   channel-policy.json
   chat-launcher.js
   clevertree-ces.js
+  media-controller.js
+  ct-builtins.js
 )
 
 for f in "${FILES[@]}"; do
