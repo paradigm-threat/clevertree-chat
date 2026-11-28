@@ -88,8 +88,7 @@
         wsUrl: sameOrigin ? localWs : prodWs,
         mirrors: sameOrigin
           ? [localWs]
-          : [prodWs, "wss://pub1.relaygateway.net/chat/ws?topic=web"],
-        nick: "you"
+          : [prodWs, "wss://pub1.relaygateway.net/chat/ws?topic=web"]
       });
     })();
   </script>

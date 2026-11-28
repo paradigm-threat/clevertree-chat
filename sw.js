@@ -1,5 +1,5 @@
 /* Clevertree Chat PWA service worker */
-const SHELL_CACHE = "clevertree-shell-v2";
+const SHELL_CACHE = "clevertree-shell-v3";
 const SHELL_URLS = [
   "/",
   "/chat/",
@@ -13,6 +13,8 @@ const SHELL_URLS = [
   "/fronts/snippet/clevertree-board.css",
   "/fronts/snippet/clevertree-board.js",
   "/fronts/snippet/clevertree-outbox.js",
+  "/fronts/room/clevertree-room.js",
+  "/fronts/room/clevertree-room.css",
   "/js/site-theme.js",
   "/js/site-nav.js",
   "/js/site-pwa.js",
@@ -67,6 +69,22 @@ self.addEventListener("fetch", (event) => {
             Response.error()
           );
         }),
+    );
+    return;
+  }
+
+  // Room UI ships often (nick/identity); always prefer network then refresh cache.
+  if (url.pathname.startsWith("/fronts/room/")) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            void caches.open(SHELL_CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then((c) => c || Response.error())),
     );
     return;
   }

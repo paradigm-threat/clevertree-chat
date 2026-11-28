@@ -90,6 +90,16 @@ assert(manifest.display === "standalone", "PWA display standalone");
 const sw = fs.readFileSync(path.join(__dirname, "../sw.js"), "utf8");
 assert(sw.includes('"/chat/"') || sw.includes('"/chat"'), "SW precaches /chat");
 assert(sw.includes("site.webmanifest"), "SW precaches manifest");
+assert(sw.includes("clevertree-shell-v3"), "SW cache bumped for room nick UI");
+assert(sw.includes('"/fronts/room/clevertree-room.js"'), "SW precaches room JS");
+assert(
+  sw.includes('pathname.startsWith("/fronts/room/")'),
+  "SW network-first for /fronts/room/ so nick UI updates ship"
+);
+assert(
+  !/nick:\s*["']you["']/.test(chatPage),
+  "chat page must not hard-code nick you; room uses localStorage / composer"
+);
 
 const tryPage = fs.readFileSync(path.join(__dirname, "../try/index.html"), "utf8");
 assert(tryPage.includes('href="/chat'), "try page links to same-origin /chat");
