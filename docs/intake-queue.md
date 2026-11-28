@@ -112,14 +112,28 @@ Queue path: `var/clevertree-live/queue/channel_asr/`. Drain (`action=drain_chann
 - Does not put the queue on iad1/GitHub.
 - Chrome Web Store / marketing copy stay high-level (“organized by batch SI”).
 
+## Room = queue; Bunny = uncurated inbox (shipped)
+
+| Piece | Role |
+|-------|------|
+| **Chat room** (IRC / WS / submit) | Live claim queue + conversation. History + markers are what batch drains. |
+| **Bunny inbox** | Sole uncurated blob store: speak/video, Networker harvests, SI assessments/media. Path `inbox/{kind}/{source_user}/{object_id}/…`. |
+| **Host index** | `var/clevertree-live/inbox-index/{source_user}/{object_id}.json` — status, urls, content_hash. |
+| **Claim queue** | `var/clevertree-live/queue/claims/*.json` when `CLEVERTREE_ROOM_QUEUE_ONLY=1` (default **on**). |
+| **Git comments SoT** | Curated refs only after batch accepts — never raw AI/Networker bytes. |
+
+Replace is unique per `(source_user, object_id)`; server derives `source_user` (visitor / `nw:` / `si:`). Cross-user paths rejected. APIs: `POST /api/inbox/upload`, `PUT /api/inbox/{object_id}` (chat-host + MyProblem proxy). Markers: `[[mp:media …]]` and `[[mp:inbox id=…]]`.
+
+Helpers: `clevertree_chat.inbox`, `clevertree_chat.claim_queue`, `clevertree_chat.bunny_upload` (inbox default; legacy `chat-public/` when `CLEVERTREE_INBOX_UPLOAD=0`).
+
 ## Implementation backlog (ordered)
 
-1. **Queue store** — `var/clevertree-live/queue/` schema + helpers; no git. *(Partial: `queue/irc_log/` + `irc-logs/` cache landed; claim enqueue still pending.)*
-2. **Live submit rewrite** — [`live_runtime.py`](../clevertree_chat/live_runtime.py) / [`service.py`](../clevertree_chat/service.py): enqueue + provisional view; stop live `commit_changes` for new comments.
+1. **Queue store** — `var/clevertree-live/queue/` schema + helpers; no git. *(Done: `queue/claims/`, `queue/irc_log/`, `irc-logs/`, `inbox-index/`.)*
+2. **Live submit rewrite** — enqueue + provisional view; stop live `commit_changes` for new comments. *(Done behind `CLEVERTREE_ROOM_QUEUE_ONLY`, default on; set `0` to rollback.)*
 3. **View merge** — `view` / `board.snapshot` merge SoT + pending queue.
-4. **IRC** — [`irc_bridge.py`](../clevertree_chat/irc_bridge.py): PRIVMSG → enqueue; pending mirror. *(Ephemeral log cache + `irc_log` jobs live; claim path still transitional submit.)*
-5. **Batch consume** — drain reads queue first; accept → file/pair/position; reject → drop; then hooks on filed content. *(IRC transcripts: `drain_irc_logs` / `chat_transcript.accept_irc_log_job`.)*
-6. **Tests** — submit creates no SoT comment files; accept writes SoT; reject leaves SoT clean; E2E provisional → filed.
-7. **Ops / UI** — PVC layout; coach copy “Pending batch review”; migrate off live-into-git (existing SoT history stays).
+4. **IRC** — [`irc_bridge.py`](../clevertree_chat/irc_bridge.py): PRIVMSG → claim enqueue; pending mirror. *(Ephemeral log + `irc_log` jobs live; align PRIVMSG with claim queue.)*
+5. **Batch consume** — drain claims + inbox-index refs first; accept → file/pair/position; reject → drop; then hooks on filed content. *(IRC transcripts: `drain_irc_logs` / `chat_transcript.accept_irc_log_job`.)*
+6. **Tests** — submit creates no SoT comment files; accept writes SoT; reject leaves SoT clean; E2E provisional → filed. *(Unit: `tests/test_inbox_claim_queue.py`.)*
+7. **Ops / UI** — coach copy “Pending batch review”; purge Bunny per ephemeral-media after curation.
 
-*Status: policy locked; **Phase 1 target** = enqueue + Cursor drain (sole SoT writer). Transitional: live may still write SoT until cutover — treat that as historical debt, not the end state ([`batch-phases.md`](batch-phases.md)).*
+*Status: room-queue + Bunny inbox cutover **on** by default ([`batch-phases.md`](batch-phases.md)). Batch remains sole SoT writer for new claims.*

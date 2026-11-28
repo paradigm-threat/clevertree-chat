@@ -355,7 +355,10 @@ def _vision_groq(
     image_url = ""
     pub = (public_url or "").strip()
     if pub.startswith("https://") and (
-        "b-cdn.net" in pub or "bunnycdn" in pub or "chat-public/" in pub
+        "b-cdn.net" in pub
+        or "bunnycdn" in pub
+        or "chat-public/" in pub
+        or "/inbox/" in pub
     ):
         image_url = pub
     if not image_url:

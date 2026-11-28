@@ -185,20 +185,28 @@ test.describe("room composer chrome", () => {
         const fab = document.querySelector(
           '[data-role="menu-fab"]'
         ) as HTMLElement | null;
-        const titles = document.querySelector(
-          ".si-rail-titles"
+        const tabs = document.querySelector(
+          '[data-role="si-tabs"]'
+        ) as HTMLElement | null;
+        const logHead = document.querySelector(
+          '[data-role="chat-log-head"]'
+        ) as HTMLElement | null;
+        const channelSwitch = document.querySelector(
+          '[data-role="channel-switch"]'
         ) as HTMLElement | null;
         const gSi = document.querySelector(
           '[data-role="gutter-si"]'
         ) as HTMLElement | null;
-        if (!body || !si || !chat || !composer || !fab || !titles) return null;
+        if (!body || !si || !chat || !composer || !fab || !tabs || !logHead) {
+          return null;
+        }
         const cs = getComputedStyle(body);
         const contentH =
           body.clientHeight -
           parseFloat(cs.paddingTop) -
           parseFloat(cs.paddingBottom);
         const fabR = fab.getBoundingClientRect();
-        const titlesR = titles.getBoundingClientRect();
+        const tabsR = tabs.getBoundingClientRect();
         const bodyW = body.clientWidth;
         return {
           contentH,
@@ -210,8 +218,9 @@ test.describe("room composer chrome", () => {
           bodyW,
           siCollapsed: si.classList.contains("si-collapsed"),
           composerCollapsed: composer.classList.contains("composer-collapsed"),
-          fabLeftOfTitles: fabR.left < titlesR.left,
-          fabRightOfTitles: fabR.right > titlesR.right,
+          fabLeftOfTabs: fabR.left < tabsR.left,
+          fabRightOfTabs: fabR.right > tabsR.right,
+          hasChannelSwitch: !!channelSwitch,
           gutterVisible: !!(gSi && !gSi.hidden),
           orient: o,
         };
@@ -225,6 +234,7 @@ test.describe("room composer chrome", () => {
       /* Landscape/desktop: composer stays expanded after history blur. */
       expect(m!.composerCollapsed).toBe(false);
       expect(m!.gutterVisible).toBe(true);
+      expect(m!.hasChannelSwitch).toBe(true);
       for (const key of ["si", "chat", "composer"] as const) {
         expect(
           Math.abs(m![key] - m!.contentH),
@@ -237,21 +247,21 @@ test.describe("room composer chrome", () => {
       expect(m!.coW / m!.bodyW).toBeGreaterThan(0.22);
       expect(m!.coW / m!.bodyW).toBeLessThan(0.42);
       if (orient === "left") {
-        expect(m!.fabLeftOfTitles, "left: FAB outer/left").toBe(true);
+        expect(m!.fabLeftOfTabs, "left: FAB outer/left of tabs").toBe(true);
       } else {
-        expect(m!.fabRightOfTitles, "right: FAB outer/right").toBe(true);
+        expect(m!.fabRightOfTabs, "right: FAB outer/right of tabs").toBe(true);
       }
     }
   });
 
-  test("row gutters resize SI and composer widths and persist", async ({
+  test("row gutter resizes SI width and persists", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1200, height: 700 });
     await page.goto(liveUrl());
     const room = page.locator(".room, .ct-room").first();
     await expect(room).toHaveAttribute("data-chrome", "row");
-    /* Ensure three-column layout so SI gutter is between SI and chat. */
+    /* Ensure split layout so SI gutter is between SI and chat-stack. */
     await page.evaluate(() => {
       try {
         localStorage.setItem("clevertree.room.layoutMode", "split");
@@ -323,10 +333,10 @@ test.describe("room composer chrome", () => {
     });
     expect(after.w).toBeGreaterThan(before + 20);
     expect(after.var).toMatch(/%$/);
-    expect(after.stored?.si).toBeGreaterThan(33);
+    expect(after.stored?.si).toBeGreaterThan(60);
   });
 
-  test("phone landscape: ~33% panels, resizable, remembered", async ({
+  test("phone landscape: ~60/40 SI + chat-stack, resizable, remembered", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 844, height: 390 });
@@ -345,23 +355,33 @@ test.describe("room composer chrome", () => {
     const defaults = await page.evaluate(() => {
       const roomEl = document.querySelector(".room") as HTMLElement;
       const si = document.querySelector('[data-role="si"]') as HTMLElement;
+      const stack = document.querySelector(
+        '[data-role="chat-stack"]'
+      ) as HTMLElement;
+      const chat = document.querySelector('[data-role="chat"]') as HTMLElement;
       const co = document.querySelector(
         '[data-role="composer"]'
       ) as HTMLElement;
       const body = document.querySelector(".room .body") as HTMLElement;
+      const siBox = si.getBoundingClientRect();
+      const stackBox = stack.getBoundingClientRect();
+      const chatBox = chat.getBoundingClientRect();
+      const coBox = co.getBoundingClientRect();
       return {
         siVar: getComputedStyle(roomEl).getPropertyValue("--ct-si-w").trim(),
         coVar: getComputedStyle(roomEl).getPropertyValue("--ct-co-w").trim(),
-        siPct: si.getBoundingClientRect().width / body.clientWidth,
-        coPct: co.getBoundingClientRect().width / body.clientWidth,
+        siPct: siBox.width / body.clientWidth,
+        stackPct: stackBox.width / body.clientWidth,
+        stackedVertically: Math.abs(chatBox.left - coBox.left) < 8 && coBox.top >= chatBox.bottom - 2,
       };
     });
-    expect(defaults.siVar).toBe("33%");
-    expect(defaults.coVar).toBe("33%");
-    expect(defaults.siPct).toBeGreaterThan(0.25);
-    expect(defaults.siPct).toBeLessThan(0.42);
-    expect(defaults.coPct).toBeGreaterThan(0.25);
-    expect(defaults.coPct).toBeLessThan(0.42);
+    expect(defaults.siVar).toBe("60%");
+    expect(defaults.coVar).toBe("");
+    expect(defaults.siPct).toBeGreaterThan(0.5);
+    expect(defaults.siPct).toBeLessThan(0.72);
+    expect(defaults.stackPct).toBeGreaterThan(0.25);
+    expect(defaults.stackPct).toBeLessThan(0.5);
+    expect(defaults.stackedVertically).toBe(true);
 
     await page.evaluate(() => {
       const si = document.querySelector('[data-role="si"]') as HTMLElement | null;
@@ -383,7 +403,7 @@ test.describe("room composer chrome", () => {
     const saved = await page.evaluate(() =>
       JSON.parse(localStorage.getItem("clevertree.room.panelWidths") || "null")
     );
-    expect(saved?.si).toBeGreaterThan(33);
+    expect(saved?.si).toBeGreaterThan(60);
 
     await page.reload();
     await expect(room).toHaveAttribute("data-chrome", "row");
@@ -456,7 +476,7 @@ test.describe("room composer chrome", () => {
     const history = page.locator('[data-role="history"]');
     const composer = page.locator('[data-role="composer"]');
     const si = page.locator('[data-role="si"]');
-    const titles = page.locator(".si-rail-titles");
+    const siHead = page.locator('[data-role="si-head"]');
     await expect(history).toBeVisible({ timeout: 15_000 });
 
     await history.click({ position: { x: 24, y: 40 } });
@@ -464,8 +484,8 @@ test.describe("room composer chrome", () => {
       .poll(async () => (await composerExpanded(page)).expanded)
       .toBe(true);
 
-    /* Open SI via titles (and shell swipe) — composer must stay expanded. */
-    await titles.click();
+    /* Open SI via rail head (and shell swipe) — composer must stay expanded. */
+    await siHead.click({ position: { x: 80, y: 12 } });
     await expect
       .poll(async () =>
         si.evaluate((el) => el.classList.contains("si-expanded"))
@@ -480,9 +500,9 @@ test.describe("room composer chrome", () => {
       )
       .toBe(true);
 
-    const tBox = await titles.boundingBox();
+    const tBox = await siHead.boundingBox();
     expect(tBox).toBeTruthy();
-    const sx = tBox!.x + Math.min(40, tBox!.width / 2);
+    const sx = tBox!.x + Math.min(80, tBox!.width / 2);
     const sy = tBox!.y + tBox!.height / 2;
     await page.mouse.move(sx, sy);
     await page.mouse.down();

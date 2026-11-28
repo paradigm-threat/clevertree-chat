@@ -82,9 +82,16 @@ assert.ok(
   "mirrors must normalize bare hosts; channel-policy loads from script URL"
 );
 assert.ok(
-  /data-role="si-title">'\s*\+\s*title/.test(roomJs) ||
-    /si-title">' \+[\s\S]{0,20}title/.test(roomJs),
-  "SI rail title must seed from opts.title on mount"
+  /data-role="chat-log-title">'\s*\+\s*title/.test(roomJs) ||
+    /chat-log-title">' \+[\s\S]{0,40}title/.test(roomJs),
+  "chat-log head title must seed from opts.title on mount"
+);
+assert.ok(
+  /data-role="chat-log-head"/.test(roomJs) &&
+    /data-role="channel-switch"/.test(roomJs) &&
+    /si-rail-head[\s\S]{0,400}si-tabs/.test(roomJs) &&
+    !/data-role="si-title"/.test(roomJs),
+  "SI head is menu+tabs; channel switch lives on chat-log-head"
 );
 
 const roomCss = fs.readFileSync(
@@ -93,10 +100,37 @@ const roomCss = fs.readFileSync(
 );
 assert.ok(
   /data-chrome="row"/.test(roomCss) &&
-    /--ct-si-w:\s*33%/.test(roomCss) &&
-    /--ct-co-w:\s*33%/.test(roomCss) &&
+    /--ct-si-w:\s*60%/.test(roomCss) &&
+    /chat-stack/.test(roomCss) &&
     /col-resize/.test(roomCss),
-  "row CSS must default to resizable ~33% panel vars"
+  "row CSS must default to resizable ~60% SI + chat-stack"
+);
+assert.ok(
+  /data-chrome="row"\] \.si-panel\.si-collapsed \.si-strip-body/.test(roomCss) &&
+    /isLandscapeChrome\(\)\) nextSi = true/.test(roomJs),
+  "row/desktop must keep SI body visible (no header-only collapse)"
+);
+assert.ok(
+  /data-role="chat-stack"/.test(roomJs),
+  "room shell must wrap chat log + composer in chat-stack"
+);
+assert.ok(
+  /data-role="ext-open"/.test(roomJs) &&
+    /Open Chat/.test(roomJs) &&
+    /data-ext/.test(roomJs) &&
+    /setExtHandoff/.test(roomJs) &&
+    /extensionOnly:\s*true/.test(roomJs) &&
+    /probeExtHandoff/.test(roomJs) &&
+    !/setExtPanelOpen/.test(roomJs) &&
+    !/Toggle Extension/.test(roomJs) &&
+    !/Chat lives in the Clevertree extension/.test(roomJs),
+  "extension handoff: Open Chat stays in SI rail whenever extension is present"
+);
+assert.ok(
+  /data-ext="handoff"/.test(roomCss) &&
+    /\.si-ext-open/.test(roomCss) &&
+    /chat-stack/.test(roomCss),
+  "handoff CSS must expand SI full-bleed and style Open Chat in the rail"
 );
 
 console.log("test_room_composer_chrome.js: ok");

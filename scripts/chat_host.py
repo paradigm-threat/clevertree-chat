@@ -31,6 +31,13 @@ UPLOAD_PATHS = {
     "/api/debate/media/upload/",
 }
 
+INBOX_UPLOAD_PATHS = {
+    "/api/inbox/upload",
+    "/api/inbox/upload/",
+    "/api/chat/inbox/upload",
+    "/api/chat/inbox/upload/",
+}
+
 # Static files Google (and anyone) may fetch. Everything else under ROOT is 404 —
 # including directory listings of scripts/, clevertree_chat/, infra/, etc.
 PUBLIC_STATIC_EXACT = {
@@ -128,7 +135,11 @@ class ChatHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_OPTIONS(self):
-        if self.path.startswith("/api/chat") or self.path.startswith("/api/debate"):
+        if (
+            self.path.startswith("/api/chat")
+            or self.path.startswith("/api/debate")
+            or self.path.startswith("/api/inbox")
+        ):
             self.send_response(204)
             self._cors()
             self.end_headers()
@@ -199,6 +210,8 @@ class ChatHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path in UPLOAD_PATHS:
             return self._media_upload(parsed)
+        if parsed.path in INBOX_UPLOAD_PATHS or parsed.path.startswith("/api/inbox/"):
+            return self._inbox_upload(parsed)
         if parsed.path.startswith("/api/chat") or parsed.path.startswith("/api/debate"):
             length = int(self.headers.get("Content-Length") or 0)
             if length > MAX_BYTES + 1024:
@@ -207,15 +220,21 @@ class ChatHandler(SimpleHTTPRequestHandler):
             return self._api(parsed, payload)
         self.send_error(404)
 
+    def do_PUT(self):
+        parsed = urlparse(self.path)
+        if parsed.path.startswith("/api/inbox/") and parsed.path not in INBOX_UPLOAD_PATHS:
+            return self._inbox_upload(parsed, replace=True)
+        self.send_error(404)
+
     def _cors(self):
         origin = self.headers.get("Origin") or "*"
         self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Credentials", "true")
         self.send_header(
             "Access-Control-Allow-Headers",
-            "Content-Type, Idempotency-Key",
+            "Content-Type, Idempotency-Key, X-Visitor-Id, X-Networker-Id, X-SI-Service",
         )
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 
     def _json(self, code: int, body: dict):
         raw = json.dumps(body).encode()
@@ -257,6 +276,8 @@ class ChatHandler(SimpleHTTPRequestHandler):
         filename, file_ctype, data = file_field
         channel = str(form.get("channel") or "web")
         kind = str(form.get("kind") or "")
+        visitor = str(form.get("visitor") or self.headers.get("X-Visitor-Id") or "")
+        object_id = str(form.get("object_id") or "")
         try:
             from clevertree_chat import bunny_upload
 
@@ -267,6 +288,8 @@ class ChatHandler(SimpleHTTPRequestHandler):
                 channel=channel,
                 kind=kind,
                 client_ip=self._client_ip(),
+                visitor=visitor,
+                object_id=object_id,
             )
         except Exception as exc:
             sys.stderr.write(traceback.format_exc())
@@ -276,6 +299,8 @@ class ChatHandler(SimpleHTTPRequestHandler):
             code = 413 if err == "file_too_large" else 429 if err == "rate_limited" else 503 if err == "bunny_not_configured" else 400
             if err.startswith("bunny_upload"):
                 code = 502
+            if err == "object_owned_by_other_user":
+                code = 403
             return self._json(code, result)
         # Include ready-to-post marker for clients
         from clevertree_chat.bunny_upload import format_media_marker
@@ -286,6 +311,131 @@ class ChatHandler(SimpleHTTPRequestHandler):
             channel=str(result.get("channel") or channel),
             review="pending",
             sha256=str(result.get("sha256") or ""),
+        )
+        return self._json(200, result)
+
+    def _inbox_upload(self, parsed, replace: bool = False):
+        """POST /api/inbox/upload or PUT /api/inbox/{object_id}."""
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            return self._json(400, {"error": "missing_body"})
+        if length > MAX_BYTES + (1024 * 64):
+            remaining = length
+            while remaining > 0:
+                chunk = self.rfile.read(min(65536, remaining))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+            return self._json(413, {"error": "file_too_large", "max_bytes": MAX_BYTES})
+
+        path_parts = [p for p in parsed.path.strip("/").split("/") if p]
+        path_object_id = ""
+        if replace and len(path_parts) >= 3 and path_parts[0] == "api" and path_parts[1] == "inbox":
+            path_object_id = path_parts[2]
+
+        content_type = self.headers.get("Content-Type") or ""
+        body = self.rfile.read(length)
+        kind = "chat"
+        filename = "upload.bin"
+        file_ctype = "application/octet-stream"
+        data = b""
+        object_id = path_object_id
+        visitor = self.headers.get("X-Visitor-Id") or ""
+        networker_id = self.headers.get("X-Networker-Id") or ""
+        si_service = self.headers.get("X-SI-Service") or ""
+
+        if "multipart/form-data" in content_type:
+            form = _parse_multipart(content_type, body)
+            file_field = form.get("file")
+            if isinstance(file_field, tuple) and len(file_field) == 3:
+                filename, file_ctype, data = file_field
+            elif isinstance(form.get("payload"), tuple) and len(form["payload"]) == 3:
+                filename, file_ctype, data = form["payload"]
+            elif isinstance(form.get("batch"), str):
+                data = str(form.get("batch")).encode("utf-8")
+                filename = "batch.json"
+                file_ctype = "application/json"
+            else:
+                return self._json(400, {"error": "missing_file"})
+            kind = str(form.get("kind") or kind)
+            object_id = str(form.get("object_id") or object_id)
+            visitor = str(form.get("visitor") or visitor)
+            networker_id = str(form.get("networker_id") or networker_id)
+            si_service = str(form.get("si_service") or si_service)
+        elif "application/json" in content_type:
+            data = body
+            filename = "payload.json"
+            file_ctype = "application/json"
+            try:
+                parsed_json = json.loads(body.decode() or "{}")
+                if isinstance(parsed_json, dict):
+                    kind = str(parsed_json.get("kind") or kind)
+                    object_id = str(parsed_json.get("object_id") or object_id)
+                    visitor = str(parsed_json.get("visitor") or visitor)
+                    networker_id = str(parsed_json.get("networker_id") or networker_id)
+                    if "data" in parsed_json and isinstance(parsed_json["data"], (dict, list)):
+                        data = (json.dumps(parsed_json["data"]) + "\n").encode("utf-8")
+            except Exception:
+                pass
+        else:
+            data = body
+
+        if not data:
+            return self._json(400, {"error": "missing_file"})
+
+        try:
+            from clevertree_chat import inbox
+
+            source_user = inbox.derive_source_user(
+                visitor=visitor,
+                networker_id=networker_id,
+                si_service=si_service,
+                kind=kind,
+                headers={
+                    "x-visitor-id": visitor,
+                    "x-networker-id": networker_id,
+                    "x-si-service": si_service,
+                },
+            )
+            skip = file_ctype.startswith("application/json") or filename.endswith(".json")
+            result = inbox.put_object(
+                data if isinstance(data, (bytes, bytearray)) else bytes(data),
+                filename=str(filename or "upload.bin"),
+                content_type=str(file_ctype or "application/octet-stream"),
+                kind=kind,
+                source_user=source_user,
+                object_id=object_id,
+                client_ip=self._client_ip(),
+                skip_classify=skip,
+            )
+        except Exception as exc:
+            sys.stderr.write(traceback.format_exc())
+            return self._json(500, {"error": str(exc)})
+
+        if not result.get("ok"):
+            err = str(result.get("error") or "upload_failed")
+            code = (
+                413
+                if err == "file_too_large"
+                else 429
+                if err == "rate_limited"
+                else 503
+                if err == "bunny_not_configured"
+                else 403
+                if err == "object_owned_by_other_user"
+                else 400
+            )
+            if err.startswith("bunny_upload"):
+                code = 502
+            return self._json(code, result)
+
+        from clevertree_chat.inbox import format_inbox_marker
+
+        result["marker"] = format_inbox_marker(
+            object_id=str(result.get("object_id") or ""),
+            url=str(result.get("url") or ""),
+            kind=str(result.get("kind") or kind),
+            source_user=str(result.get("source_user") or ""),
         )
         return self._json(200, result)
 
@@ -461,6 +611,9 @@ class ChatHandler(SimpleHTTPRequestHandler):
                             if not body:
                                 continue
                             vid = str(msg.get("visitor") or visitor or "").strip()
+                            client_id = str(
+                                msg.get("client_id") or msg.get("clientId") or ""
+                            ).strip()
                             try:
                                 code, result = live.dispatch(
                                     {
@@ -487,28 +640,27 @@ class ChatHandler(SimpleHTTPRequestHandler):
                                                 or msg.get("nick")
                                                 or ""
                                             ),
+                                            client_id=client_id,
                                         )
                                 else:
-                                    send_raw(
-                                        json.dumps(
-                                            {
-                                                "type": "chat.error",
-                                                "topic": topic,
-                                                "error": (result or {}).get("error")
-                                                or f"submit {code}",
-                                            }
-                                        )
-                                    )
+                                    err_payload = {
+                                        "type": "chat.error",
+                                        "topic": topic,
+                                        "error": (result or {}).get("error")
+                                        or f"submit {code}",
+                                    }
+                                    if client_id:
+                                        err_payload["client_id"] = client_id
+                                    send_raw(json.dumps(err_payload))
                             except Exception as exc:
-                                send_raw(
-                                    json.dumps(
-                                        {
-                                            "type": "chat.error",
-                                            "topic": topic,
-                                            "error": str(exc),
-                                        }
-                                    )
-                                )
+                                err_payload = {
+                                    "type": "chat.error",
+                                    "topic": topic,
+                                    "error": str(exc),
+                                }
+                                if client_id:
+                                    err_payload["client_id"] = client_id
+                                send_raw(json.dumps(err_payload))
         except Exception:
             pass
         finally:

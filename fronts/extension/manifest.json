@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Clevertree Chat",
-  "version": "0.3.2",
-  "description": "Public IRC debate board on any website. Shared #web room, or product channels when you are on Clevertree sites.",
+  "version": "0.3.5",
+  "description": "Public IRC debate board on any website. Shared #web room, or product channels when you are on Clevertree sites. Networker gather is optional (Options).",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -28,12 +28,24 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["sidePanel", "storage", "tabs"],
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "clipboardWrite"
+  ],
   "host_permissions": [
     "https://api.clevertree.chat/*",
     "wss://api.clevertree.chat/*",
     "https://*.relaygateway.net/*",
-    "wss://*.relaygateway.net/*"
+    "wss://*.relaygateway.net/*",
+    "https://myproblem.app/*",
+    "https://nextdoor.com/*",
+    "https://*.nextdoor.com/*",
+    "https://*.nextdoor-media.com/*",
+    "https://*.ndimg.com/*"
   ],
   "content_scripts": [
     {
@@ -53,6 +65,22 @@
       ],
       "js": ["inject-id.js"],
       "run_at": "document_start"
+    },
+    {
+      "matches": ["https://nextdoor.com/*", "https://*.nextdoor.com/*"],
+      "js": [
+        "lib/scrub.js",
+        "lib/topics.js",
+        "lib/external-id.js",
+        "content-nextdoor.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["data/*.json"],
+      "matches": ["https://nextdoor.com/*", "https://*.nextdoor.com/*"]
     }
   ],
   "externally_connectable": {

@@ -45,7 +45,151 @@
   var BOT_NICKS = ["clevertree", "clevertree-si", "clevertree-ai", "relay-bot"];
   /** Separate from MyProblem site theme (`myproblem.theme`). */
   var THEME_KEY = "clevertree.room.theme";
+  var COALESCE_KEY = "clevertree.room.coalesce";
+  var COALESCE_DEFAULT_GAP_MIN = 15;
+  /** Visual modes: normal | combined | paragraph (server log never rewritten). */
+  var COALESCE_MODES = ["normal", "combined", "paragraph"];
   var VISITOR_KEY = "clevertree.visitor";
+
+  function normalizeCoalesceMode(mode, enabledLegacy) {
+    mode = String(mode || "").toLowerCase();
+    if (COALESCE_MODES.indexOf(mode) >= 0) return mode;
+    /* Migrate prior { enabled: bool } prefs. */
+    if (enabledLegacy) return "combined";
+    return "normal";
+  }
+
+  function readCoalescePrefs() {
+    try {
+      var raw = localStorage.getItem(COALESCE_KEY);
+      if (!raw)
+        return { mode: "normal", gapMinutes: COALESCE_DEFAULT_GAP_MIN };
+      var parsed = JSON.parse(raw);
+      var gap = Number(parsed && parsed.gapMinutes);
+      if (!isFinite(gap) || gap < 1) gap = COALESCE_DEFAULT_GAP_MIN;
+      if (gap > 120) gap = 120;
+      return {
+        mode: normalizeCoalesceMode(
+          parsed && parsed.mode,
+          parsed && parsed.enabled
+        ),
+        gapMinutes: Math.round(gap),
+      };
+    } catch (e) {
+      return { mode: "normal", gapMinutes: COALESCE_DEFAULT_GAP_MIN };
+    }
+  }
+
+  function persistCoalescePrefs(prefs) {
+    prefs = prefs || readCoalescePrefs();
+    var gap = Number(prefs.gapMinutes);
+    if (!isFinite(gap) || gap < 1) gap = COALESCE_DEFAULT_GAP_MIN;
+    if (gap > 120) gap = 120;
+    var out = {
+      mode: normalizeCoalesceMode(prefs.mode, prefs.enabled),
+      gapMinutes: Math.round(gap),
+    };
+    try {
+      localStorage.setItem(COALESCE_KEY, JSON.stringify(out));
+    } catch (e) {}
+    return out;
+  }
+
+  function messageTs(msg) {
+    if (!msg) return null;
+    if (typeof msg.sentAt === "number" && isFinite(msg.sentAt)) return msg.sentAt;
+    if (typeof msg.ts === "number" && isFinite(msg.ts)) {
+      return msg.ts < 1e12 ? msg.ts * 1000 : msg.ts;
+    }
+    var t = msg.time;
+    if (t == null || t === "" || t === "…") return null;
+    if (t === "now") return Date.now();
+    if (typeof t === "number" && isFinite(t)) return t < 1e12 ? t * 1000 : t;
+    var asNum = Number(t);
+    if (isFinite(asNum) && asNum > 1e9) {
+      return asNum < 1e12 ? asNum * 1000 : asNum;
+    }
+    var parsed = Date.parse(String(t));
+    if (!isNaN(parsed)) return parsed;
+    return null;
+  }
+
+  function nicksMatch(a, b) {
+    var na = String(a || "")
+      .trim()
+      .toLowerCase();
+    var nb = String(b || "")
+      .trim()
+      .toLowerCase();
+    if (!na || !nb) return false;
+    return na === nb;
+  }
+
+  function speakersMatch(a, b) {
+    if (!a || !b) return false;
+    if (nicksMatch(a.nick, b.nick)) return true;
+    if (
+      (a.self || nicksMatch(a.nick, "you")) &&
+      (b.self || nicksMatch(b.nick, "you"))
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  /** Pure: should next follow prev in one visual section? */
+  function canCoalesce(prev, next, prefs) {
+    prefs = prefs || readCoalescePrefs();
+    if (!prefs || prefs.mode === "normal" || !prev || !next) return false;
+    if (prev.failed || next.failed) return false;
+    if (!speakersMatch(prev, next)) return false;
+    var prevTs = messageTs(prev);
+    var nextTs = messageTs(next);
+    if (prevTs == null || nextTs == null) return false;
+    var gapMs = Math.max(1, prefs.gapMinutes || COALESCE_DEFAULT_GAP_MIN) * 60 * 1000;
+    return nextTs - prevTs < gapMs;
+  }
+
+  /**
+   * Pure visual grouping over an immutable row list (server log + pending outbox).
+   * Does not mutate inputs.
+   */
+  function groupMessagesForDisplay(rows, prefs) {
+    prefs = prefs || readCoalescePrefs();
+    var list = Array.isArray(rows) ? rows : [];
+    var groups = [];
+    for (var i = 0; i < list.length; i++) {
+      var m = list[i];
+      if (!m || !m.text) continue;
+      var last = groups.length ? groups[groups.length - 1] : null;
+      if (
+        last &&
+        prefs.mode !== "normal" &&
+        canCoalesce(last.tail, m, prefs)
+      ) {
+        last.lines.push(m);
+        last.tail = m;
+        if (m.pending) last.pending = true;
+        if (m.failed) last.failed = true;
+        if (m.self) last.self = true;
+        if (m.clientId) last.clientId = m.clientId;
+        if (m.sentAt) last.sentAt = m.sentAt;
+      } else {
+        groups.push({
+          nick: m.nick || "anon",
+          time: m.time || "",
+          lines: [m],
+          tail: m,
+          pending: !!m.pending,
+          failed: !!m.failed,
+          self: !!m.self,
+          clientId: m.clientId || "",
+          sentAt: m.sentAt || null,
+        });
+      }
+    }
+    return groups;
+  }
 
   function mintVisitorId() {
     if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -502,7 +646,7 @@
         : "";
     var nwBar = nw
       ? '<div class="networker-bar" data-role="networker-bar" aria-label="Networker">' +
-        '<button type="button" class="track" data-role="track" aria-pressed="false">Track</button>' +
+        '<button type="button" class="track" data-role="track" aria-pressed="false">Track group</button>' +
         '<button type="button" data-role="gather">Gather</button>' +
         '<button type="button" data-role="refresh">Refresh</button>' +
         "</div>"
@@ -522,17 +666,6 @@
       title +
       "</h2>" +
       '<div class="menu-section">' +
-      '<label class="menu-label">Channel</label>' +
-      '<div class="channel-switch-wrap" data-role="channel-switch-wrap">' +
-      '<button type="button" class="channel-switch" data-role="channel-switch" aria-haspopup="listbox" aria-expanded="false" title="List channels" aria-label="List channels">' +
-      '<code class="channel-tag" data-role="channel-tag">' +
-      ch +
-      "</code>" +
-      ICON_CARET +
-      "</button>" +
-      '<div class="channel-menu" data-role="channel-menu" role="listbox" aria-label="IRC channels" hidden></div>' +
-      "</div></div>" +
-      '<div class="menu-section">' +
       '<label class="menu-label">Layout</label>' +
       '<div class="layout-switch-wrap" data-role="layout-switch-wrap">' +
       '<button type="button" class="layout-switch" data-role="layout-switch" aria-haspopup="listbox" aria-expanded="false" title="Layout mode" aria-label="Layout mode">' +
@@ -548,13 +681,26 @@
       '<label class="menu-label">Theme</label>' +
       '<button type="button" class="theme-toggle menu-theme" data-role="theme-toggle" aria-label="Toggle room theme"></button>' +
       "</div>" +
+      '<div class="menu-section" data-role="coalesce-section">' +
+      '<label class="menu-label">Posts</label>' +
+      '<select class="menu-select" data-role="coalesce-mode" aria-label="How successive posts appear">' +
+      '<option value="normal">Normal (each line separate)</option>' +
+      '<option value="combined">Combined (one section, keep lines)</option>' +
+      '<option value="paragraph">Combined paragraph</option>' +
+      "</select>" +
+      '<label class="menu-gap">' +
+      "<span>Gap (minutes)</span>" +
+      '<input type="number" data-role="coalesce-gap" min="1" max="120" step="1" value="15" />' +
+      "</label>" +
+      '<p class="menu-hint">Visual only — server history stays untouched. Gap applies when combining.</p>' +
+      "</div>" +
       '<div class="menu-section">' +
       '<label class="menu-label">Orientation</label>' +
       '<div class="orient-toggle" role="group" aria-label="Board orientation">' +
       '<button type="button" class="orient-option" data-role="orient-left" data-orient="left" aria-pressed="true">Left</button>' +
       '<button type="button" class="orient-option" data-role="orient-right" data-orient="right" aria-pressed="false">Right</button>' +
       "</div>" +
-      '<p class="menu-hint">Menu + SI share a side; draft sits opposite. Chat stays center.</p>' +
+      '<p class="menu-hint">Menu + SI share a side; chat log and draft stack on the opposite side.</p>' +
       "</div></nav>" +
       '<div class="body" data-role="body" aria-label="' +
       title +
@@ -564,23 +710,41 @@
       '<button type="button" class="menu-fab" data-role="menu-fab" aria-label="Open menu" aria-expanded="false" aria-controls="ct-room-drawer">' +
       ICON_MENU +
       "</button>" +
-      '<div class="si-rail-titles">' +
-      '<h2 class="si-rail-title" data-role="si-title">' +
-      title +
-      "</h2>" +
-      '<p class="si-rail-sub" data-role="si-sub">' +
-      ch +
-      "</p>" +
-      "</div></header>" +
       '<div class="si-tabs" data-role="si-tabs" role="tablist" aria-label="SI tabs" hidden></div>' +
+      (nw
+        ? '<p class="networker-mode-label" data-role="networker-mode-label">Networker</p>'
+        : "") +
+      '<button type="button" class="si-ext-open" data-role="ext-open" hidden aria-label="Open chat in Clevertree extension">' +
+      "Open Chat" +
+      "</button>" +
+      "</header>" +
       '<div class="si-strip-body si-tab-panes" data-role="si-panes" hidden></div>' +
       '<div class="si-strip-body" data-role="ai-body"></div>' +
       "</aside>" +
       '<div class="panel-gutter" data-role="gutter-si" role="separator" aria-orientation="vertical" aria-label="Resize SI panel" hidden></div>' +
+      '<div class="chat-stack" data-role="chat-stack">' +
       '<main class="chat" data-role="chat">' +
+      '<header class="chat-log-head" data-role="chat-log-head">' +
+      '<div class="chat-log-titles">' +
+      '<h2 class="chat-log-title" data-role="chat-log-title">' +
+      title +
+      "</h2>" +
+      '<p class="chat-log-sub" data-role="chat-log-sub">' +
+      ch +
+      "</p>" +
+      '<p class="chat-log-pin" data-role="chat-log-pin" hidden></p>' +
+      "</div>" +
+      '<div class="channel-switch-wrap" data-role="channel-switch-wrap">' +
+      '<button type="button" class="channel-switch" data-role="channel-switch" aria-haspopup="listbox" aria-expanded="false" title="List channels" aria-label="List channels">' +
+      '<code class="channel-tag" data-role="channel-tag">' +
+      ch +
+      "</code>" +
+      ICON_CARET +
+      "</button>" +
+      '<div class="channel-menu" data-role="channel-menu" role="listbox" aria-label="IRC channels" hidden></div>' +
+      "</div></header>" +
       '<div class="history" data-role="history" role="log" aria-label="Public IRC channel messages">' +
       '<div class="stream" data-role="stream"></div></div></main>' +
-      '<div class="panel-gutter" data-role="gutter-composer" role="separator" aria-orientation="vertical" aria-label="Resize composer" hidden></div>' +
       '<footer class="composer" data-role="composer">' +
       '<div class="compose-inner">' +
       '<div class="composebox" data-role="composebox">' +
@@ -605,7 +769,7 @@
       ICON_SEND +
       "<span>Send</span></button>" +
       "</div></div>" +
-      "</div></footer></div>" +
+      "</div></footer></div></div>" +
       '<div class="overlay" data-role="overlay" hidden><div class="modal" data-role="modal"></div></div>'
     );
   }
@@ -657,15 +821,373 @@
     }
   }
 
+  var PENDING_TIMEOUT_MS = 45000;
+  var DELIVERED_CUE_MS = 2500;
+
+  function makeClientId() {
+    try {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return "ct-" + crypto.randomUUID();
+      }
+    } catch (e) {}
+    return (
+      "ct-" +
+      Date.now().toString(36) +
+      "-" +
+      Math.random().toString(36).slice(2, 10)
+    );
+  }
+
+  function normalizePendingText(text) {
+    return String(text || "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function findPendingByClientId(stream, clientId) {
+    if (!stream || !clientId) return null;
+    var nodes = stream.querySelectorAll("article.msg-pending[data-client-id]");
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].getAttribute("data-client-id") === clientId) return nodes[i];
+    }
+    var lines = stream.querySelectorAll(".msg-line[data-client-id]");
+    for (var j = 0; j < lines.length; j++) {
+      if (lines[j].getAttribute("data-client-id") === clientId) {
+        return lines[j].closest("article.msg");
+      }
+    }
+    return null;
+  }
+
+  function findPendingByText(stream, text, nick) {
+    if (!stream) return null;
+    var want = normalizePendingText(text);
+    if (!want) return null;
+    var nodes = stream.querySelectorAll("article.msg-pending");
+    var nickWant = nick ? String(nick).toLowerCase() : "";
+    for (var i = 0; i < nodes.length; i++) {
+      var art = nodes[i];
+      var copy = art.querySelector('[data-role="copy"]');
+      var raw = art.getAttribute("data-pending-text") || "";
+      if (!raw && copy) raw = copy.textContent || "";
+      if (normalizePendingText(raw) !== want) continue;
+      if (nickWant) {
+        var artNick = String(art.dataset.nick || "").toLowerCase();
+        if (
+          artNick &&
+          artNick !== nickWant &&
+          artNick !== "you" &&
+          nickWant !== "you"
+        ) {
+          continue;
+        }
+      }
+      return art;
+    }
+    return null;
+  }
+
+  function clearPendingTimer(art) {
+    if (!art) return;
+    var tid = art._pendingTimer;
+    if (tid) {
+      try {
+        clearTimeout(tid);
+      } catch (e) {}
+      art._pendingTimer = null;
+    }
+  }
+
+  function markPendingFailed(art, reason) {
+    if (!art || !art.classList.contains("msg-pending")) return;
+    clearPendingTimer(art);
+    art.classList.remove("msg-pending");
+    art.classList.add("msg-failed");
+    art.removeAttribute("data-pending");
+    art.removeAttribute("aria-busy");
+    var mark = art.querySelector(".pending-mark");
+    if (mark) {
+      mark.className = "pending-mark failed-mark";
+      mark.title = reason || "Not delivered";
+      mark.setAttribute("aria-label", reason || "Not delivered");
+      mark.innerHTML =
+        '<span class="failed-label">' + esc(reason || "Not delivered") + "</span>";
+    }
+  }
+
+  function showDeliveredCue(art, latencyMs) {
+    if (!art) return;
+    var meta = art.querySelector(".meta");
+    if (!meta) return;
+    var existing = meta.querySelector(".msg-delivered-cue");
+    if (existing) existing.remove();
+    var sec =
+      latencyMs >= 1000
+        ? (latencyMs / 1000).toFixed(latencyMs >= 10000 ? 0 : 1) + "s"
+        : Math.max(1, Math.round(latencyMs)) + "ms";
+    var cue = document.createElement("span");
+    cue.className = "msg-delivered-cue";
+    cue.textContent = "Delivered in " + sec;
+    meta.appendChild(cue);
+    var reduce =
+      typeof matchMedia === "function" &&
+      matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(
+      function () {
+        if (!cue.parentNode) return;
+        if (reduce) {
+          cue.remove();
+          return;
+        }
+        cue.classList.add("fade-out");
+        setTimeout(function () {
+          if (cue.parentNode) cue.remove();
+        }, 400);
+      },
+      DELIVERED_CUE_MS
+    );
+  }
+
+  function settlePendingArticle(art, serverMsg, cfg, roomRoot, reviewMap) {
+    if (!art) return false;
+    clearPendingTimer(art);
+    var nick = (serverMsg && serverMsg.nick) || art.dataset.nick || "anon";
+    var raw = (serverMsg && serverMsg.text) || art.getAttribute("data-pending-text") || "";
+    var time = (serverMsg && serverMsg.time) || "";
+    var sentAt = Number(art.getAttribute("data-sent-at") || 0);
+    var latencyMs = sentAt ? Math.max(0, Date.now() - sentAt) : 0;
+
+    art.classList.remove("msg-pending", "msg-failed");
+    art.removeAttribute("data-pending");
+    art.removeAttribute("aria-busy");
+    art.removeAttribute("data-pending-text");
+    art.dataset.nick = nick;
+
+    var bot = isBot(nick);
+    /* Keep data-client-id for debugging; rebuild class for bot/normal. */
+    art.className = "msg" + (bot ? " botmsg" : "");
+
+    var av = art.querySelector(".av");
+    if (av) {
+      av.className = "av" + (bot ? " bot" : "");
+      av.textContent = nickInitials(nick);
+    }
+    var nickEl = art.querySelector(".meta .nick");
+    if (nickEl) nickEl.textContent = nick || "anon";
+    var tag = art.querySelector(".meta .tag");
+    if (bot && !tag) {
+      var meta = art.querySelector(".meta");
+      if (meta) {
+        var t = document.createElement("span");
+        t.className = "tag";
+        t.textContent = "ROOM AI";
+        var timeEl0 = meta.querySelector(".time");
+        if (timeEl0) meta.insertBefore(t, timeEl0);
+        else meta.appendChild(t);
+      }
+    } else if (!bot && tag) {
+      tag.remove();
+    }
+    var timeEl = art.querySelector(".meta .time");
+    if (timeEl) {
+      timeEl.textContent =
+        time && time !== "null"
+          ? String(time)
+          : new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+    }
+    var mark = art.querySelector(".pending-mark");
+    if (mark) mark.remove();
+
+    var copy = art.querySelector('[data-role="copy"]');
+    var pendingLine =
+      (serverMsg &&
+        serverMsg.clientId &&
+        art.querySelector(
+          '.msg-line[data-client-id="' +
+            String(serverMsg.clientId).replace(/"/g, "") +
+            '"]'
+        )) ||
+      art.querySelector(".msg-line[data-pending='1']") ||
+      art.querySelector(".msg-line:last-of-type");
+    if (copy && raw) {
+      var copyInner = formatCopyHtml(raw, cfg, reviewMap);
+      var clamp = shouldClamp(stripMediaMarkers(raw), bot);
+      if (pendingLine) {
+        pendingLine.removeAttribute("data-pending");
+        pendingLine.removeAttribute("aria-busy");
+        pendingLine.innerHTML = copyInner;
+        wireMediaControls(pendingLine);
+      } else {
+        copy.className = "copy";
+        copy.innerHTML =
+          '<div class="msg-line" data-role="msg-line">' + copyInner + "</div>";
+        wireMediaControls(art);
+      }
+      var oldExpand = art.querySelector('[data-role="expand-msg"]');
+      if (oldExpand) oldExpand.remove();
+      if (clamp && roomRoot) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "expand-msg";
+        btn.setAttribute("data-role", "expand-msg");
+        btn.textContent = "Expand full reply";
+        var fullText = "";
+        var lines = art.querySelectorAll(".msg-line");
+        for (var li = 0; li < lines.length; li++) {
+          if (li) fullText += "\n";
+          fullText += lines[li].textContent || "";
+        }
+        btn.onclick = function () {
+          openMessageFullscreen(
+            roomRoot,
+            nick || "SI",
+            fullText || stripMediaMarkers(raw)
+          );
+        };
+        copy.parentNode.appendChild(btn);
+      }
+    }
+    var settledTs =
+      messageTs(serverMsg || { sentAt: sentAt || undefined, time: time }) ||
+      sentAt ||
+      Date.now();
+    art.setAttribute("data-last-ts", String(settledTs));
+    if (latencyMs) showDeliveredCue(art, latencyMs);
+    return true;
+  }
+
+  function settlePending(stream, match, serverMsg, cfg, roomRoot, reviewMap) {
+    if (!stream) return false;
+    var art = null;
+    if (match && match.clientId) {
+      art = findPendingByClientId(stream, match.clientId);
+    }
+    if (!art && match && match.text) {
+      art = findPendingByText(stream, match.text, match.nick);
+    }
+    if (!art) return false;
+    if (match && match.clientId && serverMsg) {
+      serverMsg.clientId = match.clientId;
+    }
+    return settlePendingArticle(art, serverMsg, cfg, roomRoot, reviewMap);
+  }
+
+  function enhanceStreamAnchors(root) {
+    try {
+      var SP =
+        typeof ClevertreeStreamPlayback !== "undefined"
+          ? ClevertreeStreamPlayback
+          : null;
+      if (SP && typeof SP.enhanceAnchor === "function") {
+        var anchors = root.querySelectorAll("a[href]");
+        for (var ai = 0; ai < anchors.length; ai++) {
+          SP.enhanceAnchor(anchors[ai], null);
+        }
+      }
+    } catch (eStream) {}
+  }
+
+  function lastMessageArticle(stream) {
+    if (!stream) return null;
+    var nodes = stream.querySelectorAll("article.msg");
+    return nodes.length ? nodes[nodes.length - 1] : null;
+  }
+
+  function lastLineRaw(art) {
+    if (!art) return "";
+    var lines = art.querySelectorAll(".msg-line");
+    if (!lines.length) return "";
+    var last = lines[lines.length - 1];
+    return normalizePendingText(
+      last.getAttribute("data-raw") || last.textContent || ""
+    );
+  }
+
+  /** Skip echo of a line we already showed (optimistic settle + IRC fanout). */
+  function isDuplicateLiveLine(stream, msg) {
+    var last = lastMessageArticle(stream);
+    if (!last || !msg) return false;
+    if (!nicksMatch(last.dataset.nick, msg.nick) && !nicksMatch("you", msg.nick)) {
+      /* Optimistic rows use nick "you"; server may use Visitor — still dedupe on text. */
+      if (!nicksMatch(last.dataset.nick, "you")) return false;
+    }
+    return lastLineRaw(last) === normalizePendingText(msg.text);
+  }
+
+  function appendLineToMessage(art, msg, cfg, roomRoot, reviewMap) {
+    if (!art || !msg) return art;
+    var copy = art.querySelector('[data-role="copy"]');
+    if (!copy) return art;
+    var raw = msg.text || "";
+    var line = document.createElement("div");
+    line.className = "msg-line";
+    line.setAttribute("data-role", "msg-line");
+    line.setAttribute("data-raw", raw);
+    line.innerHTML = formatCopyHtml(raw, cfg, reviewMap);
+    if (msg.pending) {
+      line.setAttribute("data-pending", "1");
+      line.setAttribute("aria-busy", "true");
+      if (msg.clientId) line.setAttribute("data-client-id", msg.clientId);
+      art.classList.add("msg-pending");
+      art.dataset.pending = "1";
+      art.setAttribute("aria-busy", "true");
+      if (msg.clientId) art.setAttribute("data-client-id", msg.clientId);
+      if (msg.sentAt) art.setAttribute("data-sent-at", String(msg.sentAt));
+      art.setAttribute("data-pending-text", raw);
+      var meta = art.querySelector(".meta");
+      if (meta && !meta.querySelector(".pending-mark")) {
+        var mark = document.createElement("span");
+        mark.className = "pending-mark";
+        mark.title = "Sending";
+        mark.setAttribute("aria-label", "Sending");
+        mark.innerHTML =
+          '<span class="pending-dot" aria-hidden="true"></span>';
+        var timeEl = meta.querySelector(".time");
+        if (timeEl) meta.insertBefore(mark, timeEl);
+        else meta.appendChild(mark);
+      }
+    }
+    copy.appendChild(line);
+    wireMediaControls(line);
+    enhanceStreamAnchors(line);
+    var ts = messageTs(msg);
+    if (ts == null && (msg.pending || msg.self)) ts = Date.now();
+    if (ts != null) art.setAttribute("data-last-ts", String(ts));
+    if (msg.self || nicksMatch(msg.nick, "you")) {
+      art.setAttribute("data-self", "1");
+    }
+    return art;
+  }
+
   function appendMessage(stream, msg, cfg, roomRoot, reviewMap) {
     var bot = isBot(msg.nick);
     var art = document.createElement("article");
-    art.className = "msg" + (bot ? " botmsg" : "");
+    var pending = !!msg.pending;
+    var failed = !!msg.failed;
+    var ts = messageTs(msg);
+    if (ts == null && (pending || msg.self)) ts = Date.now();
+    art.className =
+      "msg" +
+      (bot ? " botmsg" : "") +
+      (pending ? " msg-pending" : "") +
+      (failed ? " msg-failed" : "");
     art.dataset.nick = msg.nick || "";
+    if (ts != null) art.setAttribute("data-last-ts", String(ts));
+    if (msg.self || nicksMatch(msg.nick, "you")) {
+      art.setAttribute("data-self", "1");
+    }
+    if (pending) {
+      art.dataset.pending = "1";
+      art.setAttribute("aria-busy", "true");
+      if (msg.clientId) art.setAttribute("data-client-id", msg.clientId);
+      if (msg.sentAt) art.setAttribute("data-sent-at", String(msg.sentAt));
+      art.setAttribute("data-pending-text", msg.text || "");
+    }
     var raw = msg.text || "";
     var copyInner = formatCopyHtml(raw, cfg, reviewMap);
-    var clamp = shouldClamp(stripMediaMarkers(raw), bot);
-    var copyClass = "copy" + (clamp ? " copy-clamp" : "");
     art.innerHTML =
       '<div class="av' +
       (bot ? " bot" : "") +
@@ -678,30 +1200,33 @@
       esc(msg.nick || "anon") +
       "</span>" +
       (bot ? '<span class="tag">ROOM AI</span>' : "") +
+      (pending
+        ? '<span class="pending-mark" title="Sending" aria-label="Sending"><span class="pending-dot" aria-hidden="true"></span></span>'
+        : failed
+          ? '<span class="pending-mark failed-mark" title="Not delivered" aria-label="Not delivered"><span class="failed-label">Not delivered</span></span>'
+          : "") +
       '<time class="time">' +
       esc(msg.time || "") +
       "</time></div>" +
-      '<div class="' +
-      copyClass +
-      '" data-role="copy">' +
+      '<div class="copy" data-role="copy">' +
+      '<div class="msg-line" data-role="msg-line" data-raw="' +
+      esc(raw) +
+      '"' +
+      (pending ? ' data-pending="1"' : "") +
+      (msg.clientId
+        ? ' data-client-id="' + esc(msg.clientId) + '"'
+        : "") +
+      ">" +
       copyInner +
-      "</div>" +
-      (clamp
+      "</div></div>" +
+      (shouldClamp(stripMediaMarkers(raw), bot)
         ? '<button type="button" class="expand-msg" data-role="expand-msg">Expand full reply</button>'
         : "") +
       "</div>";
     stream.appendChild(art);
     wireMediaControls(art);
-    try {
-      var SP = typeof ClevertreeStreamPlayback !== "undefined" ? ClevertreeStreamPlayback : null;
-      if (SP && typeof SP.enhanceAnchor === "function") {
-        var anchors = art.querySelectorAll("a[href]");
-        for (var ai = 0; ai < anchors.length; ai++) {
-          SP.enhanceAnchor(anchors[ai], null);
-        }
-      }
-    } catch (eStream) {}
-    if (clamp && roomRoot) {
+    enhanceStreamAnchors(art);
+    if (shouldClamp(stripMediaMarkers(raw), bot) && roomRoot) {
       var btn = art.querySelector('[data-role="expand-msg"]');
       if (btn) {
         btn.onclick = function () {
@@ -709,6 +1234,7 @@
         };
       }
     }
+    return art;
   }
 
   function openMessageFullscreen(roomRoot, nick, text) {
@@ -772,13 +1298,19 @@
       mirrorIndex: 0,
       mirrors: opts.mirrors || [],
       ws: null,
+      /** Immutable wire/history log — never rewritten for visual coalesce. */
       messages: opts.seedMessages || [],
+      /** Optimistic sends awaiting server echo; separate from messages. */
+      pendingOutbox: [],
       historyHydrated: false,
       view: null,
+      trackedCatalog: null,
+      trackedCatalogPromise: null,
       opts: opts,
       destroyed: false,
       themePref: readThemePref(),
       theme: resolveRoomTheme(),
+      coalescePrefs: readCoalescePrefs(),
       mediaReviews: {},
       recording: false,
       mediaRecorder: null,
@@ -798,6 +1330,10 @@
       topicText: "",
       ircChannel: opts.channel || "#web",
       pin: null,
+      /* Flashback: live "N movies now showing" from index.json (not IRC pin names). */
+      catalogSubtitle: "",
+      /* Extension owns chat: SI stays; in-page WS skipped. */
+      extHandoff: false,
     };
     applyRoomTheme(el, state.theme, state.themePref);
 
@@ -825,19 +1361,35 @@
     var menuCloseBtn = $(el, '[data-role="menu-close"]');
     var orientLeftBtn = $(el, '[data-role="orient-left"]');
     var orientRightBtn = $(el, '[data-role="orient-right"]');
-    var siSub = $(el, '[data-role="si-sub"]');
-    var siTitle = $(el, '[data-role="si-title"]');
+    var chatLogTitle = $(el, '[data-role="chat-log-title"]');
+    var chatLogSub = $(el, '[data-role="chat-log-sub"]');
+    var chatLogPin = $(el, '[data-role="chat-log-pin"]');
+    var extOpenBtn = $(el, '[data-role="ext-open"]');
     /* Menu button lives in the SI rail header (not floating). */
+    var FLASHBACK_PLACEHOLDER =
+      "Where can I find a movie… · What do you recommend to watch… · I'd like to request a fan edit of a movie…";
+    var isFlashbackChannel =
+      String((opts && opts.channel) || "")
+        .trim()
+        .toLowerCase() === "#flashback";
     var PLACEHOLDER_EXPANDED =
       (opts && opts.placeholder) ||
-      "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…";
+      (isFlashbackChannel
+        ? FLASHBACK_PLACEHOLDER
+        : "Help me with a problem… · Help me find something… · What's the latest news on something… · What's going on in town…");
     var PLACEHOLDER_COLLAPSED =
       (opts && opts.placeholderCollapsed) ||
-      (opts && opts.placeholder
-        ? String(opts.placeholder).replace(/…$/, "…")
-        : "Ask something…");
-    if (opts && opts.placeholder && opts.channel === "#flashback") {
-      PLACEHOLDER_COLLAPSED = "Ask for a film…";
+      (isFlashbackChannel
+        ? "Ask for a film…"
+        : opts && opts.placeholder
+          ? String(opts.placeholder).replace(/…$/, "…")
+          : "Ask something…");
+    if (draft) {
+      var startExpanded =
+        !composerEl || composerEl.classList.contains("composer-expanded");
+      draft.placeholder = startExpanded
+        ? PLACEHOLDER_EXPANDED
+        : PLACEHOLDER_COLLAPSED;
     }
 
     var CHROME_MS = 340;
@@ -937,6 +1489,9 @@
     function setChromeState(nextSi, nextComposer) {
       nextSi = !!nextSi;
       nextComposer = !!nextComposer;
+      /* Desktop / phone-landscape row: SI body stays open (resizable column).
+       * Portrait stack may still collapse SI to the header rail. */
+      if (isLandscapeChrome()) nextSi = true;
       var siSame = !aiPanel || state.siExpanded === nextSi;
       var coSame =
         !composerEl ||
@@ -987,8 +1542,8 @@
         clearChromeInlineSize(composerEl);
         composerEl.style.transition = "none";
         if (coStart) {
+          /* Composer sits in the chat-stack column — tween height only. */
           composerEl.style.height = coStart.height + "px";
-          if (landscape) composerEl.style.width = coStart.width + "px";
         }
       }
 
@@ -1013,7 +1568,6 @@
       }
       if (composerEl && coStart) {
         composerEl.style.height = coStart.height + "px";
-        if (landscape) composerEl.style.width = coStart.width + "px";
       }
       void el.offsetWidth;
 
@@ -1029,9 +1583,9 @@
         if (landscape) aiPanel.style.width = Math.max(0, siEnd.width) + "px";
       }
       if (composerEl && coEnd) {
-        composerEl.style.transition = tween;
+        composerEl.style.transition =
+          "height " + CHROME_MS + "ms " + CHROME_EASE;
         composerEl.style.height = Math.max(0, coEnd.height) + "px";
-        if (landscape) composerEl.style.width = Math.max(0, coEnd.width) + "px";
       }
 
       if (state.chromeAnimTimer) clearTimeout(state.chromeAnimTimer);
@@ -1205,72 +1759,67 @@
     function readPanelWidths() {
       try {
         var raw = localStorage.getItem(PANEL_W_KEY);
-        if (!raw) return { si: 33, co: 33 };
+        if (!raw) return { si: 60 };
         var j = JSON.parse(raw);
         var si = Number(j && j.si);
-        var co = Number(j && j.co);
-        if (!(si >= 16 && si <= 46)) si = 33;
-        if (!(co >= 16 && co <= 46)) co = 33;
-        if (si + co > 78) {
-          var scale = 78 / (si + co);
-          si = Math.round(si * scale);
-          co = Math.round(co * scale);
+        /* Migrate old three-column 33/33 prefs → 60/40 two-column. */
+        if (j && j.co != null && (si === 33 || !(si >= 40 && si <= 72))) {
+          si = 60;
         }
-        return { si: si, co: co };
+        if (!(si >= 40 && si <= 72)) si = 60;
+        return { si: si };
       } catch (e) {
-        return { si: 33, co: 33 };
+        return { si: 60 };
       }
     }
 
-    function writePanelWidths(si, co) {
+    function writePanelWidths(si) {
       try {
-        localStorage.setItem(
-          PANEL_W_KEY,
-          JSON.stringify({ si: si, co: co })
-        );
+        localStorage.setItem(PANEL_W_KEY, JSON.stringify({ si: si }));
       } catch (e) {}
     }
 
-    function applyPanelWidths(siPct, coPct) {
+    function applyPanelWidths(siPct) {
       el.style.setProperty("--ct-si-w", siPct + "%");
-      el.style.setProperty("--ct-co-w", coPct + "%");
     }
 
     function syncChromeMode() {
-      /* Row chrome = phone landscape (≥600) + desktop (≥900): ~33% panels,
-       * gutters, and persisted widths. Portrait stays stacked. */
+      /* Row chrome = phone landscape (≥600) + desktop (≥900): SI ~60% |
+       * chat-stack ~40% (log + draft stacked). Portrait stays stacked. */
       var row = isLandscapeChrome();
       el.setAttribute("data-chrome", row ? "row" : "stack");
       var gSi = $(el, '[data-role="gutter-si"]');
-      var gCo = $(el, '[data-role="gutter-composer"]');
       if (gSi) {
         gSi.hidden = !row;
         gSi.setAttribute("aria-hidden", row ? "false" : "true");
       }
-      if (gCo) {
-        gCo.hidden = !row;
-        gCo.setAttribute("aria-hidden", row ? "false" : "true");
-      }
       if (row) {
         var w = readPanelWidths();
-        applyPanelWidths(w.si, w.co);
+        applyPanelWidths(w.si);
+        /* Entering or staying in row: keep SI fully visible (not header-only). */
+        if (!state.siExpanded) {
+          setChromeState(
+            true,
+            state.composerExpanded != null
+              ? state.composerExpanded
+              : !!(composerEl && composerEl.classList.contains("composer-expanded"))
+          );
+        }
       } else {
         el.style.removeProperty("--ct-si-w");
-        el.style.removeProperty("--ct-co-w");
       }
     }
 
     function wirePanelResize() {
       var gSi = $(el, '[data-role="gutter-si"]');
-      var gCo = $(el, '[data-role="gutter-composer"]');
-      if (!gSi || !gCo || !bodyEl) return;
+      if (!gSi || !bodyEl) return;
 
-      function startDrag(which, ev) {
+      function startDrag(ev) {
         if (!isLandscapeChrome()) return;
         ev.preventDefault();
         try {
           if (ev.pointerId != null && gSi.setPointerCapture) {
-            (which === "si" ? gSi : gCo).setPointerCapture(ev.pointerId);
+            gSi.setPointerCapture(ev.pointerId);
           }
         } catch (capErr) {}
         var startX =
@@ -1281,9 +1830,7 @@
               : 0;
         var bodyR = bodyEl.getBoundingClientRect();
         var bodyW = Math.max(1, bodyR.width);
-        var cur = readPanelWidths();
-        var startSi = cur.si;
-        var startCo = cur.co;
+        var startSi = readPanelWidths().si;
         var orientRight = state.orient === "right";
         el.classList.add("is-resizing");
 
@@ -1296,21 +1843,10 @@
                 : startX;
           var dxPct = ((x - startX) / bodyW) * 100;
           if (orientRight) dxPct = -dxPct;
-          var si = startSi;
-          var co = startCo;
-          if (which === "si") {
-            si = Math.round(startSi + dxPct);
-          } else {
-            co = Math.round(startCo - dxPct);
-          }
-          si = Math.max(16, Math.min(46, si));
-          co = Math.max(16, Math.min(46, co));
-          if (si + co > 78) {
-            if (which === "si") si = 78 - co;
-            else co = 78 - si;
-          }
-          applyPanelWidths(si, co);
-          state.panelResize = { si: si, co: co };
+          var si = Math.round(startSi + dxPct);
+          si = Math.max(40, Math.min(72, si));
+          applyPanelWidths(si);
+          state.panelResize = { si: si };
         }
 
         function onUp() {
@@ -1321,7 +1857,7 @@
           document.removeEventListener("touchmove", onMove);
           document.removeEventListener("touchend", onUp);
           if (state.panelResize) {
-            writePanelWidths(state.panelResize.si, state.panelResize.co);
+            writePanelWidths(state.panelResize.si);
             state.panelResize = null;
           }
         }
@@ -1334,10 +1870,7 @@
       }
 
       gSi.addEventListener("pointerdown", function (ev) {
-        startDrag("si", ev);
-      });
-      gCo.addEventListener("pointerdown", function (ev) {
-        startDrag("co", ev);
+        startDrag(ev);
       });
     }
 
@@ -1360,12 +1893,13 @@
       history.scrollTop = history.scrollHeight;
     }
 
-    /* Start with draft big; SI header-only until tapped. No persisted onboarding state. */
+    /* Start with draft open. Portrait: SI header-only until tapped.
+     * Row chrome (desktop / landscape) forces SI open via setChromeState. */
     try {
       localStorage.removeItem("clevertree.room.composerExpanded");
     } catch (e) {}
     setComposerExpanded(true);
-    setSiExpanded(false);
+    setSiExpanded(isLandscapeChrome());
 
     var LAYOUT_KEY = "clevertree.room.layoutMode";
     var ORIENT_KEY = "clevertree.room.orient";
@@ -1512,10 +2046,17 @@
 
     function readLayoutMode() {
       try {
-        return normalizeLayoutMode(localStorage.getItem(LAYOUT_KEY));
-      } catch (e) {
-        return "chat";
+        var stored = localStorage.getItem(LAYOUT_KEY);
+        if (stored) return normalizeLayoutMode(stored);
+      } catch (e) {}
+      /* Flashback lobby / ai=1: show SI (movie carousel) beside chat by default. */
+      if (
+        opts.aiOpen ||
+        normalizeChannelName(opts.channel || "") === "#flashback"
+      ) {
+        return "split";
       }
+      return "chat";
     }
 
     function readOrient() {
@@ -1599,7 +2140,8 @@
         if (link && el.contains(link)) {
           ev.preventDefault();
           ev.stopPropagation();
-          confirmSwitchChannel(link.getAttribute("data-channel") || "");
+          /* Silent — drafts are already persisted per channel. */
+          switchChannel(link.getAttribute("data-channel") || "", { force: true });
           return;
         }
         var chWrap = $(el, '[data-role="channel-switch-wrap"]');
@@ -1614,43 +2156,7 @@
     }
     loadChannelCatalog().catch(function () {});
 
-    // Per-repo starter chips (populate draft; never auto-send)
-    try {
-      var starters = opts.starters;
-      if ((!starters || !starters.length) && opts.channel === "#flashback") {
-        starters = [
-          "I'd like to watch …",
-          "Where can I find …?",
-          "What's showing tonight?",
-          "Who's watching right now?",
-          "Tell me about the edit of …",
-          "Can I request …?",
-        ];
-      }
-      if (starters && starters.length && composerEl && !composerEl.querySelector("[data-role=starter-chips]")) {
-        var chipRow = document.createElement("div");
-        chipRow.className = "starter-chips";
-        chipRow.setAttribute("data-role", "starter-chips");
-        starters.forEach(function (label) {
-          var b = document.createElement("button");
-          b.type = "button";
-          b.className = "starter-chip";
-          b.textContent = label;
-          b.onclick = function () {
-            if (!draft) return;
-            draft.value = label;
-            applyComposerClass(true);
-            try {
-              draft.focus();
-            } catch (e) {}
-          };
-          chipRow.appendChild(b);
-        });
-        var draftWrap = draft && draft.parentNode;
-        if (draftWrap) draftWrap.insertBefore(chipRow, draft);
-        else composerEl.insertBefore(chipRow, composerEl.firstChild);
-      }
-    } catch (eStarters) {}
+    // Starter chips removed — per-repo examples live only in the placeholder text.
 
     if (history) {
       var historyScrollHideTimer = null;
@@ -2138,15 +2644,31 @@
       opts.wsUrl = state.mirrors[0];
       state.mirrorIndex = 0;
       state.messages = [];
+      state.pendingOutbox = [];
       state.historyHydrated = false;
       state.mediaReviews = {};
       state.connected = false;
       restoreChannelDraft(ch);
       clearSiPanel();
       siInitForChannel();
-      renderSeed();
+      renderStream();
       setConnUi("Switching…", ch);
       setComposerExpanded(true);
+      disconnectWs();
+      if (typeof opts.onChannelChange === "function") {
+        try {
+          opts.onChannelChange(ch);
+        } catch (e2) {}
+      }
+      maybeConnect();
+      if (force && draft && !state.extHandoff) {
+        try {
+          draft.focus();
+        } catch (e3) {}
+      }
+    }
+
+    function disconnectWs() {
       if (state.ws) {
         try {
           state.ws.onclose = null;
@@ -2155,53 +2677,167 @@
         } catch (e) {}
         state.ws = null;
       }
-      if (typeof opts.onChannelChange === "function") {
-        try {
-          opts.onChannelChange(ch);
-        } catch (e2) {}
-      }
+      state.connected = false;
+    }
+
+    function maybeConnect() {
+      if (state.destroyed || state.extHandoff) return;
       connect();
-      if (force && draft) {
-        try {
-          draft.focus();
-        } catch (e3) {}
+    }
+
+    function syncExtOpenBtn() {
+      if (!extOpenBtn) return;
+      /* Shown whenever the extension is installed (panel open/close is unreliable). */
+      extOpenBtn.hidden = !state.extHandoff;
+    }
+
+    function setExtHandoff(on) {
+      var next = !!on;
+      var was = !!state.extHandoff;
+      if (was === next) {
+        if (!next && !state.ws && !state.destroyed) maybeConnect();
+        syncExtOpenBtn();
+        return;
       }
+      state.extHandoff = next;
+      if (next) {
+        el.setAttribute("data-ext", "handoff");
+        setSiExpanded(true);
+        setComposerExpanded(false);
+        disconnectWs();
+        setConnUi("Extension chat", "handoff");
+      } else {
+        el.removeAttribute("data-ext");
+        maybeConnect();
+      }
+      syncExtOpenBtn();
+    }
+
+    function extKnownIds() {
+      var ids = [];
+      try {
+        var stored = localStorage.getItem("clevertree.extension.id");
+        if (stored) ids.push(stored);
+      } catch (e) {}
+      try {
+        var meta = document.querySelector(
+          'meta[name="clevertree-extension-id"]'
+        );
+        if (meta && meta.content && ids.indexOf(meta.content) < 0) {
+          ids.unshift(meta.content);
+        }
+      } catch (e2) {}
+      return ids;
+    }
+
+    function probeExtMessage(payload, cb) {
+      if (
+        typeof chrome === "undefined" ||
+        !chrome.runtime ||
+        !chrome.runtime.sendMessage
+      ) {
+        cb(false);
+        return;
+      }
+      var ids = extKnownIds();
+      if (!ids.length) {
+        cb(false);
+        return;
+      }
+      var tried = 0;
+      function next() {
+        if (tried >= ids.length) {
+          cb(false);
+          return;
+        }
+        var id = ids[tried++];
+        try {
+          chrome.runtime.sendMessage(id, payload, function (res) {
+            if (chrome.runtime.lastError || !res || !res.ok) {
+              next();
+              return;
+            }
+            try {
+              localStorage.setItem("clevertree.extension.id", id);
+            } catch (e3) {}
+            cb(true, res);
+          });
+        } catch (e4) {
+          next();
+        }
+      }
+      next();
+    }
+
+    function openExtensionChat() {
+      var titleText =
+        (chatLogTitle && chatLogTitle.textContent) || opts.title || "";
+      var openOpts = {
+        url: typeof location !== "undefined" ? location.href : "",
+        channel: opts.channel,
+        title: titleText,
+        extensionOnly: true,
+      };
+      var launcher = window.ClevertreeChatLauncher;
+      if (launcher && typeof launcher.open === "function") {
+        launcher.open(openOpts);
+        return;
+      }
+      probeExtMessage(
+        {
+          type: "clevertree.chat.toggle",
+          action: "open",
+          url: openOpts.url,
+          channel: openOpts.channel,
+          title: openOpts.title,
+        },
+        function () {}
+      );
+    }
+
+    function probeExtHandoff() {
+      if (mode === "sidepanel" || state.destroyed) return;
+      function apply(present) {
+        if (state.destroyed) return;
+        setExtHandoff(!!present);
+      }
+      var launcher = window.ClevertreeChatLauncher;
+      if (launcher && typeof launcher.isExtensionPresent === "function") {
+        launcher.isExtensionPresent(apply);
+        return;
+      }
+      probeExtMessage(
+        { type: "clevertree.chat.toggle", action: "ping" },
+        function (ok) {
+          apply(!!ok);
+        }
+      );
+    }
+
+    function wireExtPresence() {
+      if (mode === "sidepanel") return;
+      if (extOpenBtn) {
+        extOpenBtn.onclick = function () {
+          openExtensionChat();
+        };
+      }
+      function onExtMsg(ev) {
+        var d = ev && ev.data;
+        if (!d || d.source !== "clevertree-chat-extension") return;
+        if (d.type === "clevertree.extension.ready") probeExtHandoff();
+      }
+      function onVis() {
+        if (document.visibilityState === "visible") probeExtHandoff();
+      }
+      window.addEventListener("message", onExtMsg);
+      document.addEventListener("visibilitychange", onVis);
+      state._onExtReady = onExtMsg;
+      state._onExtVis = onVis;
     }
 
     function confirmSwitchChannel(nextChannel) {
-      var ch = normalizeChannelName(nextChannel);
-      var current = normalizeChannelName(opts.channel);
-      if (!ch || ch === current) return;
-      if (!overlay || !modal) {
-        switchChannel(ch);
-        return;
-      }
-      modal.innerHTML =
-        '<div class="eyebrow">SWITCH CHANNEL</div>' +
-        "<h2>Switch to " +
-        esc(ch) +
-        "?</h2>" +
-        "<p>Leave " +
-        esc(current) +
-        " and open " +
-        esc(ch) +
-        ". Your draft in " +
-        esc(current) +
-        " is saved on this device and will be there when you come back.</p>" +
-        '<div class="modal-actions">' +
-        '<button type="button" class="cancel" data-role="cancel">Stay here</button>' +
-        '<button type="button" class="send" data-role="confirm">Switch channels</button></div>';
-      overlay.hidden = false;
-      overlay.classList.add("open");
-      $(modal, '[data-role="cancel"]').onclick = function () {
-        overlay.hidden = true;
-        overlay.classList.remove("open");
-      };
-      $(modal, '[data-role="confirm"]').onclick = function () {
-        overlay.hidden = true;
-        overlay.classList.remove("open");
-        switchChannel(ch, { force: true });
-      };
+      /* Kept for API compat — always silent; drafts persist per channel. */
+      switchChannel(nextChannel, { force: true });
     }
 
     function renderPendingMedia() {
@@ -2259,6 +2895,7 @@
           if (i < 0) return;
           state.pendingMedia.splice(i, 1);
           renderPendingMedia();
+          saveChannelDraft(opts.channel);
         };
       }
     }
@@ -2289,9 +2926,16 @@
 
     function setTrackUi() {
       if (!trackBtn) return;
-      trackBtn.textContent = state.tracked ? "Tracked" : "Track";
+      var noun = String(opts.trackNoun || "group").trim() || "group";
+      trackBtn.textContent = state.tracked
+        ? "Tracking " + noun
+        : "Track " + noun;
       trackBtn.classList.toggle("tracked", state.tracked);
       trackBtn.setAttribute("aria-pressed", state.tracked ? "true" : "false");
+      trackBtn.setAttribute(
+        "aria-label",
+        state.tracked ? "Stop tracking " + noun : "Track " + noun
+      );
     }
 
     var tagCfg = Object.assign(
@@ -2338,6 +2982,29 @@
             if (normalizeChannelName(repo.channels[j]) === ch) return repo;
           }
         }
+        // Object-style craft channels (myproblem): { "ga-savannah-cat-rescue": { irc_channel, si_markdown_path } }
+        if (repo.channels && !Array.isArray(repo.channels) && typeof repo.channels === "object") {
+          var ckeys = Object.keys(repo.channels);
+          for (var k = 0; k < ckeys.length; k++) {
+            var meta = repo.channels[ckeys[k]] || {};
+            var irc = normalizeChannelName(meta.irc_channel || ckeys[k]);
+            if (irc === ch) {
+              var merged = {};
+              for (var rk in repo) {
+                if (Object.prototype.hasOwnProperty.call(repo, rk) && rk !== "channels") {
+                  merged[rk] = repo[rk];
+                }
+              }
+              if (meta.si_markdown_path) merged.si_markdown_path = meta.si_markdown_path;
+              if (meta.si_tickets_json) merged.si_tickets_json = meta.si_tickets_json;
+              if (meta.si_default_poster) merged.si_default_poster = meta.si_default_poster;
+              if (meta.collection_id) merged.collection_id = meta.collection_id;
+              if (meta.title) merged.seed_topic = meta.title;
+              merged.channel_meta = meta;
+              return merged;
+            }
+          }
+        }
       }
       return null;
     }
@@ -2351,6 +3018,9 @@
       } catch (e) {}
       if (hosts.length) return "https://" + hosts[0];
       if (ch === "#flashback") return "https://flashbackrepository.org";
+      if (ch === "#ga-savannah-cat-rescue" || ch === "#mp-general") {
+        return "https://myproblem.app";
+      }
       return "";
     }
 
@@ -2386,7 +3056,66 @@
       si.tabs = [];
       si.active = "";
       si.on = false;
+      siIndexCache = null;
+      state.catalogSubtitle = "";
       if (aiBody) aiBody.hidden = false;
+    }
+
+    function formatShowingSubtitle(n) {
+      var count = Math.max(0, Number(n) || 0);
+      if (count === 1) return "1 movie now showing";
+      return count + " movies now showing";
+    }
+
+    function showingCountFromIndex(data) {
+      if (!data || typeof data !== "object") return 0;
+      if (Array.isArray(data.nowShowing)) return data.nowShowing.length;
+      if (data.showing && Array.isArray(data.showing.items)) {
+        return data.showing.items.length;
+      }
+      var projects = data.projects;
+      if (!Array.isArray(projects)) return 0;
+      var n = 0;
+      for (var i = 0; i < projects.length; i++) {
+        if (String((projects[i] && projects[i].status) || "") === "showing") n++;
+      }
+      return n;
+    }
+
+    function applyCatalogSubtitleCount(n) {
+      var count = Math.max(0, Number(n) || 0);
+      state.catalogSubtitle = count > 0 ? formatShowingSubtitle(count) : "";
+      updateSiRailChrome();
+    }
+
+    function siRefreshCatalogSubtitle(origin) {
+      var ch = normalizeChannelName(opts.channel);
+      if (ch !== "#flashback" || !origin) return;
+      var token = si.token;
+      /* Always re-fetch so a tip publish updates the count on next SI init. */
+      siIndexCache = null;
+      siLoadIndex(origin).then(function (data) {
+        if (token !== si.token || state.destroyed) return;
+        var n = showingCountFromIndex(data);
+        if (n > 0) {
+          applyCatalogSubtitleCount(n);
+          return;
+        }
+        /* Fall back to curated carousel list if index has no nowShowing yet. */
+        return fetch(
+          String(origin).replace(/\/+$/, "") + "/hooks/client/si/showing.json",
+          { credentials: "omit", cache: "no-cache" }
+        )
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (showing) {
+            if (token !== si.token || state.destroyed) return;
+            var items = showing && Array.isArray(showing.items) ? showing.items : [];
+            applyCatalogSubtitleCount(items.length);
+          })
+          .catch(function () {});
+      });
     }
 
     function siActivate(id) {
@@ -2482,16 +3211,96 @@
       if (b && typeof b.upgrade === "function") b.upgrade(rootEl);
     }
 
+    function siSlugFromDetail(d) {
+      if (!d) return "";
+      if (d.slug) return String(d.slug).trim();
+      if (d.topic) return String(d.topic).trim();
+      var rm = String(d.readme || "").replace(/\\/g, "/");
+      var m = rm.match(/\/FanMixes\/([^\/]+)\//i);
+      return m ? m[1] : "";
+    }
+
+    var siIndexCache = null;
+    function siLoadIndex(origin) {
+      if (siIndexCache && siIndexCache.origin === origin) {
+        return Promise.resolve(siIndexCache.data);
+      }
+      return fetch(String(origin).replace(/\/+$/, "") + "/index.json", {
+        credentials: "omit",
+        cache: "no-cache",
+      })
+        .then(function (r) {
+          return r.ok ? r.json() : null;
+        })
+        .then(function (data) {
+          siIndexCache = { origin: origin, data: data };
+          return data;
+        })
+        .catch(function () {
+          return null;
+        });
+    }
+
+    function siTracksForSlug(indexData, slug, origin) {
+      if (!indexData || !slug) return null;
+      var projects = indexData.projects || indexData;
+      if (!Array.isArray(projects)) return null;
+      var hit = null;
+      for (var i = 0; i < projects.length; i++) {
+        var p = projects[i] || {};
+        var folder =
+          p.slug || p.folder || p.id || String(p.path || "").split("/").pop();
+        if (String(folder) === String(slug)) {
+          hit = p;
+          break;
+        }
+      }
+      if (!hit || !hit.subtitlesJson || hit.subtitlesJson === "[]") return null;
+      try {
+        var tracks = JSON.parse(hit.subtitlesJson);
+        if (!Array.isArray(tracks) || !tracks.length) return null;
+        var base = String(origin || "").replace(/\/+$/, "");
+        return tracks
+          .map(function (t) {
+            if (!t || !t.src) return null;
+            var src = String(t.src);
+            if (src.charAt(0) === "/") src = base + src;
+            return {
+              src: src,
+              label: t.label || "Subtitles",
+              lang: t.lang || "en",
+              default: !!t.default,
+            };
+          })
+          .filter(Boolean);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function siWireVideoTracks(rootEl, tracks) {
+      if (!rootEl || !tracks || !tracks.length) return;
+      var vids = rootEl.querySelectorAll("ct-video");
+      var json = JSON.stringify(tracks);
+      for (var i = 0; i < vids.length; i++) {
+        var v = vids[i];
+        if (v.getAttribute("tracks") || v.getAttribute("subtitles")) continue;
+        v.setAttribute("tracks", json);
+      }
+    }
+
     function siOpenDetail(d) {
       d = d || {};
       var title = String(d.title || "Details");
-      var id = String(d.readme || "t:" + title);
+      var slug = siSlugFromDetail(d);
+      var id = String(slug ? "movie:" + slug : d.readme || "t:" + title);
       var existing = siFindTab(id);
       if (existing) {
         siActivate(id);
         return;
       }
       var tab = siAddTab(id, title, true);
+      if (tab && slug) tab.topic = slug;
       var head = document.createElement("div");
       head.className = "si-detail-head";
       if (d.poster) {
@@ -2519,15 +3328,24 @@
       siActivate(id);
       if (!d.readme) return;
       var token = si.token;
-      fetch(d.readme, { credentials: "omit", cache: "no-cache" })
-        .then(function (r) {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.text();
-        })
-        .then(function (md) {
+      var origin = si.origin || "";
+      Promise.all([
+        fetch(d.readme, { credentials: "omit", cache: "no-cache" }).then(
+          function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.text();
+          }
+        ),
+        slug && origin ? siLoadIndex(origin) : Promise.resolve(null),
+      ])
+        .then(function (pair) {
           if (token !== si.token || !tab.pane.parentNode) return;
+          var md = pair[0];
+          var indexData = pair[1];
           body.innerHTML = window.ClevertreeSiMarkdown.render(md);
           siRebaseUrls(body, d.readme);
+          var tracks = siTracksForSlug(indexData, slug, origin);
+          if (tracks && tracks.length) siWireVideoTracks(body, tracks);
           siUpgrade(body);
         })
         .catch(function () {
@@ -2548,6 +3366,7 @@
       siRebaseUrls(browse.pane, origin + "/");
       siActivate("browse");
       siUpgrade(browse.pane);
+      siRefreshCatalogSubtitle(origin);
       var mc = window.ClevertreeMediaController;
       if (mc && typeof mc.subscribe === "function") {
         si.unsubMedia = mc.subscribe(function (ev) {
@@ -2622,7 +3441,14 @@
           data.pin && typeof data.pin === "object" ? data.pin : null;
       }
       updateSiRailChrome();
-      if (!state.view || (!state.view.sections && !state.view.pairs && !state.view.exists)) {
+      var hasKeys =
+        state.view &&
+        (state.view.sections || state.view.pairs || state.view.exists);
+      var hasTracked =
+        state.view &&
+        Array.isArray(state.view.tracked_problems) &&
+        state.view.tracked_problems.length;
+      if (!hasKeys && !hasTracked && !demoTrackedForChannel().length) {
         renderSiBodyFallback();
       }
     }
@@ -2633,19 +3459,125 @@
       return String(pin.body || pin.text || "").trim();
     }
 
+    function topicKeyFromChannel(ch) {
+      return String(ch || "")
+        .trim()
+        .replace(/^#/, "");
+    }
+
+    function sortTrackedProblems(list) {
+      var open = [];
+      var solved = [];
+      (list || []).forEach(function (row) {
+        if (!row || !row.title) return;
+        if (String(row.status || "") === "solved") solved.push(row);
+        else open.push(row);
+      });
+      function byUpdated(a, b) {
+        return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+      }
+      open.sort(byUpdated);
+      solved.sort(byUpdated);
+      return open.concat(solved);
+    }
+
+    function loadTrackedProblemsCatalog() {
+      if (state.trackedCatalogPromise) return state.trackedCatalogPromise;
+      state.trackedCatalogPromise = fetch(
+        roomAssetUrl("tracked-problems.demo.json"),
+        { cache: "no-store" },
+      )
+        .then(function (r) {
+          return r.ok ? r.json() : null;
+        })
+        .then(function (data) {
+          state.trackedCatalog =
+            data && data.by_topic && typeof data.by_topic === "object"
+              ? data.by_topic
+              : {};
+          return state.trackedCatalog;
+        })
+        .catch(function () {
+          state.trackedCatalog = {};
+          return state.trackedCatalog;
+        });
+      return state.trackedCatalogPromise;
+    }
+
+    function demoTrackedForChannel() {
+      var topic = topicKeyFromChannel(state.ircChannel || opts.channel || "");
+      var cat = state.trackedCatalog || {};
+      return sortTrackedProblems(cat[topic] || []);
+    }
+
+    function resolveTrackedProblems(view) {
+      var fromView =
+        view && Array.isArray(view.tracked_problems) ? view.tracked_problems : null;
+      if (fromView && fromView.length) return sortTrackedProblems(fromView);
+      return demoTrackedForChannel();
+    }
+
+    /** Status display only — batch owns solved; no client flip. */
+    function renderTrackedProblemsHtml(list) {
+      if (!list || !list.length) return "";
+      var html =
+        '<div class="si-tracked" role="list" aria-label="Tracked problems">' +
+        '<p class="si-tracked-label">Problems</p>';
+      list.forEach(function (row) {
+        var solved = String(row.status || "") === "solved";
+        var check = solved
+          ? '<span class="si-tracked-check is-solved" aria-hidden="true">✓</span>'
+          : '<span class="si-tracked-check" aria-hidden="true"></span>';
+        html +=
+          '<div class="si-tracked-row" role="listitem" data-status="' +
+          (solved ? "solved" : "open") +
+          '" aria-label="' +
+          esc(String(row.title || "")) +
+          (solved ? " — solved" : " — open") +
+          '">' +
+          check +
+          '<div class="si-tracked-main">' +
+          '<p class="si-tracked-title">' +
+          esc(String(row.title || "")) +
+          "</p>" +
+          (row.summary
+            ? '<p class="si-tracked-summary">' + esc(String(row.summary)) + "</p>"
+            : "") +
+          '<p class="si-tracked-meta"><span class="si-tracked-status">' +
+          (solved ? "Solved" : "Open") +
+          "</span>" +
+          (row.updated_at
+            ? ' · <time datetime="' +
+              esc(String(row.updated_at)) +
+              '">' +
+              esc(String(row.updated_at).slice(0, 10)) +
+              "</time>"
+            : "") +
+          "</p></div></div>";
+      });
+      html += "</div>";
+      return html;
+    }
+
     function updateSiRailChrome() {
-      /* Title = IRC TOPIC; subtitle = pinned PRIVMSG body (else #channel). */
+      /* Chat-log head: IRC TOPIC left; catalog/pin/#channel subtitle; optional pin line. */
       var title =
         String(state.topicText || "").trim() ||
         String(opts.title || "").trim() ||
         "Public IRC room";
       var pinText = pinBodyText();
-      var sub =
-        pinText ||
-        String(state.ircChannel || opts.channel || "").trim() ||
-        "#web";
-      if (siTitle) siTitle.textContent = title;
-      if (siSub) siSub.textContent = sub;
+      var catalogSub = String(state.catalogSubtitle || "").trim();
+      var channelLabel =
+        String(state.ircChannel || opts.channel || "").trim() || "#web";
+      var sub = catalogSub || pinText || channelLabel;
+      if (chatLogTitle) chatLogTitle.textContent = title;
+      if (chatLogSub) chatLogSub.textContent = sub;
+      if (chatLogPin) {
+        var showPin = !!(pinText && pinText !== sub);
+        chatLogPin.hidden = !showPin;
+        chatLogPin.textContent = showPin ? "Pinned · " + pinText : "";
+      }
+      if (channelTag) channelTag.textContent = channelLabel;
       var menuTitle = $(el, '[data-role="menu-room-title"]');
       if (menuTitle) menuTitle.textContent = title;
     }
@@ -2673,17 +3605,19 @@
       if (!aiBody) return;
       /* Always replace — never keep the previous channel's SI markup. */
       state.view = view || null;
-      var v = state.view;
+      var v = state.view || {};
       updateSiRailChrome();
-      if (!v || (!v.sections && !v.pairs && !v.exists)) {
-        renderSiBodyFallback();
-        return;
-      }
+      var tracked = resolveTrackedProblems(v);
       var sections = v.sections || {};
       var keys = Object.keys(sections).filter(function (k) {
         return k !== "uncategorized";
       });
-      var html = "";
+      var hasKeys = !!(keys.length || (v.pairs && v.pairs.length) || v.exists);
+      if (!tracked.length && !hasKeys) {
+        renderSiBodyFallback();
+        return;
+      }
+      var html = renderTrackedProblemsHtml(tracked);
       if (v.pairs && v.pairs.length) {
         html += '<div class="ai-pairs"><strong>Paired</strong><ul>';
         v.pairs.forEach(function (pair) {
@@ -2720,7 +3654,11 @@
           uncat.comments.length +
           " comment(s) waiting for batch filing.</p></article>";
       }
-      aiBody.innerHTML = html ? linkifyChannelRefs(html) : "";
+      if (!html) {
+        renderSiBodyFallback();
+        return;
+      }
+      aiBody.innerHTML = linkifyChannelRefs(html);
       if (aiPanel) aiPanel.hidden = false;
     }
 
@@ -2743,12 +3681,15 @@
           if (typeof row === "string") {
             return { nick: "anon", text: row, time: "" };
           }
-          return {
+          var tsRaw = row.sentAt != null ? row.sentAt : row.ts;
+          var out = {
             nick: row.nick || row.from || row.author || "anon",
             text: row.text || row.body || row.message || "",
             time: row.time || row.ts || "",
             pinned: !!row.pinned,
           };
+          if (typeof tsRaw === "number" && isFinite(tsRaw)) out.sentAt = tsRaw;
+          return out;
         })
         .filter(function (m) {
           return m.text;
@@ -2759,17 +3700,14 @@
       var incoming = normalizeHistoryLines(raw);
       if (!incoming.length) return;
       if (replace || !state.historyHydrated) {
-        // Keep welcome seed only if history empty after filter
         state.messages = incoming;
         state.historyHydrated = true;
-        renderSeed();
       } else {
         incoming.forEach(function (m) {
-          state.messages.push(m);
-          appendMessage(stream, m, tagCfg, el, state.mediaReviews);
+          if (!serverLogHas(m)) state.messages.push(m);
         });
-        scrollHistoryToBottom();
       }
+      renderStream();
       updateSiRailChrome();
     }
 
@@ -2784,17 +3722,152 @@
       if (status) status.classList.toggle("is-connected", connected);
     }
 
-    function renderSeed() {
+    function serverLogHas(msg) {
+      if (!msg || !msg.text) return false;
+      var want = normalizePendingText(msg.text);
+      var list = state.messages || [];
+      for (var i = list.length - 1; i >= 0 && i >= list.length - 40; i--) {
+        if (normalizePendingText(list[i].text) === want) {
+          if (
+            !msg.nick ||
+            nicksMatch(list[i].nick, msg.nick) ||
+            speakersMatch(list[i], msg)
+          ) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function removePendingFromOutbox(match) {
+      var box = state.pendingOutbox || [];
+      if (!box.length) return null;
+      var clientId = match && match.clientId;
+      var want = match && match.text ? normalizePendingText(match.text) : "";
+      for (var i = 0; i < box.length; i++) {
+        var p = box[i];
+        if (clientId && p.clientId === clientId) {
+          return box.splice(i, 1)[0];
+        }
+      }
+      if (want) {
+        for (var j = 0; j < box.length; j++) {
+          if (normalizePendingText(box[j].text) === want) {
+            return box.splice(j, 1)[0];
+          }
+        }
+      }
+      return null;
+    }
+
+    /** Display rows = immutable server log + pending outbox (visual only). */
+    function displayRows() {
+      return (state.messages || []).concat(state.pendingOutbox || []);
+    }
+
+    function paintGroup(group, prefs) {
+      prefs = prefs || state.coalescePrefs;
+      if (!group || !group.lines || !group.lines.length) return;
+      var mode = (prefs && prefs.mode) || "normal";
+      var first = group.lines[0];
+      var pending = !!group.pending;
+      var failed = !!group.failed;
+      if (mode === "paragraph" && group.lines.length > 1) {
+        var para = group.lines
+          .map(function (ln) {
+            return String(ln.text || "").replace(/\s+/g, " ").trim();
+          })
+          .filter(Boolean)
+          .join(" ");
+        appendMessage(
+          stream,
+          {
+            nick: group.nick,
+            text: para,
+            time: first.time || group.time || "",
+            pending: pending,
+            failed: failed,
+            self: group.self,
+            clientId: group.clientId,
+            sentAt: group.sentAt || first.sentAt,
+          },
+          tagCfg,
+          el,
+          state.mediaReviews
+        );
+        return;
+      }
+      var art = appendMessage(
+        stream,
+        {
+          nick: group.nick,
+          text: first.text,
+          time: first.time || group.time || "",
+          pending: pending && group.lines.length === 1,
+          failed: failed,
+          self: group.self || first.self,
+          clientId: first.clientId || group.clientId,
+          sentAt: first.sentAt || group.sentAt,
+        },
+        tagCfg,
+        el,
+        state.mediaReviews
+      );
+      for (var i = 1; i < group.lines.length; i++) {
+        appendLineToMessage(
+          art,
+          group.lines[i],
+          tagCfg,
+          el,
+          state.mediaReviews
+        );
+      }
+      if (pending && group.lines.length > 1 && art) {
+        art.classList.add("msg-pending");
+        art.setAttribute("aria-busy", "true");
+      }
+      if (failed && art) {
+        art.classList.remove("msg-pending");
+        art.classList.add("msg-failed");
+      }
+    }
+
+    function renderStream() {
       stream.innerHTML = "";
-      if (!state.messages.length) {
+      var rows = displayRows();
+      if (!rows.length) {
         stream.innerHTML =
           '<div class="empty"><h2>Start the conversation.</h2><p>Ask a question or share what you know. Posts are public.</p></div>';
         return;
       }
-      state.messages.forEach(function (m) {
-        appendMessage(stream, m, tagCfg, el, state.mediaReviews);
-      });
+      var groups = groupMessagesForDisplay(rows, state.coalescePrefs);
+      for (var g = 0; g < groups.length; g++) {
+        paintGroup(groups[g], state.coalescePrefs);
+      }
       scrollHistoryToBottom();
+    }
+
+    function renderSeed() {
+      renderStream();
+    }
+
+    function applyCoalescePrefs(prefs) {
+      state.coalescePrefs = persistCoalescePrefs(prefs || state.coalescePrefs);
+      syncCoalesceUi();
+      /* Re-paint only — server log and pending outbox stay intact. */
+      renderStream();
+    }
+
+    function syncCoalesceUi() {
+      var prefs = state.coalescePrefs || readCoalescePrefs();
+      var modeEl = $(el, '[data-role="coalesce-mode"]');
+      var gap = $(el, '[data-role="coalesce-gap"]');
+      if (modeEl) modeEl.value = prefs.mode || "normal";
+      if (gap) {
+        gap.value = String(prefs.gapMinutes || COALESCE_DEFAULT_GAP_MIN);
+        gap.disabled = (prefs.mode || "normal") === "normal";
+      }
     }
 
     async function uploadBlob(file, kindHint) {
@@ -2839,6 +3912,7 @@
         marker: marker,
       });
       renderPendingMedia();
+      saveChannelDraft(opts.channel);
       setUploadStatus("");
       setComposerExpanded(true);
     }
@@ -2851,6 +3925,7 @@
         .filter(Boolean);
       state.pendingMedia = [];
       renderPendingMedia();
+      saveChannelDraft(opts.channel);
       return markers;
     }
 
@@ -3106,34 +4181,71 @@
 
     function postLocal(text) {
       var tagged = Tags.autoTag(text, opts.context || {});
+      var clientId = makeClientId();
+      var sentAt = Date.now();
       var msg = {
         nick: opts.nick || "you",
         text: tagged,
-        time: "now",
+        time: "…",
+        pending: true,
+        self: true,
+        clientId: clientId,
+        sentAt: sentAt,
       };
       if (typeof opts.onSend === "function") {
         opts.onSend(tagged, msg);
       }
-      // Optimistic local append when offline / mock
-      if (!state.ws || state.ws.readyState !== 1) {
-        state.messages.push(msg);
-        appendMessage(stream, msg, tagCfg, el);
-        scrollHistoryToBottom();
-      } else {
-        try {
-          state.ws.send(
-            JSON.stringify({
-              type: "privmsg",
-              channel: opts.channel,
-              text: tagged,
-              visitor: visitor,
-              nick: opts.nick || "you",
-            })
-          );
-        } catch (e) {
-          state.messages.push(msg);
-          appendMessage(stream, msg, tagCfg, el);
-        }
+      /* Pending outbox only — never write optimistic rows into the server log. */
+      state.pendingOutbox.push(msg);
+      renderStream();
+
+      var offline = !state.ws || state.ws.readyState !== 1;
+      function settleLocalOffline() {
+        removePendingFromOutbox({ clientId: clientId });
+        state.pendingOutbox.push({
+          nick: msg.nick,
+          text: tagged,
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          self: true,
+          clientId: clientId,
+          sentAt: sentAt,
+          pending: false,
+          localOnly: true,
+        });
+        renderStream();
+      }
+      if (offline) {
+        settleLocalOffline();
+        return;
+      }
+      try {
+        state.ws.send(
+          JSON.stringify({
+            type: "privmsg",
+            channel: opts.channel,
+            text: tagged,
+            visitor: visitor,
+            nick: opts.nick || "you",
+            client_id: clientId,
+          })
+        );
+        /* Fail stuck pending after timeout (outbox row, then re-paint). */
+        setTimeout(function () {
+          var box = state.pendingOutbox || [];
+          for (var i = 0; i < box.length; i++) {
+            if (box[i].clientId === clientId && box[i].pending) {
+              box[i].pending = false;
+              box[i].failed = true;
+              renderStream();
+              break;
+            }
+          }
+        }, PENDING_TIMEOUT_MS);
+      } catch (e) {
+        settleLocalOffline();
       }
     }
 
@@ -3147,6 +4259,26 @@
     var themeBtns = el.querySelectorAll('[data-role="theme-toggle"]');
     for (var ti = 0; ti < themeBtns.length; ti++) {
       themeBtns[ti].onclick = onThemeClick;
+    }
+    var coalesceModeEl = $(el, '[data-role="coalesce-mode"]');
+    var coalesceGapEl = $(el, '[data-role="coalesce-gap"]');
+    if (coalesceModeEl) {
+      coalesceModeEl.onchange = function () {
+        applyCoalescePrefs({
+          mode: coalesceModeEl.value || "normal",
+          gapMinutes:
+            (state.coalescePrefs && state.coalescePrefs.gapMinutes) ||
+            COALESCE_DEFAULT_GAP_MIN,
+        });
+      };
+    }
+    if (coalesceGapEl) {
+      coalesceGapEl.onchange = function () {
+        applyCoalescePrefs({
+          mode: (state.coalescePrefs && state.coalescePrefs.mode) || "normal",
+          gapMinutes: Number(coalesceGapEl.value) || COALESCE_DEFAULT_GAP_MIN,
+        });
+      };
     }
     var mq =
       typeof matchMedia === "function"
@@ -3167,6 +4299,78 @@
         setTrackUi();
         if (typeof opts.onTrack === "function") opts.onTrack(state.tracked);
       };
+    }
+    var gatherBtn = $(el, '[data-role="gather"]');
+    var refreshNwBtn = $(el, '[data-role="refresh"]');
+    if (gatherBtn) {
+      gatherBtn.onclick = function () {
+        if (typeof opts.onGather === "function") opts.onGather();
+      };
+    }
+    if (refreshNwBtn) {
+      refreshNwBtn.onclick = function () {
+        if (typeof opts.onRefresh === "function") opts.onRefresh();
+        else if (typeof opts.onGather === "function") opts.onGather();
+      };
+    }
+
+    /**
+     * Networker consent: new batch vs last local hash.
+     * Resolves { postPublic, autoFuture, confirmed }.
+     */
+    function showBatchConsent(info) {
+      info = info || {};
+      return new Promise(function (resolve) {
+        if (!overlay || !modal) {
+          resolve({
+            confirmed: false,
+            postPublic: false,
+            autoFuture: false,
+          });
+          return;
+        }
+        var hashShort = String(info.contentHash || "").slice(0, 12) || "new";
+        var posts = info.posts != null ? info.posts : "?";
+        modal.innerHTML =
+          '<div class="batch-consent" role="dialog" aria-labelledby="ct-batch-consent-title">' +
+          '<div class="aicap">Networker</div>' +
+          '<div class="aititle"><h2 id="ct-batch-consent-title">New gather batch</h2>' +
+          '<button type="button" class="close" data-role="consent-close" aria-label="Close">×</button></div>' +
+          '<p class="batch-consent-lead">This batch looks new (hash ' +
+          esc(hashShort) +
+          " · " +
+          esc(String(posts)) +
+          " posts). Is it okay to upload and post the link in the public chat?</p>" +
+          '<label class="batch-consent-check"><input type="checkbox" data-role="consent-post" checked /> ' +
+          "Post the inbox link in the public chat</label>" +
+          '<label class="batch-consent-check"><input type="checkbox" data-role="consent-auto" /> ' +
+          "Auto upload / post new batches in the future</label>" +
+          '<div class="batch-consent-actions">' +
+          '<button type="button" class="batch-consent-yes" data-role="consent-yes">Yes, upload</button>' +
+          '<button type="button" class="batch-consent-no" data-role="consent-no">Not now</button>' +
+          "</div></div>";
+        overlay.hidden = false;
+        overlay.classList.add("open");
+        function finish(confirmed) {
+          var postEl = modal.querySelector('[data-role="consent-post"]');
+          var autoEl = modal.querySelector('[data-role="consent-auto"]');
+          var postPublic = !!(postEl && postEl.checked);
+          var autoFuture = !!(autoEl && autoEl.checked);
+          overlay.classList.remove("open");
+          overlay.hidden = true;
+          modal.innerHTML = "";
+          resolve({ confirmed: !!confirmed, postPublic: postPublic, autoFuture: autoFuture });
+        }
+        var yes = modal.querySelector('[data-role="consent-yes"]');
+        var no = modal.querySelector('[data-role="consent-no"]');
+        var closer = modal.querySelector('[data-role="consent-close"]');
+        if (yes) yes.onclick = function () { finish(true); };
+        if (no) no.onclick = function () { finish(false); };
+        if (closer) closer.onclick = function () { finish(false); };
+        overlay.onclick = function (ev) {
+          if (ev.target === overlay) finish(false);
+        };
+      });
     }
     if (aiBtn) {
       aiBtn.onclick = function () {
@@ -3240,10 +4444,15 @@
         };
         ws.onclose = function () {
           state.connected = false;
+          if (state.extHandoff) {
+            setConnUi("Extension chat", "handoff");
+            return;
+          }
           setConnUi("Reconnecting…", "");
           state.mirrorIndex += 1;
           if (
             !state.destroyed &&
+            !state.extHandoff &&
             (state.mirrors.length || opts.wsUrl)
           ) {
             setTimeout(connect, 800);
@@ -3297,6 +4506,27 @@
             applyMediaReviewEvent(data);
             return;
           }
+          if (typ === "chat.error") {
+            var errClient =
+              data.client_id ||
+              (data.chat_line && data.chat_line.client_id) ||
+              "";
+            var box = state.pendingOutbox || [];
+            var marked = false;
+            for (var ei = 0; ei < box.length; ei++) {
+              if (
+                (errClient && box[ei].clientId === errClient) ||
+                (!errClient && box[ei].pending)
+              ) {
+                box[ei].pending = false;
+                box[ei].failed = true;
+                marked = true;
+                if (errClient) break;
+              }
+            }
+            if (marked) renderStream();
+            return;
+          }
           if (
             typ === "privmsg" ||
             typ === "message" ||
@@ -3323,13 +4553,24 @@
                 comment.body ||
                 "",
               time: data.time || line.ts || "",
+              sentAt: Date.now(),
             };
             if (!msg.text) return;
-            state.messages.push(msg);
-            // Drop empty-state placeholder on first live message
-            if (stream.querySelector(".empty")) stream.innerHTML = "";
-            appendMessage(stream, msg, tagCfg, el, state.mediaReviews);
-            scrollHistoryToBottom();
+            var clientId =
+              data.client_id ||
+              line.client_id ||
+              comment.client_id ||
+              "";
+            removePendingFromOutbox({
+              clientId: clientId,
+              text: msg.text,
+            });
+            /* Drop matching localOnly offline echoes once the wire has it. */
+            removePendingFromOutbox({ text: msg.text });
+            if (!serverLogHas(msg)) {
+              state.messages.push(msg);
+            }
+            renderStream();
           }
         };
       } catch (e) {
@@ -3346,9 +4587,26 @@
 
     setTrackUi();
     setAiUi();
+    syncCoalesceUi();
     renderSeed();
     siInitForChannel();
-    connect();
+    loadTrackedProblemsCatalog().then(function () {
+      if (state.destroyed) return;
+      if (state.view) {
+        renderAiFindings(state.view);
+        return;
+      }
+      var demo = demoTrackedForChannel();
+      if (demo.length) {
+        renderAiFindings({ tracked_problems: demo, exists: false });
+      }
+    });
+    if (mode === "sidepanel") {
+      connect();
+    } else {
+      wireExtPresence();
+      probeExtHandoff();
+    }
 
     /* Chat media never autoplays; when the user plays it, SI media yields. */
     el.addEventListener(
@@ -3474,6 +4732,17 @@
         state.theme = resolveRoomTheme(mode);
         applyRoomTheme(el, state.theme, state.themePref);
       },
+      showBatchConsent: showBatchConsent,
+      setNetworkerBusy: function (busy) {
+        if (gatherBtn) {
+          gatherBtn.disabled = !!busy;
+          gatherBtn.textContent = busy ? "Gathering…" : "Gather";
+        }
+        if (refreshNwBtn) {
+          refreshNwBtn.disabled = !!busy;
+          refreshNwBtn.textContent = busy ? "…" : "Refresh";
+        }
+      },
       setTracked: function (v) {
         state.tracked = !!v;
         setTrackUi();
@@ -3510,13 +4779,33 @@
         setMenuOpen(false);
       },
       appendMessage: function (msg) {
-        state.messages.push(msg);
-        appendMessage(stream, msg, tagCfg, el, state.mediaReviews);
+        /* Host API: treat as server-log append (not pending). */
+        if (msg && msg.text && !serverLogHas(msg)) {
+          state.messages.push(msg);
+        }
+        renderStream();
+      },
+      setCoalescePrefs: function (prefs) {
+        applyCoalescePrefs(prefs);
+      },
+      getCoalescePrefs: function () {
+        return state.coalescePrefs;
       },
       destroy: function () {
+        try {
+          saveChannelDraft(opts.channel);
+        } catch (eSave) {}
         state.destroyed = true;
         if (state.siCleanup) state.siCleanup();
         stopCapture();
+        if (state._onExtReady) {
+          window.removeEventListener("message", state._onExtReady);
+          state._onExtReady = null;
+        }
+        if (state._onExtVis) {
+          document.removeEventListener("visibilitychange", state._onExtVis);
+          state._onExtVis = null;
+        }
         if (state.holdComposerTimer) {
           clearTimeout(state.holdComposerTimer);
           state.holdComposerTimer = null;
@@ -3552,11 +4841,7 @@
         if (mq && mq.removeEventListener) {
           mq.removeEventListener("change", onSchemeChange);
         }
-        if (state.ws) {
-          try {
-            state.ws.close();
-          } catch (e) {}
-        }
+        disconnectWs();
         if (mode === "page") {
           document.body.classList.remove("ct-room-page");
         }
@@ -3568,6 +4853,7 @@
           "sidepanel",
         );
         el.removeAttribute("data-theme");
+        el.removeAttribute("data-ext");
         el.style.colorScheme = "";
         el.style.height = "";
         el.style.maxHeight = "";
@@ -3585,6 +4871,16 @@
     pickMirror: pickMirror,
     defaultMirrors: defaultMirrors,
     THEME_KEY: THEME_KEY,
+    COALESCE_KEY: COALESCE_KEY,
+    COALESCE_DEFAULT_GAP_MIN: COALESCE_DEFAULT_GAP_MIN,
+    COALESCE_MODES: COALESCE_MODES,
+    readCoalescePrefs: readCoalescePrefs,
+    persistCoalescePrefs: persistCoalescePrefs,
+    messageTs: messageTs,
+    nicksMatch: nicksMatch,
+    speakersMatch: speakersMatch,
+    canCoalesce: canCoalesce,
+    groupMessagesForDisplay: groupMessagesForDisplay,
     resolveTheme: resolveRoomTheme,
   };
 });

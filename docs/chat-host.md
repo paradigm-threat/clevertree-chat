@@ -34,7 +34,13 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_GIT_FALLBACK=1` | Force dulwich when `git` is absent |
 | `CLEVERTREE_IRC_ENABLE=1` | Start Ergo IRC bridge (see [irc-backbone.md](irc-backbone.md)) |
 | `CLEVERTREE_IRC_*` | Host/port/TLS/nick/prefix for the bridge |
-| `CLEVERTREE_CHANNEL_ASR` | Default `1` — enqueue ASR jobs from `[[mp:media]]` / Bunny URLs on submit |
+| `CLEVERTREE_ROOM_QUEUE_ONLY` | Default `1` — submit enqueues claims + IRC/WS only; **no** live SoT `commit_changes` for new comments (`0` = emergency rollback to live file) |
+| `CLEVERTREE_INBOX_UPLOAD` | Default `1` — media/inbox uploads use `inbox/{kind}/{source_user}/{object_id}/…` (`0` = legacy `chat-public/`) |
+| `CLEVERTREE_CHANNEL_ASR` | Default `1` — enqueue ASR/video-analyze jobs from `[[mp:media]]` / Bunny URLs on submit |
+| `CLEVERTREE_ASR_VIDEO_DELAY_SEC` | Defer video jobs so audio drains first (default `120`) |
+| `CLEVERTREE_ASR_VIDEO_LIMIT` | Max video jobs per drain tick (default `1`) |
+| `CLEVERTREE_ASR_VIDEO_FRAMES` | Timed stills per video for Groq VL (default `6`, max 12) |
+| Host `ffmpeg` / `ffprobe` | Required for video frame sample + audio strip (install via apt on pub1) |
 | `CLEVERTREE_CHANNEL_MEDIA_REVIEW` | Default `1` — cover images/video until AI clear; WS `media.review` |
 | `CLEVERTREE_MEDIA_REVIEW_DRY_RUN` | Stub-clear covers without Groq vision (also implied when ASR dry-run and no `GROQ_API_KEY`) |
 | `BUNNY_STORAGE_API_KEY` | Bunny **storage zone password** for `POST /api/chat/media/upload` (never in browser) |
@@ -58,7 +64,7 @@ The always-on **realtime AI server** runs on the chat host: lightweight preview/
 | `CLEVERTREE_BEDROCK_MODEL_ID` | Default `anthropic.claude-3-haiku-20240307-v1:0` |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` | Bedrock creds; if missing on Groq rate-limit, log + fail clearly (no invented keys) |
 
-**ASR caveat:** channel Whisper stays on Groq only — there is no Bedrock drop-in for transcription. On Groq 429 or soft RPM/RPD cap, ASR jobs return to `pending`.
+**Channel media AI:** audio priority → Groq Whisper; video (after delay) → ffmpeg frames → Groq VL + stripped audio → Whisper; VL miss → ASR-only reply. Whisper has no Bedrock drop-in (optional AWS Transcribe). Soft/429 → `pending` + `not_before`.
 
 **Text SI:** not per-message. Manual `!investigate` / room **Investigate** button → soft quota → Groq→Bedrock (`action=drain_investigate`, `action=quota_status`). Probe: `action=provider_status`, `action=text_complete`. Replies are **chat lines only** (not auto-filed into SoT). Groq HTTP from pub1 must include `User-Agent` (stdlib clients send `clevertree-chat/1.0`) or Cloudflare returns 403/1010. With `openai/gpt-oss-20b`, use generous `max_tokens` so reasoning does not starve `content`.
 

@@ -102,8 +102,55 @@ def upload_file(
     channel: str,
     kind: str = "",
     client_ip: str = "",
+    source_user: str = "",
+    object_id: str = "",
+    visitor: str = "",
 ) -> dict[str, Any]:
-    """Validate + PUT to ``chat-public/<channel>/<sha>.<ext>``."""
+    """Validate + PUT via unified inbox (per source_user + object_id).
+
+    Legacy ``chat-public/<channel>/<sha>`` is retained only when
+    ``CLEVERTREE_INBOX_UPLOAD=0``.
+    """
+    use_inbox = (os.environ.get("CLEVERTREE_INBOX_UPLOAD") or "1").strip().lower() not in {
+        "0",
+        "false",
+        "off",
+        "no",
+    }
+    slug = channel_slug(channel)
+    channel_out = (
+        f"#{slug}" if not (channel or "").startswith("#") else (channel or f"#{slug}")
+    )
+
+    if use_inbox:
+        from clevertree_chat import inbox
+
+        src = source_user or inbox.derive_source_user(visitor=visitor, kind="chat")
+        result = inbox.put_object(
+            data,
+            filename=filename,
+            content_type=content_type,
+            kind="chat",
+            source_user=src,
+            object_id=object_id,
+            client_ip=client_ip,
+            meta={"channel": channel_out, "declared_kind": kind or ""},
+        )
+        if not result.get("ok"):
+            return result
+        return {
+            **result,
+            "kind": result.get("classified_kind") or kind or "file",
+            "channel": channel_out,
+            "review": "pending",
+            "marker_inbox": inbox.format_inbox_marker(
+                object_id=str(result.get("object_id") or ""),
+                url=str(result.get("url") or ""),
+                kind="chat",
+                source_user=str(result.get("source_user") or src),
+            ),
+        }
+
     if len(data) > MAX_BYTES:
         return {"ok": False, "error": "file_too_large", "max_bytes": MAX_BYTES}
     if client_ip and not check_rate_limit(client_ip):
@@ -118,7 +165,6 @@ def upload_file(
     if not classified.get("ok"):
         return classified
 
-    slug = channel_slug(channel)
     sha = sha256_hex(data)
     ext = str(classified["ext"])
     bunny_path = f"chat-public/{slug}/{sha}.{ext}"
@@ -132,7 +178,7 @@ def upload_file(
         "sha256": sha,
         "kind": classified["kind"],
         "mime": classified["mime"],
-        "channel": f"#{slug}" if not (channel or "").startswith("#") else (channel or f"#{slug}"),
+        "channel": channel_out,
         "review": "pending",
         "max_bytes": MAX_BYTES,
     }

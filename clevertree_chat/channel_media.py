@@ -1,9 +1,10 @@
 """Parse MyProblem public-room media markers for ASR / VL enqueue.
 
 Markers look like:
-  [[mp:media kind=audio url=https://…/chat-public/….webm channel=#mp-general]]
+  [[mp:media kind=audio url=https://…/inbox/chat/…/….webm channel=#mp-general]]
+  [[mp:inbox id=… kind=chat url=https://…/inbox/…]]
 
-Also accepts bare Bunny `chat-public/` URLs when no marker is present.
+Also accepts bare Bunny `inbox/` / legacy `chat-public/` URLs when no marker is present.
 """
 
 from __future__ import annotations
@@ -13,9 +14,10 @@ from typing import Any
 from urllib.parse import urlparse
 
 MARKER_RE = re.compile(r"\[\[mp:media\s+([^\]]+)\]\]", re.IGNORECASE)
+INBOX_MARKER_RE = re.compile(r"\[\[mp:inbox\s+([^\]]+)\]\]", re.IGNORECASE)
 ATTR_RE = re.compile(r"(\w+)=([^\s\]]+)")
 URL_RE = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
-BUNNY_HINT = re.compile(r"b-cdn\.net|bunnycdn|chat-public/", re.IGNORECASE)
+BUNNY_HINT = re.compile(r"b-cdn\.net|bunnycdn|chat-public/|/inbox/", re.IGNORECASE)
 AUDIO_EXT = {".webm", ".wav", ".mp3", ".m4a", ".ogg", ".opus", ".flac", ".aac"}
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".webm"}  # webm may be audio-only; kind wins
 IMAGE_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"}
@@ -71,17 +73,18 @@ def _guess_kind(url: str, explicit: str = "") -> str:
 
 
 def parse_media_markers(body: str) -> list[dict[str, Any]]:
-    """Return media dicts from [[mp:media …]] markers (deduped by url)."""
+    """Return media dicts from [[mp:media …]] / [[mp:inbox …]] (deduped by url)."""
     text = body or ""
     out: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for match in MARKER_RE.finditer(text):
+
+    def _add(match: re.Match[str], source: str) -> None:
         attrs = _attrs(match.group(1))
         url = (attrs.get("url") or "").strip().rstrip(".,);]")
         if not url or not url.startswith("http"):
-            continue
+            return
         if url in seen:
-            continue
+            return
         seen.add(url)
         kind = _guess_kind(url, attrs.get("kind") or "")
         channel = (attrs.get("channel") or "").strip()
@@ -89,6 +92,7 @@ def parse_media_markers(body: str) -> list[dict[str, Any]]:
         if review not in {"pending", "clear", "reject"}:
             review = "pending"
         sha = (attrs.get("sha") or "").strip()
+        object_id = (attrs.get("id") or "").strip()
         out.append(
             {
                 "kind": kind,
@@ -96,10 +100,16 @@ def parse_media_markers(body: str) -> list[dict[str, Any]]:
                 "channel": channel,
                 "review": review,
                 "sha": sha,
+                "object_id": object_id,
                 "raw": match.group(0),
-                "source": "marker",
+                "source": source,
             }
         )
+
+    for match in MARKER_RE.finditer(text):
+        _add(match, "marker")
+    for match in INBOX_MARKER_RE.finditer(text):
+        _add(match, "inbox")
     return out
 
 

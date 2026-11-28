@@ -1,6 +1,8 @@
 /**
- * Clevertree Chat — side panel + page handshake (clevertree.chat.toggle).
+ * Clevertree Chat — side panel + page handshake + Networker batch SW.
  */
+importScripts("networker-batch.js");
+
 chrome.runtime.onInstalled.addListener(function () {
   if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(function () {});
@@ -22,13 +24,14 @@ function openSidePanel(windowId, msg, sendResponse) {
   chrome.sidePanel
     .open({ windowId: windowId })
     .then(function () {
-      chrome.runtime
-        .sendMessage({
-          type: "clevertree.chat.toggle",
-          action: "context",
-          url: (msg && msg.url) || "",
-        })
-        .catch(function () {});
+      var context = {
+        type: "clevertree.chat.toggle",
+        action: "context",
+        url: (msg && msg.url) || "",
+      };
+      if (msg && msg.channel) context.channel = String(msg.channel);
+      if (msg && msg.title) context.title = String(msg.title);
+      chrome.runtime.sendMessage(context).catch(function () {});
       sendResponse({ ok: true, action: "open" });
     })
     .catch(function () {
@@ -38,13 +41,11 @@ function openSidePanel(windowId, msg, sendResponse) {
 
 function handleToggleMessage(msg, sendResponse) {
   var action = (msg && msg.action) || "toggle";
-  // Quiet presence check — never opens the panel.
   if (action === "ping") {
     sendResponse({ ok: true, action: "ping" });
     return false;
   }
   if (action === "close") {
-    // Chromium has no reliable sidePanel.close; ACK only.
     sendResponse({ ok: true, action: "close" });
     return false;
   }
@@ -53,7 +54,7 @@ function handleToggleMessage(msg, sendResponse) {
       var t = tabs && tabs[0];
       openSidePanel(t && t.windowId, msg, sendResponse);
     });
-    return true; // async
+    return true;
   }
   sendResponse({ ok: true });
   return false;

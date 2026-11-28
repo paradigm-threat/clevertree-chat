@@ -301,6 +301,12 @@ def view_topic(topic: str, visitor: str = "", focus: str = "") -> dict:
     visitor_row.setdefault("uuid", visitor or "")
     view["visitor"] = visitor_row
     _apply_room_chrome(topic, view, fallback_title=str(page_title or "Public IRC room"))
+    try:
+        from clevertree_chat.tracked_problems import tracked_problems_for_topic
+
+        view["tracked_problems"] = tracked_problems_for_topic(topic)
+    except Exception:
+        view.setdefault("tracked_problems", [])
     return view
 
 
@@ -476,12 +482,54 @@ def dispatch(
                     "idempotent_replay": True,
                 }
                 return 200, replay
+        body_text = str(payload.get("body") or "")
+        from clevertree_chat.claim_queue import enqueue_claim, room_queue_only
+
+        if room_queue_only():
+            # Room = claim queue: IRC/WS + ephemeral claim JSON only — no SoT commit.
+            claim = enqueue_claim(
+                topic=topic,
+                page=page,
+                body=body_text,
+                visitor=visitor,
+                source=str(payload.get("source") or "web"),
+                nick=str(payload.get("name") or "").strip(),
+                chosen=chosen,
+                client_post_id=idem,
+            )
+            with _lock:
+                view = view_topic(
+                    topic,
+                    visitor,
+                    str(query.get("subtopic") or payload.get("subtopic") or ""),
+                )
+                result = {
+                    "ok": True,
+                    "queued": True,
+                    "room_queue": True,
+                    "comment_id": claim["id"],
+                    "id": claim["id"],
+                    "starting": "uncategorized",
+                    "placed": False,
+                    "body": body_text,
+                    "view": view,
+                }
+                _note_provisional_association(service, topic)
+                if idem:
+                    slim = {k: v for k, v in result.items() if k != "view"}
+                    slim["topic"] = topic
+                    slim["body"] = body_text
+                    store = _load_idempotency()
+                    store[idem] = slim
+                    _save_idempotency(store)
+            return 200, result
+
         with _lock:
             result = service.submit_for_page(
                 page,
                 visitor,
                 topic,
-                str(payload.get("body") or ""),
+                body_text,
                 chosen=chosen,
                 name=payload.get("name"),
                 session=session,
@@ -494,7 +542,7 @@ def dispatch(
                     if k != "view"
                 }
                 slim["topic"] = topic
-                slim["body"] = str(payload.get("body") or "")
+                slim["body"] = body_text
                 store = _load_idempotency()
                 store[idem] = slim
                 _save_idempotency(store)
@@ -954,6 +1002,7 @@ def fanout_submit(
     source: str = "web",
     nick: str = "",
     msgid: str = "",
+    client_id: str = "",
 ) -> None:
     """Broadcast post.live after a successful submit; mirror to IRC when bridged."""
     view = body.get("view") or view_topic(topic, visitor)
@@ -961,6 +1010,7 @@ def fanout_submit(
     starting = body.get("starting") or "uncategorized"
     text = body.get("body") or ""
     author = (view.get("visitor") or {}).get("name") or "Visitor"
+    client_id = str(client_id or "").strip()
     # IRC bridge already appended the wire line (+ msgid) before submit.
     if source != "irc":
         try:
@@ -1002,35 +1052,38 @@ def fanout_submit(
         )
     except Exception:
         pass
-    HUB.broadcast(
-        topic,
-        {
-            "type": "post.live",
-            "topic": topic,
-            "comment": {
-                "id": filed,
-                "author": author,
-                "author_uuid": visitor,
-                "body": text,
-                "keys": [],
-                "starting": starting,
-                "placed": False,
-                "mine": True,
-                "injected": False,
-                "kind": "post",
-            },
-            "view": view,
-            "activity": activity_from_view(view, visitor),
-            "chat_line": {
-                "ts": None,
-                "topic": topic,
-                "visitor": visitor,
-                "nick": nick or str(author),
-                "body": text,
-                "source": source,
-            },
+    chat_line = {
+        "ts": None,
+        "topic": topic,
+        "visitor": visitor,
+        "nick": nick or str(author),
+        "body": text,
+        "source": source,
+    }
+    if client_id:
+        chat_line["client_id"] = client_id
+    payload = {
+        "type": "post.live",
+        "topic": topic,
+        "comment": {
+            "id": filed,
+            "author": author,
+            "author_uuid": visitor,
+            "body": text,
+            "keys": [],
+            "starting": starting,
+            "placed": False,
+            "mine": True,
+            "injected": False,
+            "kind": "post",
         },
-    )
+        "view": view,
+        "activity": activity_from_view(view, visitor),
+        "chat_line": chat_line,
+    }
+    if client_id:
+        payload["client_id"] = client_id
+    HUB.broadcast(topic, payload)
     try:
         from clevertree_chat.irc_bridge import get_bridge
 

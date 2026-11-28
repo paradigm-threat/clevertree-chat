@@ -12,19 +12,13 @@
         "#flashback"
       ],
       "theme_path": "hooks/client/chat-theme/",
-      "lobby_playlist_path": "hooks/client/lobby/lobby.playlist.json",
+      "lobby_playlist_path": "hooks/client/lobby/lobby.m3u",
       "si_markdown_path": "hooks/client/si/panel.md",
-      "seed_topic": "Welcome to the Flashback Repository. Ask about a movie you want to watch, or how to watch it \u2014 or use the SI panel to browse the movies.",
-      "placeholder": "I'd like to watch \u2026",
-      "starters": [
-        "I'd like to watch \u2026",
-        "Where can I find \u2026?",
-        "What's showing tonight?",
-        "Who's watching right now?",
-        "Tell me about the edit of \u2026",
-        "Can I request \u2026?"
-      ],
-      "notes": "Flashback lobby \u2014 catalog default in relay-master; House Lights theme from tip"
+      "seed_topic": "Flashback Repository",
+      "placeholder": "Where can I find a movie\u2026 \u00b7 What do you recommend to watch\u2026 \u00b7 I'd like to request a fan edit of a movie\u2026",
+      "placeholder_collapsed": "Ask for a film\u2026",
+      "starters": [],
+      "notes": "Flashback lobby \u2014 catalog default in relay-master; House Lights theme from tip. Examples live in placeholder only (no starter chips)."
     },
     "paradigm-threat": {
       "hosts": [
@@ -60,9 +54,13 @@
           "irc_channel": "#ga-savannah-cat-rescue",
           "title": "Savannah Cat Rescue",
           "collection_id": "savannah-cat-rescue",
-          "path": "/c/ga-savannah-cat-rescue"
+          "path": "/c/ga-savannah-cat-rescue",
+          "si_markdown_path": "hooks/client/si/ga-savannah-cat-rescue/panel.md",
+          "si_tickets_json": "hooks/client/si/ga-savannah-cat-rescue/tickets.json",
+          "si_default_poster": "hooks/client/si/ga-savannah-cat-rescue/default-ticket-cover.svg"
         }
-      }
+      },
+      "notes": "Craft channels: per-channel si_markdown_path on channel object; object-map channels resolved by siRepoForChannel."
     },
     "public-web": {
       "default_channel": "#web",

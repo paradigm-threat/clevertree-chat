@@ -27,6 +27,8 @@ FILES=(
   clevertree-ces.js
   media-controller.js
   ct-builtins.js
+  stream-playback.js
+  tracked-problems.demo.json
 )
 
 for f in "${FILES[@]}"; do

@@ -10,6 +10,9 @@
     label { display: flex; gap: 0.6rem; align-items: flex-start; margin: 1rem 0; }
     .hint { color: #52665a; font-size: 0.9rem; }
     .ok { color: #285c46; font-weight: 600; }
+    .row { display: flex; align-items: center; gap: 0.6rem; margin: 0.5rem 0 1rem; }
+    .row input[type="number"] { width: 4.5rem; padding: 0.35rem 0.5rem; }
+    select { font: inherit; padding: 0.35rem 0.5rem; max-width: 100%; }
   </style>
 </head>
 <body>
@@ -30,6 +33,19 @@
       <option value="dark">Dark</option>
     </select>
   </label>
+  <label>
+    Successive posts
+    <select id="coalesce-mode">
+      <option value="normal">Normal (each line separate)</option>
+      <option value="combined">Combined (one section, keep lines)</option>
+      <option value="paragraph">Combined paragraph</option>
+    </select>
+  </label>
+  <p class="hint">Visual only — the server history is never rewritten. Switching modes re-paints the room.</p>
+  <div class="row">
+    <label for="coalesce-gap">Gap (minutes)</label>
+    <input type="number" id="coalesce-gap" min="1" max="120" step="1" value="15">
+  </div>
   <p class="ok" id="saved" hidden>Saved.</p>
   <script src="options.js"></script>
 </body>

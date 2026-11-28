@@ -23,6 +23,16 @@ We say **SI** (Super Intelligence, i.e. AI) for the software that files, summari
 - A visitor who has not named themselves gets a generated name from the topic and what they wrote. Generated names stay professional, safe for work, funny when that still fits, and simple. They come from an allowlist. A name the visitor set is left alone. A generated name may be revised when their writing changes. The visible name is not stored in the private auth repo.
 - Spam is ascertained by the batch SI. After a flag, anyone who sees it may support or protest within **48 hours** (X). If the flag still stands when X ends, the post is removed from view. After a further **7 days** (Y), it is removed entirely. Repos may tighten X, Y, or the spam definition in `rules.md`. Contests inform the batch; they do not rewrite standing rules. Changing spam policy goes through the usual rules process. Full detail: [`spam.md`](spam.md).
 
+### Craft-channel SI boards (collections)
+
+Practical / MyProblem craft channels (e.g. `#ga-savannah-cat-rescue`) may host an SI panel from **per-channel markdown** on the product origin (Flashback pattern: `panel.md` + carousel JSON), not from comments-git blobs.
+
+- **Board SoT** = collection markdown ticket list (open first; closed last).
+- **Carousel JSON** = visual index (`title` / `poster` / `readme`); same card shape as Flashback showing list.
+- **tracked-problems JSON** = compact checklist strip (open above solved).
+- Successive batch passes: re-sort open above closed → sink resolved → **prune closed from the board on the next confirmed pass** → AI cover still vs default poster per ticket.
+- Reply templates are human-paste only on the origin social network.
+
 ### Problem pages (MyProblem-style tickets)
 
 When the page is a **problem ticket** (dossier + debate), treat category keys as **solution approaches**, not abstract debate axes.

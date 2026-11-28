@@ -5,7 +5,7 @@
 
 **Brand spelling:** **Clevertree** — never **CleverTree**. Keep the internal `t` lowercase in copy, titles, docs, and agent text.
 
-**Debate board** = **IRC room** + **SI panel**. People talk in IRC; batch **SI** (Super Intelligence, i.e. AI) curates the SI workspace (topics, findings, keys/counters in comments SoT). **SI curates and organizes only** — it does not vote, pick winners, mint topic-index entries, or take sides. Cleverchat is an **independent product** — MyProblem and others may mount it; it does not depend on them. Batch providers: **Groq / Bedrock / peers only** (no GPU batch servers).
+**Debate board** = **IRC room** + **SI panel**. People talk in IRC; batch **SI** (Super Intelligence, i.e. AI) curates the SI workspace (topics, findings, keys/counters in comments SoT). **SI curates and organizes only** — it does not vote, pick winners, mint topic-index entries, or take sides. On practical/MyProblem channels the SI panel also lists **tracked problems** (open first, green check when solved) from `tracked_problems` on the view / demo catalog — status is batch/seed display only; clients must not flip solved. Cleverchat is an **independent product** — MyProblem and others may mount it; it does not depend on them. Batch providers: **Groq / Bedrock / peers only** (no GPU batch servers).
 
 ## One-sentence rule
 
@@ -39,17 +39,19 @@ IRC backbone: [`docs/irc-backbone.md`](docs/irc-backbone.md) — Linode Ergo (`p
 
 ## What works today
 
-- **Realtime AI host** on `api.clevertree.chat`: `/api/chat` (+ `/api/debate` alias) → host disk; WS fan-out; heuristic drain + `batch_hooks` *(transitional live SoT writes — Phase 1 end state is enqueue + Cursor drain)*
-- **IRC bridge**: PRIVMSG ↔ submit; `SI ask` / `!answer` fold into `owner-answers.md` + `rules.md`; manual `!investigate` → Groq text SI (Free-tier soft budgets; chat reply only)
-- **Channel ASR**: `[[mp:media]]` → Whisper turbo on Groq (soft RPM/RPD); video markers ASR speech only (no VL yet)
+- **Realtime AI host** on `api.clevertree.chat`: `/api/chat` (+ `/api/debate` alias) → host disk; WS fan-out; **room = claim queue** (`CLEVERTREE_ROOM_QUEUE_ONLY=1` default — no live SoT `commit_changes` for new claims)
+- **Bunny uncurated inbox**: `POST /api/inbox/upload` + media upload → `inbox/{kind}/{source_user}/{object_id}/…` + host `inbox-index`; speak/video, Networker, SI artifacts share one store
+- **IRC bridge**: PRIVMSG ↔ submit; `SI ask` / `!answer` fold into `owner-answers.md` + `rules.md`; manual `!investigate` → Groq text SI (Free-tier soft budgets; assessment JSON also → Bunny `inbox/si/…` when configured)
+- **Channel media AI**: `[[mp:media]]` / inbox URLs audio/video auto-queue on host; audio-first Whisper; video → frame VL (Groq) + stripped-audio Whisper, ASR-only fallback (soft RPM/RPD; never drop)
 - **Debate board** = shared IRC room + SI panel (extension / dock); legacy standalone board widget retired
+- **Craft SI boards** (e.g. `#ga-savannah-cat-rescue`): per-channel `si_markdown_path` on myproblem.app (`hooks/client/si/…/panel.md` + tickets carousel JSON); board markdown under the collection; open float / closed sink / prune on successive batch passes
 - Fetch (`CLEVERTREE_FETCH=1`), associations, spam-state hooks; Spot wake gated off (`CLEVERTREE_SPOT_WAKE=0`)
 - **Mesh**: catalog `clevertree-chat-comments` → iad1; GitLab forge mirror; peers hkg1/ord1 notify OK; `CLEVERTREE_PUBLISH_REMOTES`
 - Extension zip at `/extension` (works on any site → `#web` + `[[d:domain]]`); Chrome Web Store listing optional ([`docs/chrome-web-store.md`](docs/chrome-web-store.md))
 
 ## Near-future goals (priority)
 
-1. **Queue-before-SoT cutover** — implement [`docs/intake-queue.md`](docs/intake-queue.md) (live enqueue only; Cursor sole SoT writer on shared queue in Phase 1).
+1. **Batch claim drain + view merge** — consume `queue/claims/` + inbox-index; provisional rows in board snapshot ([`docs/intake-queue.md`](docs/intake-queue.md)).
 2. **Align job schema** with MyProblem/QuizGate shared batch queue ([`docs/batch-phases.md`](docs/batch-phases.md)).
 3. **External IRC peers** — MyProblem-oriented helper bot on outside nets (Georgia/Israel first); `!` / help-phrase triggers only — [`docs/external-irc-peers.md`](docs/external-irc-peers.md).
 4. **Chrome Web Store** — human dashboard upload + review.

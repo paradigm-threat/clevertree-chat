@@ -1,5 +1,6 @@
 package chat.clevertree.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -23,20 +24,34 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // Keep adjustResize so IME insets are delivered to the WebView listener.
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        val launchIntent = intent
         setContent {
-            ClevertreeApp()
+            ClevertreeApp(launchIntent)
         }
     }
 }
 
+/** Intent extras: `channel` (e.g. `#flashback`), `title`, optional `api`. */
 @Composable
-private fun ClevertreeApp() {
+private fun ClevertreeApp(intent: Intent?) {
     val config =
-        remember {
+        remember(intent) {
+            val rawCh =
+                intent?.getStringExtra("channel")?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: "#flashback"
+            val ch = if (rawCh.startsWith("#")) rawCh else "#$rawCh"
+            val title =
+                intent?.getStringExtra("title")?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: "Flashback Repository"
+            val api =
+                intent?.getStringExtra("api")?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: ClevertreeRoomConfig.DEFAULT_API_BASE
             ClevertreeRoomConfig(
-                apiBase = ClevertreeRoomConfig.DEFAULT_API_BASE,
-                channel = ClevertreeRoomConfig.UNIVERSAL_CHANNEL, // #web = clevertree.chat/chat
-                title = "Clevertree Chat",
+                apiBase = api,
+                channel = ch,
+                title = title,
+                // Open SI rail so movie carousel is visible on TV landscape.
+                aiOpen = true,
             )
         }
     // Top status bar only here; bottom nav + IME padding is applied on the

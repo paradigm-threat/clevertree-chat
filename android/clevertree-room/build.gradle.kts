@@ -68,6 +68,8 @@ val syncRoomAssets by tasks.registering(Copy::class) {
             "clevertree-ces.js",
             "media-controller.js",
             "ct-builtins.js",
+            "stream-playback.js",
+            "tracked-problems.demo.json",
             "themes/**",
         )
     }

@@ -1,0 +1,190 @@
+{
+  "schema": "clevertree.tracked-problems.demo.v1",
+  "notes": "Phase-1 catalog. Status seed/batch-owned. Open rows sort above solved. Savannah rows from 2026-11-28 batch assessment.",
+  "by_topic": {
+    "mp-general": [
+      {
+        "id": "garage-ring-power",
+        "title": "Garage lights kill outdoor / Ring power",
+        "status": "open",
+        "updated_at": "2026-11-27T18:00:00Z",
+        "summary": "Outdoor/Ring feed drops when garage lights switch off \u2014 always-hot path vs hire electrician.",
+        "tip_slug": "garage-ring-power",
+        "source": "seed"
+      },
+      {
+        "id": "kitchen-sink-clogged",
+        "title": "Kitchen sink clogged",
+        "status": "open",
+        "updated_at": "2026-11-26T15:30:00Z",
+        "summary": "Basin fills and drains slowly; disposal present; no chemicals yet.",
+        "tip_slug": null,
+        "source": "seed"
+      },
+      {
+        "id": "wifi-after-router-move",
+        "title": "Wi-Fi died after moving the router",
+        "status": "open",
+        "updated_at": "2026-11-25T21:10:00Z",
+        "summary": "SSID visible but phones cannot connect; ethernet still works after living-room move.",
+        "tip_slug": null,
+        "source": "seed"
+      },
+      {
+        "id": "lamp-coach-lantern",
+        "title": "Replace outdoor coach lantern bulb",
+        "status": "solved",
+        "updated_at": "2026-11-26T19:53:11Z",
+        "summary": "Morgan ask + Devon tip + SI batch: power off, open finial/latch, outdoor LED, wipe glass.",
+        "tip_slug": null,
+        "source": "seed"
+      }
+    ],
+    "ga-savannah-cat-rescue": [
+      {
+        "id": "rehome-litter-mate",
+        "title": "Rehome sweet kitten \u2014 litter mates placed",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "Still looking for a home for this sweet girl all her litter mates have found homes. She\u2019s super sweet and playful she loves carrying her toys around in her mout\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "colonial-village-found",
+        "title": "Found friendly cat \u2014 Colonial Village",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "COLONIAL VILLAGE!!! Is this your cat?? He\u2019s been here for months. Friendly and grabs your feet. But he is terrorizing my 4 girls (female older cats) because he \u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "mama-kittens-cars",
+        "title": "Mama + kittens under cars / porch",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "This is the cat that keep coming on my porch with five are 6 kittens and sometime the kittens will be under the car my car are the next door neighbor car and so\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "vinnie-neighborhood-cat",
+        "title": "Neighborhood cat Vinnie \u2014 post-injury care",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "This is \u201cVincent Van Gogh\u201d aka \u201cVinnie or Wonky\u201d. He is a neighborhood cat. He is fixed and has his rabies vaccine. He\u2019s recouped in my house for 2 months from \u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "lost-tortie-babies",
+        "title": "Lost tortie / babies \u2014 still missing",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "i still haven\u2019t found my babies an my heart is breaking joy knowing where they are and it this cold outside. the tortoise shell name is finster and the grey one\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "found-wound-34th-paulsen",
+        "title": "Found sweet cat with head wound (34th/Paulsen area)",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "Anyone missing this cat near 34th and Paulsen? Super sweet and vocal. (Has a head wound on forehead).",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "friendly-no-ear-tip",
+        "title": "Friendly outdoor cat \u2014 no ear tip / owner?",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "I'm wondering if anyone knows of this cat or their owner. They are very friendly and seem socialized but neither ear is snipped and I see them outside frequentl\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "luna-missing",
+        "title": "Luna missing since late September",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "Luna has been missing since 9/28/25. The date on the flyer is wrong. That was the date I added her on another platform. I'm still looking for her. She got lost \u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "nugget-windsor-forrest",
+        "title": "Nugget missing \u2014 Windsor Forrest",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "This is Nugget who is missing from Windsor Forrest on Briarcliff Cir down by the elementary school \ud83d\ude25. Just figured out how to put a picture. He just got shaved \u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "kitten-fleas-foster",
+        "title": "Rescued kitten \u2014 fleas/mites/underweight",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "My partner found a kitten in desperate need of rescuing a few weeks ago, he was only 4-5 weeks old, matted, covered in fleas, ear mites, and was underweight. We\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "brothers-flooded-house",
+        "title": "Brothers need home \u2014 flooded house rescue",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "These brothers are in need of a home. I rescued them from an abandoned flooded house. They are super sweet, lovable and inseparable. They also love my 2 dogs. I\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "lost-pink-collar",
+        "title": "Lost cat \u2014 pink fuzzy collar",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "My boy went missing this past Friday/Saturday. He is two years old and is wearing a pink fuzzy collar. Last seen near rose dhu/rose hill off coffee bluff. Pleas\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "colony-unsafe-relocate",
+        "title": "Fixed colony no longer safe at house",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "I have a group of stray cats that ive been feeding. With help ive gotten them fixed. They are no longer safe at my house. The lady across the street is steady p\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "ferals-overseas-relocate",
+        "title": "Four ferals need relocate \u2014 moving overseas",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "I need assistance to rehome four feral cats that I currently take care of. I'm moving overseas (unexpectedly) and don't want to leave the cats to fend for thems\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "colony-feeder-needed",
+        "title": "Colony feeder / TNR help needed",
+        "status": "open",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "\ud83d\udea8 HELP NEEDED: local feeder for a cat colony I have been feeding/watering/providing shelter & TNRING (trap/neuter/release) a colony of cats in an apartment comp\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      },
+      {
+        "id": "found-thank-goodness",
+        "title": "Update: cat found \u2014 thank you",
+        "status": "solved",
+        "updated_at": "2026-11-28T13:45:22Z",
+        "summary": "Update: My cat has been found, thank goodness and thank you, everyone! At 10 PM, it was raining outside, and I found her in the bushes next door with a flashlig\u2026",
+        "tip_slug": null,
+        "source": "batch-assessment"
+      }
+    ]
+  }
+}

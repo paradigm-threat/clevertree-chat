@@ -271,11 +271,45 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
         text = _clean_si_text((result.text or "").strip())
         if not text:
             text = "(no findings)"
+        full_text = text
         if len(text) > 1200:
             text = text[:1197] + "…"
         provider = result.provider
         model = result.model
+        inbox_url = ""
+        inbox_id = ""
+        inbox_marker = ""
+        try:
+            from clevertree_chat import inbox
+
+            stored = inbox.put_si_artifact(
+                {
+                    "topic": topic,
+                    "focus": focus,
+                    "text": full_text,
+                    "provider": provider,
+                    "model": model,
+                    "job_id": job.get("id"),
+                },
+                service="si:investigate",
+                object_id=str(job.get("id") or ""),
+                filename="investigate.json",
+                meta={"topic": topic},
+            )
+            if stored.get("ok"):
+                inbox_url = str(stored.get("url") or "")
+                inbox_id = str(stored.get("object_id") or "")
+                inbox_marker = inbox.format_inbox_marker(
+                    object_id=inbox_id,
+                    url=inbox_url,
+                    kind="si",
+                    source_user="si:investigate",
+                )
+        except Exception as exc:
+            log.warning("investigate inbox store failed: %s", exc)
         body = f"SI investigate ({provider}/{model}): {text}"
+        if inbox_marker:
+            body = f"{body} {inbox_marker}"
         if reply is not None:
             try:
                 reply(topic, body, "clevertree-si")
@@ -288,6 +322,8 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
             provider=provider,
             model=model,
             failover=bool(result.failover),
+            inbox_url=inbox_url,
+            inbox_id=inbox_id,
         )
         return {
             "ok": True,
@@ -295,6 +331,8 @@ def process_job(job: dict[str, Any], *, reply: ReplyFn | None = None) -> dict[st
             "status": "done",
             "provider": provider,
             "model": model,
+            "inbox_url": inbox_url,
+            "inbox_id": inbox_id,
         }
     except ProviderError as exc:
         msg = str(exc)[:200]

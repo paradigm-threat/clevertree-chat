@@ -43,6 +43,8 @@ def build_view(debate, *, page: str, topic: str, focus: str = "", visitor: str =
         # Live title/subtitle come from IRC TOPIC + METADATA (irc_chrome), not git.
         "title": "",
         "subtitle": "",
+        # Filled by live_runtime.view_topic (demo catalog + tip resolutions).
+        "tracked_problems": [],
     }
 
 
@@ -62,6 +64,7 @@ def _empty(topic: str, focus: str) -> dict:
         "created": False,
         "title": "",
         "subtitle": "",
+        "tracked_problems": [],
     }
 
 

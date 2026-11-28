@@ -30,14 +30,15 @@ See [`fronts/room/channel-policy.json`](../fronts/room/channel-policy.json) and 
 - **MyProblem collections:** typically one channel per collection (`CRAFT_CHANNELS`).
 - Product sites use a **header corner chat** button (dock or extension side panel) — no in-article scrolled chat.
 
-## SI rail chrome (TOPIC + pin METADATA)
+## Chat-log chrome (TOPIC + pin + channel switch)
 
-Live title/subtitle come from **IRC only** — no parallel git pin list:
+IRC identity lives on the **chat log head** (not the SI rail). SI chrome is menu FAB + section tabs only.
 
 | UI | Protocol | Notes |
 |--|--|--|
-| **Title** | Channel `TOPIC` | Seeded once from `channel-policy.json` when TOPIC is empty; then Ergo owns it |
-| **Subtitle / pin** | `METADATA` key `clevertree/pin-msgid` → PRIVMSG `msgid` + history | Body resolved from the wire cache / CHATHISTORY |
+| **Log title** | Channel `TOPIC` | Seeded once from `channel-policy.json` when TOPIC is empty; then Ergo owns it |
+| **Log subtitle / pin** | `METADATA` key `clevertree/pin-msgid` → PRIVMSG `msgid` + history | Body resolved from the wire cache / CHATHISTORY |
+| **Channel switch** | Dropdown on log head (right) | Silent; drafts persist per channel in `localStorage` |
 | Empty SI panel | Show pinned PRIVMSG until SoT sections exist | Also passed into SI batch context |
 
 WS fans `topic.update` / `pin.update` (and the same fields on `hello`). Shared mount: [`fronts/room/clevertree-room.js`](../fronts/room/clevertree-room.js). Both CEs — `<clevertree-room>` and `<clevertree-chat-dock>` in [`clevertree-ces.js`](../fronts/room/clevertree-ces.js) — defer to that mount after hello.
