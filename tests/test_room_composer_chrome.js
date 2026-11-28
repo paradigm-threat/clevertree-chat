@@ -147,5 +147,12 @@ assert.ok(
     /nick-passphrase-reclaim/.test(roomJs),
   "room menu Identity section: passkey + nick passphrase"
 );
+assert.ok(
+  /addEventListener\("input"/.test(roomJs) &&
+    /addEventListener\("change"/.test(roomJs) &&
+    /persistNickToServer\(nick\)/.test(roomJs) &&
+    /aria-hidden/.test(roomJs),
+  "nick input persists on change/blur; send also persists; lock badge aria-hidden"
+);
 
 console.log("test_room_composer_chrome.js: ok");
