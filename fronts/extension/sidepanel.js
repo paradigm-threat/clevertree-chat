@@ -441,9 +441,16 @@
         title: title,
         context: ctx,
         showNetworker: !!networker,
+        networkerDisabled: !!override.networkerDisabled,
         apiBase: API_BASE,
         wsUrl: wsFor(channel),
-        nick: "you",
+        nick: (function () {
+          try {
+            return localStorage.getItem("clevertree.nick") || "";
+          } catch (e) {
+            return "";
+          }
+        })(),
         onGather: networker ? handleGather : undefined,
         onRefresh: networker ? handleGather : undefined,
         onTrack: networker
@@ -504,7 +511,12 @@
         autoUploadPost = !!local[AUTO_UPLOAD_POST_KEY];
         chrome.storage.sync.get({ networkerEnabled: false }, function (data) {
           activeTabUrl(function (url) {
-            mount(url, data.networkerEnabled);
+            var allowed =
+              window.MyProblemSocialHosts &&
+              MyProblemSocialHosts.isAllowed(url);
+            mount(url, !!data.networkerEnabled && !!allowed, {
+              networkerDisabled: !!data.networkerEnabled && !allowed,
+            });
           });
         });
       }
@@ -515,9 +527,13 @@
     if (!msg || msg.type !== "clevertree.chat.toggle") return;
     if (msg.action === "open" || msg.action === "context") {
       chrome.storage.sync.get({ networkerEnabled: false }, function (data) {
-        mount(msg.url || "https://example.com/", data.networkerEnabled, {
+        var url = msg.url || "https://example.com/";
+        var allowed =
+          window.MyProblemSocialHosts && MyProblemSocialHosts.isAllowed(url);
+        mount(url, !!data.networkerEnabled && !!allowed, {
           channel: msg.channel || "",
           title: msg.title || "",
+          networkerDisabled: !!data.networkerEnabled && !allowed,
         });
       });
     }

@@ -435,9 +435,11 @@ class Debate:
 
     def set_name(self, user_uuid: str, name: str, session=None) -> None:
         self._authorize(user_uuid, session)
-        cleaned = " ".join(name.split())
-        if not cleaned:
-            raise ValueError("name is empty")
+        from clevertree_chat.nick_claims import sanitize_nick
+
+        cleaned = sanitize_nick(name)
+        if user_uuid not in self._index()["by_uuid"]:
+            self.ensure_user(user_uuid)
         index = self._index()
         row = index["by_uuid"][user_uuid]
         row["name"] = cleaned

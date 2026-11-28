@@ -1,11 +1,13 @@
 (function () {
   "use strict";
   var COALESCE_KEY = "clevertree.room.coalesce";
+  var NICK_KEY = "clevertree.nick";
   var DEFAULT_GAP = 15;
   var nw = document.getElementById("networker");
   var theme = document.getElementById("theme");
   var coalesceMode = document.getElementById("coalesce-mode");
   var coalesceGap = document.getElementById("coalesce-gap");
+  var nickInput = document.getElementById("nick");
   var saved = document.getElementById("saved");
 
   function flash() {
@@ -72,6 +74,27 @@
     syncGapDisabled();
   }
 
+  function sanitizeNick(raw) {
+    var cleaned = String(raw || "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 32);
+    if (!cleaned) return "";
+    var first = cleaned.charAt(0).replace(/[^A-Za-z\[\]\\`_^{|}]/g, "n");
+    var rest = cleaned.slice(1).replace(/[^A-Za-z0-9\[\]\\`_^{|}-]/g, "");
+    return (first + rest).slice(0, 32);
+  }
+
+  function saveNick() {
+    var nick = sanitizeNick(nickInput && nickInput.value);
+    if (nickInput) nickInput.value = nick;
+    try {
+      if (nick) localStorage.setItem(NICK_KEY, nick);
+      else localStorage.removeItem(NICK_KEY);
+    } catch (e) {}
+    chrome.storage.sync.set({ roomNick: nick || "" }, flash);
+  }
+
   chrome.storage.sync.get(
     {
       networkerEnabled: false,
@@ -79,6 +102,7 @@
       roomCoalesceMode: "",
       roomCoalesceEnabled: false,
       roomCoalesceGapMinutes: DEFAULT_GAP,
+      roomNick: "",
     },
     function (data) {
       nw.checked = !!data.networkerEnabled;
@@ -94,6 +118,16 @@
       if (coalesceGap) coalesceGap.value = String(Math.round(gap));
       writeCoalesceLocal({ mode: mode, gapMinutes: Math.round(gap) });
       syncGapDisabled();
+      var nick = sanitizeNick(data.roomNick || "");
+      try {
+        if (!nick) nick = sanitizeNick(localStorage.getItem(NICK_KEY) || "");
+      } catch (e) {}
+      if (nickInput) nickInput.value = nick;
+      if (nick) {
+        try {
+          localStorage.setItem(NICK_KEY, nick);
+        } catch (e2) {}
+      }
     }
   );
 
@@ -112,4 +146,8 @@
   });
   if (coalesceMode) coalesceMode.addEventListener("change", saveCoalesce);
   if (coalesceGap) coalesceGap.addEventListener("change", saveCoalesce);
+  if (nickInput) {
+    nickInput.addEventListener("change", saveNick);
+    nickInput.addEventListener("blur", saveNick);
+  }
 })();

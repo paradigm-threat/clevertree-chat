@@ -543,14 +543,27 @@ class ChatHandler(SimpleHTTPRequestHandler):
                 )
         except ValueError as exc:
             code, body = 400, {"error": str(exc)}
+        except PermissionError as exc:
+            err = str(exc)
+            code, body = (
+                (409, {"error": "nick_taken", "ok": False})
+                if err == "nick_taken"
+                else (403, {"error": err, "ok": False})
+            )
         except Exception as exc:
             sys.stderr.write(traceback.format_exc())
             code, body = 500, {"error": str(exc)}
+        cookie_hdr = ""
+        if isinstance(body, dict) and body.get("session_cookie"):
+            cookie_hdr = str(body.pop("session_cookie") or "")
+            body.pop("session_token", None)
         raw = json.dumps(body).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self._cors()
+        if cookie_hdr:
+            self.send_header("Set-Cookie", cookie_hdr)
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)

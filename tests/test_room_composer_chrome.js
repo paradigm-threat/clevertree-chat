@@ -133,4 +133,19 @@ assert.ok(
   "handoff CSS must expand SI full-bleed and style Open Chat in the rail"
 );
 
+assert.ok(
+  /data-role="nick-input"/.test(roomJs) &&
+    /clevertree\.nick/.test(roomJs) &&
+    /action:\s*["']name["']/.test(roomJs) &&
+    /currentNick\s*\(/.test(roomJs) &&
+    !/nick:\s*opts\.nick\s*\|\|\s*["']you["']/.test(roomJs),
+  "composer nick field + localStorage; posts must not hard-code nick you"
+);
+assert.ok(
+  /data-role="identity-section"/.test(roomJs) &&
+    /passkey-register/.test(roomJs) &&
+    /nick-passphrase-reclaim/.test(roomJs),
+  "room menu Identity section: passkey + nick passphrase"
+);
+
 console.log("test_room_composer_chrome.js: ok");

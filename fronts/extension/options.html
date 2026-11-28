@@ -46,6 +46,13 @@
     <label for="coalesce-gap">Gap (minutes)</label>
     <input type="number" id="coalesce-gap" min="1" max="120" step="1" value="15">
   </div>
+  <h2 style="font-size:1.1rem;margin-top:2rem">Identity</h2>
+  <p class="hint">Display nick for IRC posts. Advanced lock (passkey / passphrase) is also in the room menu.</p>
+  <label style="display:block">
+    Name for IRC posts
+    <input type="text" id="nick" maxlength="32" autocomplete="username" spellcheck="false" placeholder="Name for IRC posts" style="display:block;width:100%;margin-top:0.35rem;padding:0.4rem 0.5rem;box-sizing:border-box">
+  </label>
+  <p class="hint">Free to change until you register a passkey or nick passphrase in the room menu. Stored as <code>clevertree.nick</code> for the side panel.</p>
   <p class="ok" id="saved" hidden>Saved.</p>
   <script src="options.js"></script>
 </body>

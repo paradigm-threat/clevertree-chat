@@ -26,3 +26,12 @@ body {
   padding: 0.35rem 0.55rem;
   cursor: pointer;
 }
+.networker-bar-disabled {
+  display: block;
+  font: 600 0.8rem/1.35 var(--ct-sans, sans-serif);
+  color: var(--ct-muted, #52665a);
+  padding: 0.55rem 0.65rem;
+}
+.networker-bar-disabled button {
+  display: none;
+}

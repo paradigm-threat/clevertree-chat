@@ -50,6 +50,7 @@
   /** Visual modes: normal | combined | paragraph (server log never rewritten). */
   var COALESCE_MODES = ["normal", "combined", "paragraph"];
   var VISITOR_KEY = "clevertree.visitor";
+  var NICK_KEY = "clevertree.nick";
 
   function normalizeCoalesceMode(mode, enabledLegacy) {
     mode = String(mode || "").toLowerCase();
@@ -218,6 +219,33 @@
       "-" +
       hex.slice(20)
     );
+  }
+
+  function readStoredNick() {
+    try {
+      var n = localStorage.getItem(NICK_KEY);
+      return n ? String(n).trim() : "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function writeStoredNick(nick) {
+    try {
+      if (nick) localStorage.setItem(NICK_KEY, String(nick));
+      else localStorage.removeItem(NICK_KEY);
+    } catch (e) {}
+  }
+
+  function sanitizeNickLocal(raw) {
+    var cleaned = String(raw || "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 32);
+    if (!cleaned) return "";
+    var first = cleaned.charAt(0).replace(/[^A-Za-z\[\]\\`_^{|}]/g, "n");
+    var rest = cleaned.slice(1).replace(/[^A-Za-z0-9\[\]\\`_^{|}-]/g, "");
+    return (first + rest).slice(0, 32);
   }
 
   function ensureVisitor(opts) {
@@ -640,6 +668,7 @@
     var title = esc(opts.title || "Public room");
     var mode = opts.mode || "page";
     var nw = !!opts.showNetworker;
+    var nwDisabled = !!opts.networkerDisabled;
     var sideLabel =
       mode === "sidepanel"
         ? '<div class="surface-label"><span>Chrome side panel · Clevertree</span><span>ROOM</span></div>'
@@ -650,7 +679,11 @@
         '<button type="button" data-role="gather">Gather</button>' +
         '<button type="button" data-role="refresh">Refresh</button>' +
         "</div>"
-      : "";
+      : nwDisabled
+        ? '<div class="networker-bar networker-bar-disabled" data-role="networker-bar" role="status">' +
+          "Networker mode disabled. Site not recognized as a social network." +
+          "</div>"
+        : "";
     return (
       sideLabel +
       nwBar +
@@ -701,6 +734,24 @@
       '<button type="button" class="orient-option" data-role="orient-right" data-orient="right" aria-pressed="false">Right</button>' +
       "</div>" +
       '<p class="menu-hint">Menu + SI share a side; chat log and draft stack on the opposite side.</p>' +
+      "</div>" +
+      '<div class="menu-section" data-role="identity-section">' +
+      '<label class="menu-label">Identity</label>' +
+      '<p class="menu-identity-nick">Nick: <strong data-role="identity-nick">—</strong> ' +
+      '<span class="menu-lock-badge" data-role="identity-locked" hidden>Locked</span></p>' +
+      '<p class="menu-hint">Free to chat under any name. A passkey protects your nick across browsers. IRC account (SASL) comes later.</p>' +
+      '<div class="menu-identity-actions">' +
+      '<button type="button" class="menu-action" data-role="passkey-register">Register passkey</button>' +
+      '<button type="button" class="menu-action" data-role="passkey-login">Sign in with passkey</button>' +
+      "</div>" +
+      '<label class="menu-gap">Nick passphrase (optional)' +
+      '<input type="password" class="menu-input" data-role="nick-passphrase" autocomplete="new-password" placeholder="Set or reclaim" />' +
+      "</label>" +
+      '<div class="menu-identity-actions">' +
+      '<button type="button" class="menu-action" data-role="nick-passphrase-set">Lock with passphrase</button>' +
+      '<button type="button" class="menu-action" data-role="nick-passphrase-reclaim">Reclaim nick</button>' +
+      "</div>" +
+      '<p class="menu-hint" data-role="identity-status" hidden></p>' +
       "</div></nav>" +
       '<div class="body" data-role="body" aria-label="' +
       title +
@@ -748,6 +799,7 @@
       '<footer class="composer" data-role="composer">' +
       '<div class="compose-inner">' +
       '<div class="composebox" data-role="composebox">' +
+      '<input type="text" class="nick-input" data-role="nick-input" maxlength="32" spellcheck="false" autocomplete="username" autocapitalize="off" enterkeyhint="done" aria-label="Name for IRC posts" placeholder="Name for IRC posts" />' +
       '<textarea data-role="draft" aria-label="Message to public room" inputmode="text" enterkeyhint="send" autocomplete="off" autocorrect="on" placeholder="Help me with a problem… · Help me find something… · What\'s the latest news on something… · What\'s going on in town…"></textarea>' +
       '<div class="pending-media" data-role="pending-media" hidden></div>' +
       '<div class="tools">' +
@@ -1344,9 +1396,158 @@
     var stream = $(el, '[data-role="stream"]');
     var history = $(el, '[data-role="history"]');
     var draft = $(el, '[data-role="draft"]');
+    var nickInput = $(el, '[data-role="nick-input"]');
     var sendBtn = $(el, '[data-role="send"]');
     var composerEl = $(el, '[data-role="composer"]');
     var composeBox = $(el, '[data-role="composebox"]');
+    var identityNickEl = $(el, '[data-role="identity-nick"]');
+    var identityLockedEl = $(el, '[data-role="identity-locked"]');
+    var identityStatusEl = $(el, '[data-role="identity-status"]');
+    var passkeyRegisterBtn = $(el, '[data-role="passkey-register"]');
+    var passkeyLoginBtn = $(el, '[data-role="passkey-login"]');
+    var nickPassphraseInput = $(el, '[data-role="nick-passphrase"]');
+    var nickPassphraseSetBtn = $(el, '[data-role="nick-passphrase-set"]');
+    var nickPassphraseReclaimBtn = $(el, '[data-role="nick-passphrase-reclaim"]');
+
+    function currentNick() {
+      var fromInput =
+        nickInput && nickInput.value
+          ? sanitizeNickLocal(nickInput.value)
+          : "";
+      var fromOpts = opts.nick ? sanitizeNickLocal(opts.nick) : "";
+      var fromStore = sanitizeNickLocal(readStoredNick());
+      return fromInput || fromOpts || fromStore || "anon";
+    }
+
+    function setIdentityStatus(text, isError) {
+      if (!identityStatusEl) return;
+      if (!text) {
+        identityStatusEl.hidden = true;
+        identityStatusEl.textContent = "";
+        return;
+      }
+      identityStatusEl.hidden = false;
+      identityStatusEl.textContent = text;
+      identityStatusEl.classList.toggle("menu-hint-error", !!isError);
+    }
+
+    function refreshIdentityUi(locked) {
+      var nick = currentNick();
+      if (identityNickEl) identityNickEl.textContent = nick || "—";
+      if (identityLockedEl) {
+        identityLockedEl.hidden = !locked;
+      }
+      if (nickInput && document.activeElement !== nickInput) {
+        var shown = sanitizeNickLocal(readStoredNick() || (opts.nick || ""));
+        if (shown && nickInput.value !== shown) nickInput.value = shown;
+      }
+    }
+
+    async function apiChat(payload) {
+      var res = await fetch(apiBase() + "/api/chat", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          Object.assign({ visitor: visitor, topic: channelSlug() }, payload || {})
+        ),
+      });
+      var data = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        data = {};
+      }
+      return { res: res, data: data };
+    }
+
+    async function persistNickToServer(raw) {
+      var nick = sanitizeNickLocal(raw);
+      if (!nick) {
+        setIdentityStatus("Enter a nick first.", true);
+        return null;
+      }
+      writeStoredNick(nick);
+      opts.nick = nick;
+      refreshIdentityUi(false);
+      try {
+        var out = await apiChat({ action: "name", name: nick });
+        if (out.res.status === 409 || out.data.error === "nick_taken") {
+          setIdentityStatus("That nick is locked by someone else.", true);
+          return null;
+        }
+        if (!out.res.ok) {
+          setIdentityStatus(out.data.error || "Could not save nick.", true);
+          return null;
+        }
+        var filed =
+          (out.data.nick || out.data.name || (out.data.claim && out.data.claim.nick) || nick);
+        filed = sanitizeNickLocal(filed) || nick;
+        writeStoredNick(filed);
+        opts.nick = filed;
+        if (nickInput) nickInput.value = filed;
+        var locked = !!(
+          (out.data.claim && out.data.claim.locked) ||
+          (out.data.visitor && out.data.visitor.locked) ||
+          (out.data.view &&
+            out.data.view.visitor &&
+            out.data.view.visitor.locked)
+        );
+        refreshIdentityUi(locked);
+        setIdentityStatus(
+          filed !== nick ? "Nick filed as " + filed + " (suffix)." : "Nick saved.",
+          false
+        );
+        return filed;
+      } catch (e) {
+        setIdentityStatus("Could not reach server to save nick.", true);
+        return nick;
+      }
+    }
+
+    function hydrateNickFromView(view) {
+      if (!view || !view.visitor) return;
+      var v = view.visitor;
+      if (v.name && v.chosen) {
+        var n = sanitizeNickLocal(v.name);
+        if (n) {
+          writeStoredNick(n);
+          opts.nick = n;
+          if (nickInput && document.activeElement !== nickInput) {
+            nickInput.value = n;
+          }
+        }
+      }
+      refreshIdentityUi(!!v.locked);
+    }
+
+    /* Seed nick field from opts / localStorage */
+    (function initNickField() {
+      var seed =
+        sanitizeNickLocal(opts.nick || "") ||
+        sanitizeNickLocal(readStoredNick()) ||
+        "";
+      if (seed) {
+        opts.nick = seed;
+        if (nickInput) nickInput.value = seed;
+      }
+      refreshIdentityUi(false);
+    })();
+
+    if (nickInput) {
+      nickInput.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          nickInput.blur();
+        }
+      });
+      nickInput.addEventListener("blur", function () {
+        var v = sanitizeNickLocal(nickInput.value);
+        if (!v) return;
+        nickInput.value = v;
+        void persistNickToServer(v);
+      });
+    }
     var investigateBtn = $(el, '[data-role="investigate"]');
     var channelTag = $(el, '[data-role="channel-tag"]');
     var channelSwitchBtn = $(el, '[data-role="channel-switch"]');
@@ -4207,8 +4408,10 @@
       var tagged = Tags.autoTag(text, opts.context || {});
       var clientId = makeClientId();
       var sentAt = Date.now();
+      var nick = currentNick();
+      opts.nick = nick;
       var msg = {
-        nick: opts.nick || "you",
+        nick: nick,
         text: tagged,
         time: "…",
         pending: true,
@@ -4252,7 +4455,7 @@
             channel: opts.channel,
             text: tagged,
             visitor: visitor,
-            nick: opts.nick || "you",
+            nick: nick,
             client_id: clientId,
           })
         );
@@ -4502,8 +4705,10 @@
             applyIrcChrome(data);
             if (data.view) applyIrcChrome(data.view);
             /* Fresh SI for this channel — never keep the previous room's panel. */
-            if (data.view) renderAiFindings(data.view);
-            else clearSiPanel();
+            if (data.view) {
+              renderAiFindings(data.view);
+              hydrateNickFromView(data.view);
+            } else clearSiPanel();
             hydrateHistory(
               data.chat_history || data.history || data.lines || [],
               true
@@ -4519,6 +4724,7 @@
             if (data.view) {
               applyIrcChrome(data.view);
               renderAiFindings(data.view);
+              hydrateNickFromView(data.view);
             }
             return;
           }
@@ -4731,6 +4937,197 @@
     }
     syncKeyboardViewport();
 
+    function b64url(buf) {
+      var bytes = new Uint8Array(buf);
+      var s = "";
+      for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+
+    async function registerPasskeyFlow() {
+      setIdentityStatus("Preparing passkey…");
+      try {
+        if (!window.PublicKeyCredential) {
+          setIdentityStatus("Passkeys need a secure browser context (HTTPS).", true);
+          return;
+        }
+        var optOut = await apiChat({ action: "passkey", op: "options" });
+        if (!optOut.res.ok) {
+          setIdentityStatus(optOut.data.error || "Passkey options failed.", true);
+          return;
+        }
+        var options = (optOut.data.options || optOut.data).options || optOut.data.options;
+        if (!options && optOut.data.rp) options = optOut.data;
+        if (!options) {
+          setIdentityStatus("Server did not return passkey options.", true);
+          return;
+        }
+        var challenge = new Uint8Array(32);
+        if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(challenge);
+        var userId = new TextEncoder().encode(visitor);
+        var publicKey = {
+          rp: options.rp || { name: "Clevertree Chat", id: location.hostname },
+          user: {
+            id: userId,
+            name: currentNick() || visitor,
+            displayName: currentNick() || "Clevertree visitor",
+          },
+          challenge: challenge,
+          pubKeyCredParams: options.pubKeyCredParams || [
+            { type: "public-key", alg: -7 },
+          ],
+          authenticatorSelection: options.authenticatorSelection || {
+            residentKey: "required",
+            requireResidentKey: true,
+            userVerification: "required",
+          },
+          timeout: options.timeout || 60000,
+          attestation: options.attestation || "none",
+        };
+        var cred = await navigator.credentials.create({ publicKey: publicKey });
+        if (!cred) {
+          setIdentityStatus("Passkey creation cancelled.", true);
+          return;
+        }
+        var credId = cred.id || b64url(cred.rawId);
+        var pubKey = "";
+        try {
+          pubKey = b64url(
+            (cred.response && cred.response.getPublicKey && cred.response.getPublicKey()) ||
+              new Uint8Array(0)
+          );
+        } catch (e) {
+          pubKey = "webauthn:" + credId;
+        }
+        if (!pubKey) pubKey = "webauthn:" + credId;
+        var reg = await apiChat({
+          action: "passkey",
+          op: "register",
+          credential_id: credId,
+          public_key: pubKey,
+          name: currentNick(),
+        });
+        if (!reg.res.ok) {
+          setIdentityStatus(reg.data.error || "Could not register passkey.", true);
+          return;
+        }
+        refreshIdentityUi(true);
+        setIdentityStatus("Passkey registered — nick locked to this visitor.");
+      } catch (e) {
+        setIdentityStatus(
+          (e && e.message) || "Passkey registration failed.",
+          true
+        );
+      }
+    }
+
+    async function loginPasskeyFlow() {
+      setIdentityStatus("Waiting for passkey…");
+      try {
+        if (!window.PublicKeyCredential) {
+          setIdentityStatus("Passkeys need a secure browser context (HTTPS).", true);
+          return;
+        }
+        var challenge = new Uint8Array(32);
+        if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(challenge);
+        var assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge: challenge,
+            userVerification: "required",
+            timeout: 60000,
+          },
+          mediation: "optional",
+        });
+        if (!assertion) {
+          setIdentityStatus("Passkey sign-in cancelled.", true);
+          return;
+        }
+        var credId = assertion.id || b64url(assertion.rawId);
+        var login = await apiChat({
+          action: "passkey",
+          op: "login",
+          credential_id: credId,
+        });
+        if (!login.res.ok) {
+          setIdentityStatus(login.data.error || "Passkey sign-in failed.", true);
+          return;
+        }
+        if (login.data.visitor) {
+          try {
+            localStorage.setItem(VISITOR_KEY, login.data.visitor);
+          } catch (e) {}
+        }
+        refreshIdentityUi(true);
+        setIdentityStatus("Signed in with passkey.");
+      } catch (e) {
+        setIdentityStatus((e && e.message) || "Passkey sign-in failed.", true);
+      }
+    }
+
+    if (passkeyRegisterBtn) {
+      passkeyRegisterBtn.onclick = function () {
+        void registerPasskeyFlow();
+      };
+    }
+    if (passkeyLoginBtn) {
+      passkeyLoginBtn.onclick = function () {
+        void loginPasskeyFlow();
+      };
+    }
+    if (nickPassphraseSetBtn) {
+      nickPassphraseSetBtn.onclick = function () {
+        void (async function () {
+          var nick = currentNick();
+          var pass = (nickPassphraseInput && nickPassphraseInput.value) || "";
+          if (!nick || !pass) {
+            setIdentityStatus("Nick and passphrase required.", true);
+            return;
+          }
+          await persistNickToServer(nick);
+          var out = await apiChat({
+            action: "nick_passphrase",
+            name: nick,
+            passphrase: pass,
+          });
+          if (!out.res.ok) {
+            setIdentityStatus(out.data.error || "Could not set passphrase.", true);
+            return;
+          }
+          if (nickPassphraseInput) nickPassphraseInput.value = "";
+          refreshIdentityUi(true);
+          setIdentityStatus("Nick locked with passphrase.");
+        })();
+      };
+    }
+    if (nickPassphraseReclaimBtn) {
+      nickPassphraseReclaimBtn.onclick = function () {
+        void (async function () {
+          var nick = currentNick();
+          var pass = (nickPassphraseInput && nickPassphraseInput.value) || "";
+          if (!nick || !pass) {
+            setIdentityStatus("Nick and passphrase required to reclaim.", true);
+            return;
+          }
+          var out = await apiChat({
+            action: "nick_reclaim",
+            name: nick,
+            passphrase: pass,
+          });
+          if (!out.res.ok) {
+            setIdentityStatus(out.data.error || "Reclaim failed.", true);
+            return;
+          }
+          var filed = sanitizeNickLocal(out.data.nick || nick) || nick;
+          writeStoredNick(filed);
+          opts.nick = filed;
+          if (nickInput) nickInput.value = filed;
+          if (nickPassphraseInput) nickPassphraseInput.value = "";
+          refreshIdentityUi(true);
+          setIdentityStatus("Nick reclaimed.");
+        })();
+      };
+    }
+
     return {
       el: el,
       mode: mode,
@@ -4777,6 +5174,7 @@
       },
       setView: function (view) {
         renderAiFindings(view);
+        hydrateNickFromView(view);
       },
       setChannel: function (channel) {
         switchChannel(channel);

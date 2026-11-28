@@ -75,3 +75,7 @@ Relay Ergo is the product home. A separate **peer bot** plan covers monitoring a
 ## Related
 
 - [chat-host.md](chat-host.md) · [context-tags.md](context-tags.md) · [intake-queue.md](intake-queue.md) · [external-irc-peers.md](external-irc-peers.md) · PT mesh chat ops in fan-edits `ops/chat/README.md`
+
+## Display nick (web visitors)
+
+Web users share the bridge connection (`CLEVERTREE_IRC_NICK`). The composer **Name for IRC posts** field is the human-facing nick in the room UI and in PRIVMSG body prefixes — not a distinct Ergo NICK. Native IRC users still map `uuid5(irc:…:nick)`. **Planned:** Ergo account + SASL for verified global nick ownership.

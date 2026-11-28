@@ -81,16 +81,38 @@ def _names(debate, visitor: str) -> tuple[dict[int, str], int | None]:
 
 def _visitor_row(debate, visitor: str, names: dict[int, str], mine: int | None) -> dict:
     if mine is None:
-        return {"name": "", "chosen": False}
+        locked = False
+        try:
+            locked = bool(debate.auth and debate.auth.has_passkey(visitor))
+        except Exception:
+            locked = False
+        return {"name": "", "chosen": False, "locked": locked, "uuid": visitor or ""}
     index = debate._index()
     row = {}
     for user_uuid, item in index.get("by_uuid", {}).items():
         if user_uuid == visitor:
             row = item
             break
+    name = names.get(mine, "") or str(row.get("name") or "")
+    locked = False
+    try:
+        locked = bool(debate.auth and debate.auth.has_passkey(visitor))
+    except Exception:
+        locked = False
+    if not locked and name:
+        try:
+            from clevertree_chat.nick_claims import load_claim
+
+            claim = load_claim(name)
+            if claim and str(claim.get("visitor") or "") == visitor and claim.get("locked"):
+                locked = True
+        except Exception:
+            pass
     return {
-        "name": names.get(mine, ""),
+        "name": name,
         "chosen": row.get("name_source") == "chosen",
+        "locked": locked,
+        "uuid": visitor or "",
     }
 
 

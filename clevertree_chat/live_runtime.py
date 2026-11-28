@@ -615,10 +615,120 @@ def dispatch(
         return 200, result
 
     if action == "name":
-        with _lock:
-            result = service.set_name(visitor, str(payload.get("name") or ""), topic, session=session)
-        _persist()
-        return 200, result
+        try:
+            with _lock:
+                result = service.set_name(
+                    visitor, str(payload.get("name") or ""), topic, session=session
+                )
+            _persist()
+            return 200, result
+        except PermissionError as exc:
+            if str(exc) == "nick_taken":
+                return 409, {"error": "nick_taken", "ok": False}
+            return 403, {"error": str(exc), "ok": False}
+        except ValueError as exc:
+            return 400, {"error": str(exc), "ok": False}
+
+    if action == "passkey":
+        op = str(payload.get("op") or "options").strip().lower()
+        if op == "register":
+            if service.auth is None:
+                return 503, {"error": "auth_unavailable"}
+            try:
+                with _lock:
+                    result = service.register_passkey(
+                        visitor,
+                        str(payload.get("credential_id") or ""),
+                        str(payload.get("public_key") or ""),
+                        payload.get("email"),
+                    )
+            except ValueError as exc:
+                return 400, {"error": str(exc), "ok": False}
+            except RuntimeError as exc:
+                return 503, {"error": str(exc), "ok": False}
+            # Lock current nick claim when passkey is registered
+            try:
+                from clevertree_chat.nick_claims import load_claim, write_claim
+
+                name = ""
+                if isinstance(result, dict) and result.get("session"):
+                    pass
+                viewish = service.view(topic, visitor=visitor) if topic else {}
+                name = str((viewish.get("visitor") or {}).get("name") or payload.get("name") or "")
+                if name:
+                    prior = load_claim(name)
+                    if prior and str(prior.get("visitor") or "") == visitor:
+                        write_claim(
+                            name,
+                            visitor=visitor,
+                            locked=True,
+                            passphrase_hash=str(prior.get("passphrase_hash") or ""),
+                        )
+            except Exception:
+                pass
+            _persist()
+            session_obj = result.get("session") if isinstance(result, dict) else None
+            out = {"saved": True, "ok": True}
+            if session_obj is not None and hasattr(session_obj, "header"):
+                out["session_cookie"] = session_obj.header()
+                out["session_token"] = session_obj.token
+            return 200, out
+        if op in {"login", "authenticate"}:
+            cred = str(payload.get("credential_id") or "").strip()
+            if not cred:
+                return 400, {"error": "credential_id_required"}
+            if service.auth is None:
+                return 503, {"error": "auth_unavailable"}
+            try:
+                session_obj = service.auth.begin_session(cred)
+            except Exception as exc:
+                return 400, {"error": str(exc)}
+            return 200, {
+                "ok": True,
+                "visitor": session_obj.uuid,
+                "session_cookie": session_obj.header(),
+                "session_token": session_obj.token,
+            }
+        if service.auth is None:
+            return 503, {"error": "auth_unavailable"}
+        return 200, service.passkey_options(visitor)
+
+    if action == "nick_passphrase":
+        from clevertree_chat import nick_claims
+
+        nick = str(payload.get("name") or payload.get("nick") or "").strip()
+        passphrase = str(payload.get("passphrase") or "")
+        try:
+            with _lock:
+                claim = nick_claims.set_passphrase(nick, visitor, passphrase)
+                # Persist chosen name when setting passphrase
+                service.set_name(visitor, claim["nick"], topic, session=session)
+            _persist()
+            return 200, {"ok": True, "claim": claim}
+        except nick_claims.NickTakenError:
+            return 409, {"error": "nick_taken", "ok": False}
+        except PermissionError as exc:
+            return 403, {"error": str(exc), "ok": False}
+        except ValueError as exc:
+            return 400, {"error": str(exc), "ok": False}
+
+    if action == "nick_reclaim":
+        from clevertree_chat import nick_claims
+
+        nick = str(payload.get("name") or payload.get("nick") or "").strip()
+        passphrase = str(payload.get("passphrase") or "")
+        try:
+            with _lock:
+                claim = nick_claims.reclaim_with_passphrase(nick, visitor, passphrase)
+                service.debate.set_name(visitor, claim["nick"], session=session)
+            _persist()
+            return 200, {"ok": True, "claim": claim, "nick": claim["nick"]}
+        except nick_claims.NickTakenError:
+            return 409, {"error": "nick_taken", "ok": False}
+        except PermissionError as exc:
+            return 403, {"error": str(exc), "ok": False}
+        except ValueError as exc:
+            return 400, {"error": str(exc), "ok": False}
 
     if action == "chat_history":
         from clevertree_chat import irc_log_cache

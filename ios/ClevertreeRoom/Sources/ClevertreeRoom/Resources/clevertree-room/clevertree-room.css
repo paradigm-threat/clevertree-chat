@@ -625,6 +625,64 @@ body.ct-room-page .room{height:var(--room-viewport-height);min-height:460px}
 }
 .room .composer .tools{flex:none;margin-top:8px}
 .room .composer .pending-media{flex:none}
+.room .composer .composebox .nick-input{
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+  border:0;
+  border-bottom:1px solid var(--line);
+  background:transparent;
+  color:var(--ink);
+  font:12px/1.35 var(--sans);
+  padding:6px 2px 5px;
+  margin:0 0 4px;
+  outline:none;
+}
+.room .composer .composebox .nick-input::placeholder{color:var(--muted);opacity:.9}
+.room .composer.composer-collapsed .composebox .nick-input{
+  font-size:11px;
+  padding:4px 2px 3px;
+}
+.room .menu-identity-nick{margin:0 0 6px;font-size:13px}
+.room .menu-lock-badge{
+  display:inline-block;
+  margin-left:4px;
+  padding:1px 6px;
+  border-radius:4px;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.02em;
+  background:var(--green2);
+  color:var(--green);
+  vertical-align:middle;
+}
+.room .menu-identity-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:8px 0;
+}
+.room .menu-action{
+  font-size:12px;
+  padding:6px 8px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--white);
+  color:var(--ink);
+}
+.room .menu-action:hover{border-color:var(--green)}
+.room .menu-input{
+  display:block;
+  width:100%;
+  margin-top:4px;
+  padding:6px 8px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--white);
+  color:var(--ink);
+  font:13px/1.35 var(--sans);
+}
+.room .menu-hint-error{color:var(--amber,#79501d)}
 .room .composer .composebox textarea{
   transition:min-height .28s ease, height .28s ease, font-size .28s ease;
 }
@@ -1083,6 +1141,15 @@ body.ct-room-page .room{height:var(--room-viewport-height);min-height:460px}
   .room .msg-pending{opacity:.55}
   .room .msg-pending .pending-mark::after{content:"Sending";margin-left:4px}
 }
+
+/* Networker disabled (non-whitelisted host) */
+.room .networker-bar-disabled{
+  display:block;
+  font:600 13px/1.4 var(--sans);
+  color:var(--muted);
+  padding:10px 12px;
+}
+.room .networker-bar-disabled button{display:none}
 
 /* Networker batch consent */
 .room .batch-consent{padding:18px 20px 20px;max-width:min(420px,92vw)}

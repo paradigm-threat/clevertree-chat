@@ -123,8 +123,23 @@ class DebateService:
         return self.view(topic, visitor=visitor)
 
     def set_name(self, visitor: str, name: str, topic: str = "", session: Session | None = None) -> dict:
-        self.debate.set_name(visitor, name, session=session)
-        return self.view(topic, visitor=visitor) if topic else {"name": name}
+        from clevertree_chat.nick_claims import NickTakenError, claim_nick_for_visitor
+
+        try:
+            claim = claim_nick_for_visitor(name, visitor, allow_suffix=True)
+        except NickTakenError as exc:
+            raise PermissionError("nick_taken") from exc
+        filed = str(claim.get("nick") or name)
+        self.debate.set_name(visitor, filed, session=session)
+        view = self.view(topic, visitor=visitor) if topic else {"name": filed}
+        if isinstance(view, dict):
+            view["name"] = filed
+            view["nick"] = filed
+            view["claim"] = {
+                "nick": filed,
+                "locked": bool(claim.get("locked")),
+            }
+        return view
 
     def passkey_options(self, visitor: str) -> dict:
         return {"options": registration_options(visitor), "login": authentication_options()}
@@ -136,6 +151,10 @@ class DebateService:
         public_key: str,
         email: str | None = None,
     ) -> dict:
+        if self.auth is None:
+            raise RuntimeError("auth_unavailable")
+        if not str(credential_id or "").strip() or not str(public_key or "").strip():
+            raise ValueError("credential_id_and_public_key_required")
         self.auth.register_passkey(
             self.debate,
             uuid=visitor,
