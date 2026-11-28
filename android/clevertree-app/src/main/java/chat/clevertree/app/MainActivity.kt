@@ -13,8 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import chat.clevertree.room.ClevertreeRoom
 import chat.clevertree.room.ClevertreeRoomConfig
+import chat.clevertree.room.ClevertreeTv
 
 private val CtBg = Color(0xFF0B1210)
 
@@ -31,9 +33,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Intent extras: `channel` (e.g. `#flashback`), `title`, optional `api`. */
+/** Intent extras: `channel` (e.g. `#flashback`), `title`, optional `api`, optional `tv`. */
 @Composable
 private fun ClevertreeApp(intent: Intent?) {
+    val context = LocalContext.current
     val config =
         remember(intent) {
             val rawCh =
@@ -46,12 +49,15 @@ private fun ClevertreeApp(intent: Intent?) {
             val api =
                 intent?.getStringExtra("api")?.trim()?.takeIf { it.isNotEmpty() }
                     ?: ClevertreeRoomConfig.DEFAULT_API_BASE
+            val tvExtra = intent?.getBooleanExtra("tv", false) == true
+            val tv = tvExtra || ClevertreeTv.isTelevision(context)
             ClevertreeRoomConfig(
                 apiBase = api,
                 channel = ch,
                 title = title,
                 // Open SI rail so movie carousel is visible on TV landscape.
                 aiOpen = true,
+                tv = tv,
             )
         }
     // Top status bar only here; bottom nav + IME padding is applied on the

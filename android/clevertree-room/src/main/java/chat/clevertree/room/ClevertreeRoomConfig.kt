@@ -19,6 +19,8 @@ data class ClevertreeRoomConfig(
     val theme: String = "",
     val aiOpen: Boolean = false,
     val surface: String = "embed",
+    /** Android TV / leanback: enables D-pad nav + dictate bridge in the room UI. */
+    val tv: Boolean = false,
 ) {
     /** Asset path under `assets/` (no leading slash). */
     fun assetPath(): String = ASSET_LIVE_HTML
@@ -37,6 +39,7 @@ data class ClevertreeRoomConfig(
         if (theme == "light" || theme == "dark") q["theme"] = theme
         if (aiOpen) q["ai"] = "1"
         if (surface == "side") q["surface"] = "side"
+        if (tv) q["tv"] = "1"
         val query =
             q.entries.joinToString("&") { (k, v) ->
                 "${enc(k)}=${enc(v)}"

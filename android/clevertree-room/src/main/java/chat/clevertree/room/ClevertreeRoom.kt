@@ -5,8 +5,12 @@ import android.annotation.SuppressLint
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewGroup
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,12 +32,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewAssetLoader
+import org.json.JSONObject
 
 /**
  * Embeddable Clevertree rich chat room (IRC + SI panel) with media upload/playback
  * and protective covers — same UI as the web room, hosted in a WebView.
  *
  * Host apps should declare CAMERA, RECORD_AUDIO, and INTERNET in their manifest.
+ * On Android TV (`config.tv` or auto-detected), enables D-pad focus + dictate bridge.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -42,9 +49,59 @@ fun ClevertreeRoom(
     onPermissionRequest: ((PermissionRequest) -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val tvMode = config.tv || ClevertreeTv.isTelevision(context)
+    val effectiveConfig = remember(config, tvMode) { if (tvMode && !config.tv) config.copy(tv = true) else config }
+
     var pendingPermission by remember { mutableStateOf<PermissionRequest?>(null) }
     var fileResultHandler by remember { mutableStateOf<((Array<Uri>?) -> Unit)?>(null) }
     var chromeClient by remember { mutableStateOf<ClevertreeRoomWebChromeClient?>(null) }
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var dictate by remember { mutableStateOf<ClevertreeDictate?>(null) }
+
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
+
+    fun injectTranscript(text: String) {
+        val wv = webViewRef ?: return
+        val payload = JSONObject.quote(text)
+        wv.evaluateJavascript(
+            "(function(){try{if(window.CleverTreeRoom&&typeof CleverTreeRoom.tvInjectTranscript==='function')" +
+                "{CleverTreeRoom.tvInjectTranscript($payload);}}" +
+                "catch(e){}})();",
+            null,
+        )
+    }
+
+    fun runMediaCommand(cmd: String) {
+        val wv = webViewRef ?: return
+        val payload = JSONObject.quote(cmd)
+        wv.evaluateJavascript(
+            "(function(){try{if(window.CleverTreeRoom&&typeof CleverTreeRoom.tvMediaCommand==='function')" +
+                "{CleverTreeRoom.tvMediaCommand($payload);}}" +
+                "catch(e){}})();",
+            null,
+        )
+    }
+
+    fun ensureDictate(): ClevertreeDictate {
+        dictate?.let { return it }
+        val d =
+            ClevertreeDictate(
+                context = context.applicationContext,
+                onResult = { text -> mainHandler.post { injectTranscript(text) } },
+                onError = { /* soft-fail; UI stays usable */ },
+            )
+        dictate = d
+        return d
+    }
+
+    fun startDictateFlow() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        ensureDictate().start()
+    }
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -52,7 +109,12 @@ fun ClevertreeRoom(
         ) { grants ->
             val req = pendingPermission
             pendingPermission = null
-            if (req == null) return@rememberLauncherForActivityResult
+            if (req == null) {
+                if (grants[Manifest.permission.RECORD_AUDIO] == true && tvMode) {
+                    startDictateFlow()
+                }
+                return@rememberLauncherForActivityResult
+            }
             val ok =
                 grants.values.any { it } ||
                     ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
@@ -65,6 +127,23 @@ fun ClevertreeRoom(
                 req.deny()
             }
         }
+
+    val dictatePermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) startDictateFlow()
+        }
+
+    fun requestDictate() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            startDictateFlow()
+        } else {
+            dictatePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     val fileChooserLauncher =
         rememberLauncherForActivityResult(
@@ -117,7 +196,14 @@ fun ClevertreeRoom(
                 }
             }
 
-    val url = remember(config) { config.assetUrl() }
+    val url = remember(effectiveConfig) { effectiveConfig.assetUrl() }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            dictate?.stop()
+            dictate = null
+        }
+    }
 
     AndroidView(
         factory = { ctx ->
@@ -136,10 +222,23 @@ fun ClevertreeRoom(
                     )
                 isFocusable = true
                 isFocusableInTouchMode = true
-                // Claim window focus on touch so soft keyboard can open for <textarea>.
+                descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
                 setOnTouchListener { v, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         v.requestFocus()
+                    }
+                    false
+                }
+                setOnKeyListener { _, keyCode, event ->
+                    if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+                    val media = ClevertreeTv.mediaCommandForKey(keyCode, event.action)
+                    if (media != null) {
+                        runMediaCommand(media)
+                        return@setOnKeyListener true
+                    }
+                    if (tvMode && ClevertreeTv.isVoiceAssistKey(keyCode)) {
+                        requestDictate()
+                        return@setOnKeyListener true
                     }
                     false
                 }
@@ -150,12 +249,46 @@ fun ClevertreeRoom(
                 settings.mediaPlaybackRequiresUserGesture = false
                 settings.cacheMode = WebSettings.LOAD_DEFAULT
                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                addJavascriptInterface(
+                    object {
+                        @JavascriptInterface
+                        fun startDictate() {
+                            mainHandler.post { requestDictate() }
+                        }
+
+                        @JavascriptInterface
+                        fun stopDictate() {
+                            mainHandler.post { dictate?.stop() }
+                        }
+
+                        @JavascriptInterface
+                        fun isTv(): Boolean = tvMode
+                    },
+                    "AndroidRoom",
+                )
                 webViewClient =
                     object : WebViewClient() {
                         override fun shouldInterceptRequest(
                             view: WebView?,
                             request: WebResourceRequest,
                         ) = assetLoader.shouldInterceptRequest(request.url)
+
+                        override fun onPageFinished(
+                            view: WebView?,
+                            finishedUrl: String?,
+                        ) {
+                            super.onPageFinished(view, finishedUrl)
+                            view?.post {
+                                view.requestFocus()
+                                if (tvMode) {
+                                    view.evaluateJavascript(
+                                        "(function(){try{if(window.CleverTreeRoom&&typeof CleverTreeRoom.tvBoot==='function')" +
+                                            "{CleverTreeRoom.tvBoot();}}catch(e){}})();",
+                                        null,
+                                    )
+                                }
+                            }
+                        }
                     }
                 val client =
                     ClevertreeRoomWebChromeClient(
@@ -173,17 +306,20 @@ fun ClevertreeRoom(
                     )
                 chromeClient = client
                 webChromeClient = client
+                webViewRef = this
                 loadUrl(url)
+                if (tvMode) {
+                    post { requestFocus() }
+                }
             }
         },
-        // Compose owns system-bar/IME insets (WebView listeners often never fire
-        // under AndroidView). nav + ime ⇒ room sits above keyboard when it opens.
         modifier =
             modifier
                 .fillMaxSize()
                 .navigationBarsPadding()
                 .imePadding(),
         update = { webView ->
+            webViewRef = webView
             if (webView.url != url) {
                 webView.loadUrl(url)
             }

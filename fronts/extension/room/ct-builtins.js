@@ -246,6 +246,9 @@
     "ct-carousel .ct-car-card{flex:0 0 120px;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px;padding:0 4px;text-align:left;background:none;border:0;color:inherit;cursor:pointer}" +
     "ct-carousel .ct-car-poster{width:120px;aspect-ratio:2/3;object-fit:cover;border-radius:6px;background:color-mix(in srgb,currentColor 12%,transparent);border:1px solid var(--line,#d9ded6);display:block}" +
     "ct-carousel .ct-car-card:hover .ct-car-poster,ct-carousel .ct-car-card:focus-visible .ct-car-poster{outline:2px solid var(--green,#225744);outline-offset:1px}" +
+    '[data-tv="1"] ct-carousel .ct-car-card:focus .ct-car-poster,' +
+    '[data-tv="1"] ct-carousel .ct-car-card:focus-visible .ct-car-poster{' +
+    "outline:3px solid var(--green,#225744);outline-offset:3px;transform:scale(1.04)}" +
     "ct-carousel .ct-car-title{font-size:12px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}" +
     "ct-carousel .ct-car-year{font-size:11px;color:var(--muted,#52645c)}" +
     "ct-carousel .ct-car-status{font-size:12px;color:var(--muted,#52645c)}" +
@@ -629,6 +632,74 @@
                   detail: detail,
                 })
               );
+            });
+            card.addEventListener("keydown", function (ev) {
+              if (
+                ev.key !== "ArrowLeft" &&
+                ev.key !== "ArrowRight" &&
+                ev.key !== "ArrowUp" &&
+                ev.key !== "ArrowDown"
+              ) {
+                return;
+              }
+              var cards = Array.prototype.slice.call(
+                row.querySelectorAll(".ct-car-card")
+              );
+              var idx = cards.indexOf(card);
+              if (idx < 0) return;
+              var next = -1;
+              var pick =
+                typeof window !== "undefined" &&
+                window.CleverTreeRoom &&
+                typeof window.CleverTreeRoom.pickSpatialFocusTarget === "function"
+                  ? window.CleverTreeRoom.pickSpatialFocusTarget
+                  : null;
+              if (
+                pick &&
+                (ev.key === "ArrowUp" ||
+                  ev.key === "ArrowDown" ||
+                  self.getAttribute("mode") === "grid")
+              ) {
+                var rects = cards.map(function (c) {
+                  var r = c.getBoundingClientRect();
+                  return {
+                    left: r.left,
+                    top: r.top,
+                    width: r.width,
+                    height: r.height,
+                  };
+                });
+                var dx =
+                  ev.key === "ArrowRight" ? 1 : ev.key === "ArrowLeft" ? -1 : 0;
+                var dy =
+                  ev.key === "ArrowDown" ? 1 : ev.key === "ArrowUp" ? -1 : 0;
+                next = pick(rects, idx, dx, dy);
+                if (
+                  next < 0 &&
+                  dx !== 0 &&
+                  window.CleverTreeRoom.pickHorizontalWrapTarget
+                ) {
+                  next = window.CleverTreeRoom.pickHorizontalWrapTarget(
+                    rects,
+                    idx,
+                    dx
+                  );
+                }
+              } else if (ev.key === "ArrowRight") {
+                next = Math.min(cards.length - 1, idx + 1);
+              } else if (ev.key === "ArrowLeft") {
+                next = Math.max(0, idx - 1);
+              }
+              if (next < 0 || next === idx) return;
+              ev.preventDefault();
+              ev.stopPropagation();
+              try {
+                cards[next].focus();
+                cards[next].scrollIntoView({
+                  block: "nearest",
+                  inline: "nearest",
+                });
+              } catch (eNav) {}
             });
             row.appendChild(card);
           });

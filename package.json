@@ -4,8 +4,8 @@
   "scripts": {
     "chat:host": "python3 scripts/chat_host.py 8790",
     "demo:server": "python3 scripts/demo_server.py 8945",
-    "test:unit": "python3 -m unittest discover -s tests -v && node tests/test_extension_normalize.js && node tests/test_website_href_js.js && node tests/test_context_tags.js && node tests/test_relay_sidepanel_preview.js && node tests/test_room_ada_contrast.js && node tests/test_room_composer_chrome.js && node tests/test_room_coalesce.js",
-    "test:room": "node tests/test_context_tags.js && node tests/test_relay_sidepanel_preview.js && node tests/test_room_ada_contrast.js && node tests/test_room_composer_chrome.js && node tests/test_room_coalesce.js && PYTHONPATH=. python3 -m unittest tests.test_irc_channel_consolidate -q",
+    "test:unit": "python3 -m unittest discover -s tests -v && node tests/test_extension_normalize.js && node tests/test_website_href_js.js && node tests/test_context_tags.js && node tests/test_relay_sidepanel_preview.js && node tests/test_room_ada_contrast.js && node tests/test_room_composer_chrome.js && node tests/test_room_coalesce.js && node tests/test_guest_nicks.js && node tests/test_room_tv_nav.js",
+    "test:room": "node tests/test_context_tags.js && node tests/test_relay_sidepanel_preview.js && node tests/test_room_ada_contrast.js && node tests/test_room_composer_chrome.js && node tests/test_room_coalesce.js && node tests/test_guest_nicks.js && node tests/test_room_tv_nav.js && PYTHONPATH=. python3 -m unittest tests.test_irc_channel_consolidate -q",
     "test:e2e": "playwright test tests/e2e/chat-websocket.spec.ts tests/e2e/website-url-room.spec.ts tests/e2e/room-composer-chrome.spec.ts",
     "test:e2e:a11y": "playwright test tests/e2e/a11y-contrast.spec.ts tests/e2e/a11y-room-contrast.spec.ts",
     "test:e2e:thc": "playwright test tests/e2e/chat-websocket.spec.ts",

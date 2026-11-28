@@ -1214,3 +1214,20 @@ body.ct-room-page .room{height:var(--room-viewport-height);min-height:460px}
   flex:1 1 auto!important;
   width:100%!important;
 }
+
+/* Android TV / remote D-pad */
+.room[data-tv="1"] button:focus,
+.room[data-tv="1"] button:focus-visible,
+.room[data-tv="1"] textarea:focus,
+.room[data-tv="1"] input:focus,
+.room[data-tv="1"] a:focus-visible{
+  outline:3px solid #a57026;
+  outline-offset:3px;
+}
+.room[data-tv="1"] .tool.tv-dictate,
+.room[data-tv="1"] [data-role="dictate"]{
+  display:inline-flex;
+}
+.room [data-role="dictate"][hidden]{
+  display:none!important;
+}

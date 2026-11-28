@@ -12,8 +12,15 @@ cp "$SRC/tokens.css" "$SRC/clevertree-room.css" "$SRC/clevertree-room.js" \
   "$SRC/context-tags.js" "$SRC/channel-route.js" "$SRC/chat-launcher.js" \
   "$SRC/clevertree-ces.js" "$SRC/channel-policy.json" \
   "$SRC/media-controller.js" "$SRC/ct-builtins.js" \
+  "$SRC/guest-nicks.js" "$SRC/guest-nicks.json" \
   "$SRC/tracked-problems.demo.json" "$SRC/stream-playback.js" \
   "$DST/"
+# keep live/embed HTML (script tags) in sync when present under extension room
+for html in live.html embed.html; do
+  if [[ -f "$SRC/$html" ]]; then
+    cp "$SRC/$html" "$DST/$html"
+  fi
+done
 cp -a "$SRC/themes/." "$DST/themes/"
 echo "Synced $SRC → $DST"
 

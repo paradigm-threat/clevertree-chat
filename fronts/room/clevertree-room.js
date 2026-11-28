@@ -52,6 +52,75 @@
   var VISITOR_KEY = "clevertree.visitor";
   var NICK_KEY = "clevertree.nick";
 
+  /**
+   * TV / D-pad spatial focus: pick nearest neighbor by geometry, not DOM order.
+   * rects: [{left,top,width,height}, ...] · dx/dy in {-1,0,1} (one axis only).
+   * Returns index into rects, or -1 when nothing lies in that direction.
+   */
+  function pickSpatialFocusTarget(rects, currentIndex, dx, dy) {
+    if (!rects || !rects.length) return -1;
+    var cur = rects[currentIndex];
+    if (!cur) return -1;
+    var cx = cur.left + cur.width / 2;
+    var cy = cur.top + cur.height / 2;
+    var best = -1;
+    var bestScore = Infinity;
+    var i;
+    for (i = 0; i < rects.length; i++) {
+      if (i === currentIndex) continue;
+      var r = rects[i];
+      if (!r || !(r.width > 0) || !(r.height > 0)) continue;
+      var x = r.left + r.width / 2;
+      var y = r.top + r.height / 2;
+      var ox = x - cx;
+      var oy = y - cy;
+      if (dx > 0 && ox <= 4) continue;
+      if (dx < 0 && ox >= -4) continue;
+      if (dy > 0 && oy <= 4) continue;
+      if (dy < 0 && oy >= -4) continue;
+      var primary = dx !== 0 ? Math.abs(ox) : Math.abs(oy);
+      var secondary = dx !== 0 ? Math.abs(oy) : Math.abs(ox);
+      /* Prefer same row/column: heavy cross-axis penalty. */
+      var score = primary + secondary * 5;
+      if (score < bestScore) {
+        bestScore = score;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  /** Horizontal wrap within the current visual row (vertical overlap). */
+  function pickHorizontalWrapTarget(rects, currentIndex, dx) {
+    if (!rects || !rects.length || !dx) return -1;
+    var cur = rects[currentIndex];
+    if (!cur) return -1;
+    var best = -1;
+    var bestX = dx > 0 ? Infinity : -Infinity;
+    var i;
+    for (i = 0; i < rects.length; i++) {
+      if (i === currentIndex) continue;
+      var r = rects[i];
+      if (!r || !(r.width > 0) || !(r.height > 0)) continue;
+      var overlap =
+        Math.min(cur.top + cur.height, r.top + r.height) -
+        Math.max(cur.top, r.top);
+      if (overlap < Math.min(cur.height, r.height) * 0.25) continue;
+      var x = r.left + r.width / 2;
+      if (dx > 0) {
+        /* Past right edge → leftmost in row */
+        if (x < bestX) {
+          bestX = x;
+          best = i;
+        }
+      } else if (x > bestX) {
+        bestX = x;
+        best = i;
+      }
+    }
+    return best;
+  }
+
   function normalizeCoalesceMode(mode, enabledLegacy) {
     mode = String(mode || "").toLowerCase();
     if (COALESCE_MODES.indexOf(mode) >= 0) return mode;
@@ -246,6 +315,51 @@
     var first = cleaned.charAt(0).replace(/[^A-Za-z\[\]\\`_^{|}]/g, "n");
     var rest = cleaned.slice(1).replace(/[^A-Za-z0-9\[\]\\`_^{|}-]/g, "");
     return (first + rest).slice(0, 32);
+  }
+
+  var PLACEHOLDER_NICKS = {
+    anon: 1,
+    anonymous: 1,
+    you: 1,
+    visitor: 1,
+    "": 1,
+  };
+
+  function isPlaceholderNick(nick) {
+    var n = sanitizeNickLocal(nick || "");
+    return !n || !!PLACEHOLDER_NICKS[n.toLowerCase()];
+  }
+
+  function guestNickStems() {
+    try {
+      var api =
+        typeof globalThis !== "undefined" ? globalThis.ClevertreeGuestNicks : null;
+      if (api && api.stems && api.stems.length) return api.stems;
+    } catch (e) {}
+    return ["Fern", "Moss", "Cedar", "Birch", "Oak", "Pine", "River", "Ridge"];
+  }
+
+  function randomGuestSuffix() {
+    var alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+    var len = Math.random() < 0.5 ? 2 : 3;
+    var out = "";
+    for (var i = 0; i < len; i++) {
+      out += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+    }
+    return out;
+  }
+
+  function mintGuestNickLocal() {
+    var stems = guestNickStems();
+    var attempts = 0;
+    while (attempts < 24) {
+      attempts++;
+      var stem = stems[Math.floor(Math.random() * stems.length)] || "Fern";
+      var raw = String(stem) + randomGuestSuffix();
+      var nick = sanitizeNickLocal(raw);
+      if (nick && !isPlaceholderNick(nick)) return nick;
+    }
+    return sanitizeNickLocal("Fern" + randomGuestSuffix()) || "Fern7k";
   }
 
   function ensureVisitor(opts) {
@@ -810,6 +924,9 @@
       '<button type="button" class="tool" data-role="record-audio" title="Record audio" aria-label="Record audio">' +
       ICON_MIC +
       "</button>" +
+      '<button type="button" class="tool tv-dictate" data-role="dictate" title="Dictate with remote mic" aria-label="Dictate message" hidden>' +
+      ICON_MIC +
+      "<span>Dictate</span></button>" +
       '<button type="button" class="tool" data-role="record-video" title="Record video" aria-label="Record video">' +
       ICON_VIDEO +
       "</button>" +
@@ -1317,6 +1434,8 @@
     };
   }
 
+  var activeTvMount = null;
+
   function mount(el, opts) {
     opts = opts || {};
     var visitor = ensureVisitor(opts);
@@ -1328,6 +1447,11 @@
       // Explicitly ignored — gather belongs only on Relay chrome.
       opts.showGather = false;
     }
+    var tvMode =
+      !!opts.tv ||
+      (typeof document !== "undefined" &&
+        document.documentElement.getAttribute("data-tv") === "1");
+    opts.tv = tvMode;
 
     el.classList.add("room", "ct-room");
     if (mode === "sidepanel") el.classList.add("sidepanel");
@@ -1335,6 +1459,12 @@
     // (host pages like myproblem.app own body tokens/layout).
     if (mode === "page") document.body.classList.add("ct-room-page");
     else el.classList.add("ct-room-host", "embedded");
+    if (tvMode) {
+      el.setAttribute("data-tv", "1");
+      try {
+        document.documentElement.setAttribute("data-tv", "1");
+      } catch (eTv) {}
+    }
 
     if (!opts.apiBase) opts.apiBase = "https://api.clevertree.chat";
     if (!opts.channel) opts.channel = "#web";
@@ -1398,8 +1528,10 @@
     var draft = $(el, '[data-role="draft"]');
     var nickInput = $(el, '[data-role="nick-input"]');
     var sendBtn = $(el, '[data-role="send"]');
+    var dictateBtn = $(el, '[data-role="dictate"]');
     var composerEl = $(el, '[data-role="composer"]');
     var composeBox = $(el, '[data-role="composebox"]');
+    if (tvMode && dictateBtn) dictateBtn.hidden = false;
     var identityNickEl = $(el, '[data-role="identity-nick"]');
     var identityLockedEl = $(el, '[data-role="identity-locked"]');
     var identityStatusEl = $(el, '[data-role="identity-status"]');
@@ -1417,6 +1549,24 @@
       var fromOpts = opts.nick ? sanitizeNickLocal(opts.nick) : "";
       var fromStore = sanitizeNickLocal(readStoredNick());
       return fromInput || fromOpts || fromStore || "anon";
+    }
+
+    /** Mint forest guest nick only when about to post without a real name. */
+    function ensureGuestNick() {
+      var existing = currentNick();
+      if (!isPlaceholderNick(existing)) return existing;
+      var minted = mintGuestNickLocal();
+      writeStoredNick(minted);
+      opts.nick = minted;
+      if (nickInput) nickInput.value = minted;
+      refreshIdentityUi(false);
+      return minted;
+    }
+
+    async function ensureGuestNickReady() {
+      var nick = ensureGuestNick();
+      var filed = await persistNickToServer(nick);
+      return filed || nick || currentNick();
     }
 
     function setIdentityStatus(text, isError) {
@@ -1840,6 +1990,208 @@
       return isLandscapeChrome() || isDesktopChrome();
     }
 
+    function tvFocusableSelector() {
+      return [
+        "button:not([disabled]):not([hidden])",
+        "a[href]",
+        'input:not([type="hidden"]):not([disabled]):not([hidden])',
+        "textarea:not([disabled]):not([hidden])",
+        "select:not([disabled])",
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(",");
+    }
+
+    function tvIsVisible(node) {
+      if (!node || node.hidden) return false;
+      if (node.getAttribute && node.getAttribute("hidden") != null) return false;
+      try {
+        var st = window.getComputedStyle(node);
+        if (st.display === "none" || st.visibility === "hidden") return false;
+        var r = node.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function tvClusterRoot(which) {
+      if (which === "si") {
+        return aiPanel || $(el, '[data-role="si"]');
+      }
+      return (
+        $(el, '[data-role="chat-stack"]') ||
+        $(el, '[data-role="composer"]') ||
+        composerEl
+      );
+    }
+
+    function tvCollectFocusables(which) {
+      var root = tvClusterRoot(which);
+      if (!root) return [];
+      var nodes = root.querySelectorAll(tvFocusableSelector());
+      var out = [];
+      for (var i = 0; i < nodes.length; i++) {
+        if (tvIsVisible(nodes[i])) out.push(nodes[i]);
+      }
+      return out;
+    }
+
+    function focusFirstInCluster(which) {
+      var list = tvCollectFocusables(which);
+      if (!list.length) return false;
+      try {
+        list[0].focus();
+        if (list[0].scrollIntoView) {
+          list[0].scrollIntoView({ block: "nearest", inline: "nearest" });
+        }
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+
+    function tvActiveCluster() {
+      var ae = document.activeElement;
+      if (ae && aiPanel && aiPanel.contains(ae)) return "si";
+      if (ae && el.contains(ae)) return "chat";
+      return state.siExpanded || opts.aiOpen ? "si" : "chat";
+    }
+
+    function tvFocusNode(node) {
+      if (!node) return false;
+      try {
+        node.focus();
+        if (node.scrollIntoView) {
+          node.scrollIntoView({ block: "nearest", inline: "nearest" });
+        }
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+
+    /**
+     * Move focus by screen geometry (grid-aware). dx/dy: -1 | 0 | 1.
+     * Horizontal may wrap within the same visual row; vertical does not wrap.
+     * Returns false when no target in that direction (caller may switch cluster).
+     */
+    function tvMoveSpatial(which, dx, dy, allowWrap) {
+      var list = tvCollectFocusables(which);
+      if (!list.length) return false;
+      var ae = document.activeElement;
+      var idx = -1;
+      var i;
+      for (i = 0; i < list.length; i++) {
+        if (list[i] === ae || list[i].contains(ae)) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx < 0) return tvFocusNode(list[0]);
+
+      var rects = [];
+      for (i = 0; i < list.length; i++) {
+        try {
+          var r = list[i].getBoundingClientRect();
+          rects.push({
+            left: r.left,
+            top: r.top,
+            width: r.width,
+            height: r.height,
+          });
+        } catch (eRect) {
+          rects.push({ left: 0, top: 0, width: 0, height: 0 });
+        }
+      }
+
+      var next = pickSpatialFocusTarget(rects, idx, dx, dy);
+      if (next < 0 && allowWrap && dx !== 0 && dy === 0) {
+        next = pickHorizontalWrapTarget(rects, idx, dx);
+      }
+      if (next < 0) return false;
+      return tvFocusNode(list[next]);
+    }
+
+    /** @deprecated linear DOM walk — kept for callers/tests; prefer tvMoveSpatial */
+    function tvMoveWithinCluster(which, dir) {
+      return tvMoveSpatial(which, dir < 0 ? -1 : 1, 0, true);
+    }
+
+    function tvSwitchCluster(to) {
+      if (to === "si") {
+        releaseComposerHold();
+        focusSi();
+        return focusFirstInCluster("si");
+      }
+      focusComposer();
+      return focusFirstInCluster("chat");
+    }
+
+    function tvInjectTranscript(text) {
+      var t = String(text || "").trim();
+      if (!t || !draft) return false;
+      var cur = String(draft.value || "").trim();
+      draft.value = cur ? cur + " " + t : t;
+      try {
+        draft.dispatchEvent(new Event("input", { bubbles: true }));
+      } catch (e) {}
+      setComposerExpanded(true);
+      try {
+        draft.focus();
+      } catch (e2) {}
+      return true;
+    }
+
+    function tvMediaCommand(cmd) {
+      var c = String(cmd || "").toLowerCase();
+      var mc =
+        typeof window !== "undefined" ? window.ClevertreeMediaController : null;
+      if (c === "playpause" || c === "play" || c === "pause") {
+        if (mc) {
+          var st = mc.getState && mc.getState();
+          if (st && st.playing) mc.pause();
+          else if (mc.resume) mc.resume();
+        }
+        var playBtn =
+          el.querySelector('ct-playlist [data-ct="play"]') ||
+          el.querySelector('ct-video [data-ct="play"]');
+        if (playBtn && (!mc || !(mc.getState && mc.getState().active))) {
+          try {
+            playBtn.click();
+          } catch (e) {}
+        }
+        return true;
+      }
+      if (c === "stop" && mc) {
+        mc.stop();
+        return true;
+      }
+      if (c === "next" || c === "prev") {
+        var sel = c === "next" ? '[data-ct="next"]' : '[data-ct="prev"]';
+        var btn = el.querySelector("ct-playlist " + sel);
+        if (btn) {
+          try {
+            btn.click();
+          } catch (e2) {}
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function tvBoot() {
+      releaseComposerHold();
+      try {
+        if (draft && document.activeElement === draft) draft.blur();
+      } catch (e) {}
+      if (dictateBtn) dictateBtn.hidden = false;
+      if (opts.aiOpen || isLandscapeChrome()) {
+        focusSi();
+      } else {
+        focusFirstInCluster("si") || focusFirstInCluster("chat");
+      }
+    }
+
     function focusComposer() {
       /* Focus in the user gesture first (IME), then expand chrome. */
       holdComposer(CHROME_MS + 600);
@@ -1859,12 +2211,17 @@
     }
 
     function focusSi() {
-      if (state.holdComposerOpen) return;
+      if (state.holdComposerOpen && !tvMode) return;
       /* Landscape/desktop: open SI without shrinking the composer column. */
       if (keepComposerOpenInRow()) {
         setChromeState(true, true);
       } else {
         setChromeState(true, false);
+      }
+      if (tvMode) {
+        try {
+          focusFirstInCluster("si");
+        } catch (eFs) {}
       }
     }
 
@@ -2111,12 +2468,19 @@
     }
 
     /* Start with draft open. Portrait: SI header-only until tapped.
-     * Row chrome (desktop / landscape) forces SI open via setChromeState. */
+     * Row chrome (desktop / landscape) forces SI open via setChromeState.
+     * TV: keep composer expanded visually but do not steal focus into draft. */
     try {
       localStorage.removeItem("clevertree.room.composerExpanded");
     } catch (e) {}
     setComposerExpanded(true);
-    setSiExpanded(isLandscapeChrome());
+    setSiExpanded(isLandscapeChrome() || !!opts.aiOpen || tvMode);
+    if (tvMode) {
+      releaseComposerHold();
+      try {
+        if (draft && document.activeElement === draft) draft.blur();
+      } catch (eBlur) {}
+    }
 
     var LAYOUT_KEY = "clevertree.room.layoutMode";
     var ORIENT_KEY = "clevertree.room.orient";
@@ -4385,6 +4749,21 @@
         startCapture(false);
       };
     }
+    if (dictateBtn) {
+      dictateBtn.onclick = function () {
+        try {
+          if (
+            window.AndroidRoom &&
+            typeof window.AndroidRoom.startDictate === "function"
+          ) {
+            window.AndroidRoom.startDictate();
+            return;
+          }
+        } catch (eDict) {}
+        /* Browser fallback: reuse clip recorder when no native bridge. */
+        startCapture(false);
+      };
+    }
     if (recordVideoBtn) {
       recordVideoBtn.onclick = function () {
         startCapture(true);
@@ -4394,6 +4773,76 @@
       stopRecordBtn.onclick = function () {
         stopCapture();
       };
+    }
+
+    if (tvMode) {
+      el.addEventListener(
+        "keydown",
+        function (ev) {
+          var key = ev.key;
+          var inField =
+            ev.target &&
+            (ev.target.tagName === "TEXTAREA" ||
+              ev.target.tagName === "INPUT" ||
+              (ev.target.isContentEditable && ev.target.isContentEditable));
+          if (key === "Escape") {
+            if (state.menuOpen) {
+              setMenuOpen(false);
+              ev.preventDefault();
+              return;
+            }
+            if (inField && draft && document.activeElement === draft) {
+              try {
+                draft.blur();
+              } catch (e) {}
+              focusFirstInCluster("si");
+              ev.preventDefault();
+            }
+            return;
+          }
+          if (inField && (key === "ArrowLeft" || key === "ArrowRight")) {
+            /* Allow caret move inside inputs unless at edge + modifier. */
+            return;
+          }
+          if (key === "ArrowLeft") {
+            if (tvActiveCluster() === "chat") {
+              /* Edge of chat → SI; otherwise step left in chat chrome. */
+              if (!tvMoveSpatial("chat", -1, 0, false)) {
+                tvSwitchCluster("si");
+              }
+            } else {
+              /* Within SI: spatial left; wrap only within the same visual row. */
+              tvMoveSpatial("si", -1, 0, true);
+            }
+            ev.preventDefault();
+            return;
+          }
+          if (key === "ArrowRight") {
+            if (tvActiveCluster() === "si") {
+              /* Spatial right through grid/playlist; leave SI only at the edge. */
+              if (!tvMoveSpatial("si", 1, 0, false)) {
+                tvSwitchCluster("chat");
+              }
+            } else {
+              tvMoveSpatial("chat", 1, 0, true);
+            }
+            ev.preventDefault();
+            return;
+          }
+          if (key === "ArrowUp") {
+            /* Vertical: geometry only — never treat as left/right DOM wrap. */
+            tvMoveSpatial(tvActiveCluster(), 0, -1, false);
+            ev.preventDefault();
+            return;
+          }
+          if (key === "ArrowDown") {
+            tvMoveSpatial(tvActiveCluster(), 0, 1, false);
+            ev.preventDefault();
+            return;
+          }
+        },
+        true
+      );
     }
 
     function confirmPublic(onOk) {
@@ -4645,30 +5094,36 @@
         draft.focus();
         return;
       }
-      confirmPublic(function () {
-        var nick = currentNick();
-        if (nick && nick !== "anon") {
-          void persistNickToServer(nick);
-        }
-        var attached = takePendingMarkers();
-        var body = text;
-        if (attached.length) {
-          body = body ? body + "\n" + attached.join("\n") : attached.join("\n");
-        }
-        postLocal(body);
-        draft.value = "";
-        clearChannelDraft(opts.channel);
-      });
+      void (async function () {
+        await ensureGuestNickReady();
+        confirmPublic(function () {
+          var nick = currentNick();
+          if (nick && !isPlaceholderNick(nick)) {
+            void persistNickToServer(nick);
+          }
+          var attached = takePendingMarkers();
+          var body = text;
+          if (attached.length) {
+            body = body ? body + "\n" + attached.join("\n") : attached.join("\n");
+          }
+          postLocal(body);
+          draft.value = "";
+          clearChannelDraft(opts.channel);
+        });
+      })();
     };
 
     if (investigateBtn) {
       investigateBtn.onclick = function () {
         var focus = draft.value.trim();
         var cmd = focus ? "!investigate " + focus : "!investigate";
-        confirmPublic(function () {
-          postLocal(cmd);
-          draft.value = "";
-        });
+        void (async function () {
+          await ensureGuestNickReady();
+          confirmPublic(function () {
+            postLocal(cmd);
+            draft.value = "";
+          });
+        })();
       };
     }
 
@@ -5148,11 +5603,15 @@
       };
     }
 
-    return {
+    var api = {
       el: el,
       mode: mode,
       /** Gather must never appear on room component */
       hasGather: false,
+      tv: tvMode,
+      tvBoot: tvBoot,
+      tvInjectTranscript: tvInjectTranscript,
+      tvMediaCommand: tvMediaCommand,
       getState: function () {
         return {
           tracked: state.tracked,
@@ -5164,6 +5623,7 @@
           orient: state.orient,
           theme: state.theme,
           themePref: state.themePref,
+          tv: tvMode,
         };
       },
       setTheme: function (mode) {
@@ -5301,9 +5761,12 @@
         el.style.maxHeight = "";
         el.style.transform = "";
         el.innerHTML = "";
+        if (activeTvMount === api) activeTvMount = null;
       },
       BOT_NICKS: BOT_NICKS,
     };
+    activeTvMount = api;
+    return api;
   }
 
   return {
@@ -5324,5 +5787,27 @@
     canCoalesce: canCoalesce,
     groupMessagesForDisplay: groupMessagesForDisplay,
     resolveTheme: resolveRoomTheme,
+    isPlaceholderNick: isPlaceholderNick,
+    mintGuestNickLocal: mintGuestNickLocal,
+    sanitizeNickLocal: sanitizeNickLocal,
+    pickSpatialFocusTarget: pickSpatialFocusTarget,
+    pickHorizontalWrapTarget: pickHorizontalWrapTarget,
+    tvBoot: function () {
+      if (activeTvMount && typeof activeTvMount.tvBoot === "function") {
+        return activeTvMount.tvBoot();
+      }
+    },
+    tvInjectTranscript: function (text) {
+      if (activeTvMount && typeof activeTvMount.tvInjectTranscript === "function") {
+        return activeTvMount.tvInjectTranscript(text);
+      }
+      return false;
+    },
+    tvMediaCommand: function (cmd) {
+      if (activeTvMount && typeof activeTvMount.tvMediaCommand === "function") {
+        return activeTvMount.tvMediaCommand(cmd);
+      }
+      return false;
+    },
   };
 });

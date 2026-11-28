@@ -38,6 +38,7 @@ class ClevertreeRoomConfigTest {
                 theme = "dark",
                 aiOpen = true,
                 surface = "side",
+                tv = true,
             ).assetUrl()
 
         assertTrue(url.contains("collection=demo-col"))
@@ -45,6 +46,13 @@ class ClevertreeRoomConfigTest {
         assertTrue(url.contains("theme=dark"))
         assertTrue(url.contains("ai=1"))
         assertTrue(url.contains("surface=side"))
+        assertTrue(url.contains("tv=1"))
+    }
+
+    @Test
+    fun assetUrl_omitsTvWhenFalse() {
+        val url = ClevertreeRoomConfig(tv = false).assetUrl()
+        assertFalse(url.contains("tv="))
     }
 
     @Test

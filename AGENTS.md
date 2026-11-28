@@ -85,6 +85,6 @@ PR CI is **GitHub Actions only** (`.github/workflows/ci.yml`): unit, durable E2E
 
 - Comments SoT: https://github.com/paradigm-threat/clevertree-chat-comments · https://gitlab.com/clevertree/clevertree-chat-comments
 - MyProblem mount notes: sibling `myproblem` → `docs/clevertree-chat.md`
-- Deeper docs: [`README.md`](README.md) · [`docs/chat-host.md`](docs/chat-host.md) · [`docs/infra.md`](docs/infra.md) · [`docs/intake-queue.md`](docs/intake-queue.md) · [`docs/url-pages-and-associations.md`](docs/url-pages-and-associations.md)
+- Deeper docs: [`README.md`](README.md) · [`docs/chat-host.md`](docs/chat-host.md) · [`docs/infra.md`](docs/infra.md) · [`docs/intake-queue.md`](docs/intake-queue.md) · [`docs/url-pages-and-associations.md`](docs/url-pages-and-associations.md) · [`docs/nicks.md`](docs/nicks.md)
 
 *Last updated: 2026-11-27*

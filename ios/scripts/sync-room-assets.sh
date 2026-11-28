@@ -27,6 +27,8 @@ FILES=(
   clevertree-ces.js
   media-controller.js
   ct-builtins.js
+  guest-nicks.js
+  guest-nicks.json
   stream-playback.js
   tracked-problems.demo.json
 )
