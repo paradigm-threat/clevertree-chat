@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pack the Chromium MV3 side panel for download from clevertree.chat.
+# Pack the Chromium MV3 side panel for download from clevertree.chat / myproblem.app.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/fronts/extension"
@@ -11,27 +11,36 @@ trap 'rm -rf "$STAGE"' EXIT
 # Keep Load unpacked + zip in sync (room must live under extension root).
 bash "$ROOT/scripts/sync_extension_room.sh"
 
-mkdir -p "$OUT_DIR" "$STAGE/clevertree-chat-extension/icons"
+DEST="$STAGE/clevertree-chat-extension"
+mkdir -p "$OUT_DIR" "$DEST/icons" "$DEST/lib" "$DEST/data" "$DEST/networker"
+
 cp "$SRC/manifest.json" "$SRC/background.js" \
   "$SRC/sidepanel.html" "$SRC/sidepanel.css" "$SRC/sidepanel.js" \
   "$SRC/options.html" "$SRC/options.js" "$SRC/inject-id.js" \
-  "$STAGE/clevertree-chat-extension/"
+  "$SRC/networker-batch.js" "$SRC/content-nextdoor.js" \
+  "$DEST/"
 if [[ -f "$SRC/normalize-url.js" ]]; then
-  cp "$SRC/normalize-url.js" "$STAGE/clevertree-chat-extension/"
+  cp "$SRC/normalize-url.js" "$DEST/"
 fi
-cp "$SRC/icons/"*.png "$STAGE/clevertree-chat-extension/icons/"
+cp "$SRC/icons/"*.png "$DEST/icons/"
 # Prefer design-kit light toolbar icons when present
 KIT_ICONS="$ROOT/design/clevertree-chat-kit/platform/extension/icons/light"
 if [[ -d "$KIT_ICONS" ]]; then
   for sz in 16 32 48 128; do
     if [[ -f "$KIT_ICONS/icon-${sz}.png" ]]; then
-      cp "$KIT_ICONS/icon-${sz}.png" "$STAGE/clevertree-chat-extension/icons/icon${sz}.png"
+      cp "$KIT_ICONS/icon-${sz}.png" "$DEST/icons/icon${sz}.png"
     fi
   done
 fi
-cp -a "$SRC/room" "$STAGE/clevertree-chat-extension/"
+cp -a "$SRC/room" "$DEST/"
+cp -a "$SRC/lib/." "$DEST/lib/"
+cp -a "$SRC/data/." "$DEST/data/" 2>/dev/null || true
+# Legacy Networker subtree (gather engine mirror) when present
+if [[ -d "$SRC/networker" ]]; then
+  cp -a "$SRC/networker/." "$DEST/networker/"
+fi
 
-cat >"$STAGE/clevertree-chat-extension/INSTALL.txt" <<'TXT'
+cat >"$DEST/INSTALL.txt" <<'TXT'
 Clevertree Chat — browser extension (Chromium)
 
 1. Unzip this archive.
@@ -41,9 +50,10 @@ Clevertree Chat — browser extension (Chromium)
 5. Pin Clevertree Chat and open the side panel from the toolbar icon.
 
 Works on any website (shared #web IRC room). Product sites map to their channel.
+Guest forest nicknames mint on first send if you have not chosen a name.
 Networker tools: extension Options (off by default).
 API: https://api.clevertree.chat
-More: https://clevertree.chat/extension
+More: https://clevertree.chat/extension · https://myproblem.app/extension
 TXT
 
 rm -f "$ZIP"
@@ -52,4 +62,4 @@ rm -f "$ZIP"
   zip -qr "$ZIP" clevertree-chat-extension
 )
 echo "Wrote $ZIP ($(wc -c <"$ZIP") bytes)"
-unzip -l "$ZIP" | head -50
+unzip -l "$ZIP" | head -60

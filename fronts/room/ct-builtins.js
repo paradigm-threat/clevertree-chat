@@ -239,16 +239,17 @@
   /* Custom elements (browser only)                                     */
   /* ------------------------------------------------------------------ */
 
-  var STYLE_ID = "ct-builtins-style-v9";
+  var STYLE_ID = "ct-builtins-style-v10";
   var CSS =
     "ct-carousel,ct-video,ct-playlist{display:block;margin:14px 0}" +
     "ct-carousel .ct-car-row{display:flex;gap:18px;overflow-x:auto;padding:8px 6px 14px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}" +
     "ct-carousel .ct-car-card{flex:0 0 120px;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px;padding:0 4px;text-align:left;background:none;border:0;color:inherit;cursor:pointer}" +
     "ct-carousel .ct-car-poster{width:120px;aspect-ratio:2/3;object-fit:cover;border-radius:6px;background:color-mix(in srgb,currentColor 12%,transparent);border:1px solid var(--line,#d9ded6);display:block}" +
-    "ct-carousel .ct-car-card:hover .ct-car-poster,ct-carousel .ct-car-card:focus-visible .ct-car-poster{outline:2px solid var(--green,#225744);outline-offset:1px}" +
+    /* Hover tip on poster only; focus ring stays on the whole card (button), not the image. */
+    "ct-carousel .ct-car-card:hover .ct-car-poster{outline:2px solid var(--green,#225744);outline-offset:1px}" +
     '[data-tv="1"] ct-carousel .ct-car-card:focus .ct-car-poster,' +
     '[data-tv="1"] ct-carousel .ct-car-card:focus-visible .ct-car-poster{' +
-    "outline:3px solid var(--green,#225744);outline-offset:3px;transform:scale(1.04)}" +
+    "outline:none;transform:none}" +
     "ct-carousel .ct-car-title{font-size:12px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}" +
     "ct-carousel .ct-car-year{font-size:11px;color:var(--muted,#52645c)}" +
     "ct-carousel .ct-car-status{font-size:12px;color:var(--muted,#52645c)}" +
