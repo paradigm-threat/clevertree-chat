@@ -113,6 +113,23 @@
     next();
   }
 
+  /**
+   * Quiet presence check (action: ping). Does not open the side panel.
+   * Returns a Promise<boolean>; optional callback supported.
+   */
+  function isExtensionPresent(cb) {
+    return new Promise(function (resolve) {
+      probeExtension({ type: MSG_TYPE, action: "ping" }, function (ok) {
+        if (typeof cb === "function") {
+          try {
+            cb(!!ok);
+          } catch (e) {}
+        }
+        resolve(!!ok);
+      });
+    });
+  }
+
   function ensureShell(opts) {
     if (state.host) return state.host;
     var host = document.createElement("div");
@@ -231,6 +248,12 @@
     probeExtension(payload, function (ok) {
       if (ok) {
         state.open = true;
+        syncBtn();
+        return;
+      }
+      // Site stub mode: never open a second in-page dock / WS.
+      if (opts.extensionOnly) {
+        state.open = false;
         syncBtn();
         return;
       }
@@ -362,6 +385,7 @@
     close: close,
     toggle: toggle,
     isOpen: isOpen,
+    isExtensionPresent: isExtensionPresent,
     MSG_TYPE: MSG_TYPE,
   };
 });

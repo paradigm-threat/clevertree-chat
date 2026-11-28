@@ -8,6 +8,7 @@ MV3 side panel. **Debate board** = shared IRC room + SI panel. Works on **any we
 - Product hosts (e.g. paradigmthreat.net → `#pt`, myproblem.app → craft channels) via `channel-route.js`.
 - **Networker** (Gather / Track / Refresh) is **off by default**. Enable only in **Options**.
 - Theme: Options or room toggle; packs in `room/themes/` (system / light / dark).
+- **Exclusive surface with host sites:** pages may quiet-`ping` (`clevertree.chat.toggle` + `action: "ping"`) via `externally_connectable`. Ping must **not** open the side panel. When present, hosts (e.g. MyProblem) skip the in-page room WebSocket and show a single Open control that calls `action: "open"`. Fail-open if ping fails. No SharedWorker / SW-owned socket yet — each mounted room still owns its own WS.
 
 ## Load unpacked (ready to test)
 
@@ -31,7 +32,7 @@ Zip download (same layout): `downloads/clevertree-chat-extension.zip` / https://
 | File | Role |
 |------|------|
 | `manifest.json` | MV3 + side panel + externally_connectable |
-| `background.js` | Open panel; `clevertree.chat.toggle` handshake |
+| `background.js` | Open panel; `clevertree.chat.toggle` (`ping` / `open` / `close`) |
 | `sidepanel.html` / `.js` / `.css` | Mounts shared room |
 | `options.html` / `.js` | Networker + theme |
 | `room/*` | Synced copy of `fronts/room` (IRC + SI UI) |

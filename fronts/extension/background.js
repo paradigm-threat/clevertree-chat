@@ -14,40 +14,54 @@ chrome.action.onClicked.addListener(async function (tab) {
   } catch (e) {}
 });
 
-chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-  if (!msg || msg.type !== "clevertree.chat.toggle") return;
-  var action = msg.action || "toggle";
-  function openPanel(windowId) {
-    if (!chrome.sidePanel || windowId == null) {
-      sendResponse({ ok: false });
-      return;
-    }
-    chrome.sidePanel
-      .open({ windowId: windowId })
-      .then(function () {
-        chrome.runtime.sendMessage({
+function openSidePanel(windowId, msg, sendResponse) {
+  if (!chrome.sidePanel || windowId == null) {
+    sendResponse({ ok: false });
+    return;
+  }
+  chrome.sidePanel
+    .open({ windowId: windowId })
+    .then(function () {
+      chrome.runtime
+        .sendMessage({
           type: "clevertree.chat.toggle",
           action: "context",
-          url: msg.url || "",
-        }).catch(function () {});
-        sendResponse({ ok: true, action: "open" });
-      })
-      .catch(function () {
-        sendResponse({ ok: false });
-      });
+          url: (msg && msg.url) || "",
+        })
+        .catch(function () {});
+      sendResponse({ ok: true, action: "open" });
+    })
+    .catch(function () {
+      sendResponse({ ok: false });
+    });
+}
+
+function handleToggleMessage(msg, sendResponse) {
+  var action = (msg && msg.action) || "toggle";
+  // Quiet presence check — never opens the panel.
+  if (action === "ping") {
+    sendResponse({ ok: true, action: "ping" });
+    return false;
+  }
+  if (action === "close") {
+    // Chromium has no reliable sidePanel.close; ACK only.
+    sendResponse({ ok: true, action: "close" });
+    return false;
   }
   if (action === "open" || action === "toggle") {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       var t = tabs && tabs[0];
-      openPanel(t && t.windowId);
+      openSidePanel(t && t.windowId, msg, sendResponse);
     });
-    return true;
-  }
-  if (action === "close") {
-    sendResponse({ ok: true, action: "close" });
-    return;
+    return true; // async
   }
   sendResponse({ ok: true });
+  return false;
+}
+
+chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+  if (!msg || msg.type !== "clevertree.chat.toggle") return;
+  return handleToggleMessage(msg, sendResponse);
 });
 
 chrome.runtime.onMessageExternal.addListener(function (msg, sender, sendResponse) {
@@ -55,20 +69,5 @@ chrome.runtime.onMessageExternal.addListener(function (msg, sender, sendResponse
     sendResponse({ ok: false });
     return;
   }
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    var t = tabs && tabs[0];
-    if (!chrome.sidePanel || !t || t.windowId == null) {
-      sendResponse({ ok: false });
-      return;
-    }
-    chrome.sidePanel
-      .open({ windowId: t.windowId })
-      .then(function () {
-        sendResponse({ ok: true });
-      })
-      .catch(function () {
-        sendResponse({ ok: false });
-      });
-  });
-  return true;
+  return handleToggleMessage(msg, sendResponse);
 });
