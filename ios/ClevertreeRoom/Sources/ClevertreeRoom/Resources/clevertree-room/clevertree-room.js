@@ -738,7 +738,7 @@
       '<div class="menu-section" data-role="identity-section">' +
       '<label class="menu-label">Identity</label>' +
       '<p class="menu-identity-nick">Nick: <strong data-role="identity-nick">—</strong> ' +
-      '<span class="menu-lock-badge" data-role="identity-locked" hidden>Locked</span></p>' +
+      '<span class="menu-lock-badge" data-role="identity-locked" hidden aria-hidden="true">Locked</span></p>' +
       '<p class="menu-hint">Free to chat under any name. A passkey protects your nick across browsers. IRC account (SASL) comes later.</p>' +
       '<div class="menu-identity-actions">' +
       '<button type="button" class="menu-action" data-role="passkey-register">Register passkey</button>' +
@@ -1435,7 +1435,9 @@
       var nick = currentNick();
       if (identityNickEl) identityNickEl.textContent = nick || "—";
       if (identityLockedEl) {
-        identityLockedEl.hidden = !locked;
+        var isLocked = !!locked;
+        identityLockedEl.hidden = !isLocked;
+        identityLockedEl.setAttribute("aria-hidden", isLocked ? "false" : "true");
       }
       if (nickInput && document.activeElement !== nickInput) {
         var shown = sanitizeNickLocal(readStoredNick() || (opts.nick || ""));
@@ -1540,6 +1542,20 @@
           ev.preventDefault();
           nickInput.blur();
         }
+      });
+      nickInput.addEventListener("input", function () {
+        var v = sanitizeNickLocal(nickInput.value);
+        if (v) {
+          opts.nick = v;
+          writeStoredNick(v);
+        }
+        refreshIdentityUi(false);
+      });
+      nickInput.addEventListener("change", function () {
+        var v = sanitizeNickLocal(nickInput.value);
+        if (!v) return;
+        nickInput.value = v;
+        void persistNickToServer(v);
       });
       nickInput.addEventListener("blur", function () {
         var v = sanitizeNickLocal(nickInput.value);
@@ -4630,6 +4646,10 @@
         return;
       }
       confirmPublic(function () {
+        var nick = currentNick();
+        if (nick && nick !== "anon") {
+          void persistNickToServer(nick);
+        }
         var attached = takePendingMarkers();
         var body = text;
         if (attached.length) {
