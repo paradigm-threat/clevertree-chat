@@ -140,6 +140,21 @@ def extract_channel_media(body: str) -> list[dict[str, Any]]:
     return items
 
 
+def extract_inbox_refs(body: str) -> list[str]:
+    """Object ids / urls from [[mp:inbox …]] for claim.inbox_refs (deduped, stable order)."""
+    refs: list[str] = []
+    seen: set[str] = set()
+    for match in INBOX_MARKER_RE.finditer(body or ""):
+        attrs = _attrs(match.group(1))
+        oid = (attrs.get("id") or "").strip()
+        url = (attrs.get("url") or "").strip().rstrip(".,);]")
+        for candidate in (oid, url):
+            if candidate and candidate not in seen:
+                seen.add(candidate)
+                refs.append(candidate)
+    return refs
+
+
 def asr_eligible(item: dict[str, Any]) -> bool:
     """Audio (and audio-bearing video notes) are ASR candidates; plain files are not."""
     kind = str(item.get("kind") or "")

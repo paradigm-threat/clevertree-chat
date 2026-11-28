@@ -307,7 +307,41 @@ def view_topic(topic: str, visitor: str = "", focus: str = "") -> dict:
         view["tracked_problems"] = tracked_problems_for_topic(topic)
     except Exception:
         view.setdefault("tracked_problems", [])
+    view["pending_claims"] = _pending_claims_for_topic(topic)
     return view
+
+
+def _pending_claims_for_topic(topic: str, *, limit: int = 100) -> list[dict]:
+    """Provisional rows for board.snapshot — room queue not yet filed to SoT."""
+    try:
+        from clevertree_chat.claim_queue import list_pending, room_queue_only
+
+        if not room_queue_only():
+            return []
+        topic_key = (topic or "").strip().lstrip("#")
+        out: list[dict] = []
+        for claim in list_pending(limit=limit * 2):
+            ct = str(claim.get("topic") or "").strip().lstrip("#")
+            if ct != topic_key:
+                continue
+            out.append(
+                {
+                    "id": claim.get("id"),
+                    "body": claim.get("body") or "",
+                    "nick": claim.get("nick") or "",
+                    "visitor": claim.get("visitor") or "",
+                    "source": claim.get("source") or "",
+                    "enqueued_at": claim.get("enqueued_at") or "",
+                    "inbox_refs": claim.get("inbox_refs") or [],
+                    "status": "pending",
+                    "coach": "Pending batch review",
+                }
+            )
+            if len(out) >= limit:
+                break
+        return out
+    except Exception:
+        return []
 
 
 def _apply_room_chrome(topic: str, view: dict, *, fallback_title: str) -> None:
@@ -487,6 +521,15 @@ def dispatch(
 
         if room_queue_only():
             # Room = claim queue: IRC/WS + ephemeral claim JSON only — no SoT commit.
+            from clevertree_chat.channel_media import extract_inbox_refs
+
+            inbox_refs = extract_inbox_refs(body_text)
+            extra_refs = payload.get("inbox_refs")
+            if isinstance(extra_refs, list):
+                for ref in extra_refs:
+                    s = str(ref or "").strip()
+                    if s and s not in inbox_refs:
+                        inbox_refs.append(s)
             claim = enqueue_claim(
                 topic=topic,
                 page=page,
@@ -495,6 +538,7 @@ def dispatch(
                 source=str(payload.get("source") or "web"),
                 nick=str(payload.get("name") or "").strip(),
                 chosen=chosen,
+                inbox_refs=inbox_refs,
                 client_post_id=idem,
             )
             with _lock:
@@ -623,6 +667,13 @@ def dispatch(
 
     if action == "drain_irc_logs":
         results = drain_irc_log_jobs(limit=int(payload.get("limit") or 20))
+        return 200, {"results": results, "count": len(results)}
+
+    if action == "drain_claims":
+        results = drain_claim_jobs(
+            limit=int(payload.get("limit") or 20),
+            mode=str(payload.get("mode") or "heuristic"),
+        )
         return 200, {"results": results, "count": len(results)}
 
     if action == "drain_channel_asr":
@@ -825,6 +876,12 @@ def start_drain_worker(interval_s: float = 2.0) -> None:
                     irc_log_cache.rotate_if_needed()
                     if ticks % 15 == 0:  # ~30s at 2s interval
                         drain_irc_log_jobs(limit=10)
+                except Exception:
+                    pass
+                # Claim queue → SoT (heuristic Phase 1)
+                try:
+                    if ticks % 12 == 0:  # ~24s
+                        drain_claim_jobs(limit=10)
                 except Exception:
                     pass
                 # Channel media ASR (Groq when GROQ_API_KEY set)
@@ -1121,6 +1178,118 @@ def drain_irc_log_jobs(*, limit: int = 20) -> list[dict]:
             if job_path:
                 irc_log_cache.mark_job(job_path, "failed", error=str(exc))
             results.append({"job": job.get("id"), "ok": False, "reason": str(exc)})
+    return results
+
+
+def _claim_looks_like_spam(claim: dict) -> bool:
+    """Phase-1 heuristic reject — never files SoT. Provider gray-zone can refine later."""
+    body = str(claim.get("body") or "").strip()
+    if not body:
+        return True
+    if len(body) > 20_000:
+        return True
+    lower = body.lower()
+    # Empty-ish markers only
+    if lower in {"ok", ".", "..", "…", "test"}:
+        return True
+    spam_needles = (
+        "buy viagra",
+        "crypto airdrop",
+        "click here now",
+        "free robux",
+    )
+    return any(n in lower for n in spam_needles)
+
+
+def _mark_inbox_refs_status(refs: list, status: str) -> None:
+    """Best-effort: mark matching inbox-index rows by object_id."""
+    import json
+
+    try:
+        from clevertree_chat.irc_log_cache import live_root
+
+        index_root = live_root() / "inbox-index"
+    except Exception:
+        return
+    if not index_root.is_dir():
+        return
+    for ref in refs or []:
+        ref_s = str(ref or "").strip()
+        if not ref_s or ref_s.startswith("http"):
+            continue
+        for path in index_root.glob(f"*/{ref_s}.json"):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    data["status"] = status
+                    path.write_text(
+                        json.dumps(data, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+            except Exception:
+                continue
+
+
+def drain_claim_jobs(*, limit: int = 20, mode: str = "heuristic") -> list[dict]:
+    """Consume queue/claims — accept files SoT; reject drops (never SoT).
+
+    Phase 1: Cursor/manual ``action=drain_claims`` + light heuristic.
+    Does not go through room_queue_only submit (that would re-enqueue).
+    """
+    from clevertree_chat import claim_queue
+
+    service = open_service()
+    results: list[dict] = []
+    dirty_topics: set[str] = set()
+    for claim in claim_queue.list_pending(limit=limit):
+        claim_id = str(claim.get("id") or "")
+        topic = str(claim.get("topic") or "").strip()
+        body = str(claim.get("body") or "")
+        if not claim_id or not topic:
+            if claim_id:
+                claim_queue.mark_status(claim_id, "rejected")
+            results.append({"id": claim_id, "ok": False, "status": "rejected", "reason": "missing_fields"})
+            continue
+        if mode == "reject_all" or _claim_looks_like_spam(claim):
+            claim_queue.mark_status(claim_id, "rejected")
+            _mark_inbox_refs_status(claim.get("inbox_refs") or [], "rejected")
+            results.append({"id": claim_id, "ok": True, "status": "rejected", "topic": topic})
+            dirty_topics.add(topic)
+            continue
+        try:
+            page = str(claim.get("page") or page_for_topic(topic))
+            with _lock:
+                filed = service.submit_for_page(
+                    page,
+                    str(claim.get("visitor") or ""),
+                    topic,
+                    body,
+                    chosen=claim.get("chosen"),
+                    name=str(claim.get("nick") or "").strip() or None,
+                )
+            claim_queue.mark_status(claim_id, "accepted")
+            _mark_inbox_refs_status(claim.get("inbox_refs") or [], "accepted")
+            _persist()
+            dirty_topics.add(topic)
+            results.append(
+                {
+                    "id": claim_id,
+                    "ok": True,
+                    "status": "accepted",
+                    "topic": topic,
+                    "comment_id": filed.get("comment_id") or filed.get("id"),
+                }
+            )
+        except Exception as exc:
+            results.append(
+                {"id": claim_id, "ok": False, "status": "failed", "topic": topic, "reason": str(exc)}
+            )
+    for topic in dirty_topics:
+        try:
+            view = view_topic(topic)
+            HUB.broadcast(topic, {"type": "board.snapshot", "topic": topic, "view": view})
+        except Exception:
+            pass
     return results
 
 

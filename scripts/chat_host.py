@@ -210,6 +210,8 @@ class ChatHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path in UPLOAD_PATHS:
             return self._media_upload(parsed)
+        if parsed.path in {"/api/inbox/index", "/api/inbox/index/"}:
+            return self._inbox_index_upsert(parsed)
         if parsed.path in INBOX_UPLOAD_PATHS or parsed.path.startswith("/api/inbox/"):
             return self._inbox_upload(parsed)
         if parsed.path.startswith("/api/chat") or parsed.path.startswith("/api/debate"):
@@ -302,17 +304,72 @@ class ChatHandler(SimpleHTTPRequestHandler):
             if err == "object_owned_by_other_user":
                 code = 403
             return self._json(code, result)
-        # Include ready-to-post marker for clients
-        from clevertree_chat.bunny_upload import format_media_marker
+        # Prefer inbox marker when upload landed under inbox/; else legacy media marker.
+        if result.get("marker_inbox"):
+            result["marker"] = result["marker_inbox"]
+        else:
+            from clevertree_chat.bunny_upload import format_media_marker
 
-        result["marker"] = format_media_marker(
-            kind=str(result.get("kind") or "file"),
-            url=str(result.get("url") or ""),
-            channel=str(result.get("channel") or channel),
-            review="pending",
-            sha256=str(result.get("sha256") or ""),
-        )
+            result["marker"] = format_media_marker(
+                kind=str(result.get("kind") or "file"),
+                url=str(result.get("url") or ""),
+                channel=str(result.get("channel") or channel),
+                review="pending",
+                sha256=str(result.get("sha256") or ""),
+            )
         return self._json(200, result)
+
+    def _inbox_index_upsert(self, parsed):
+        """POST /api/inbox/index — twin writers (e.g. MyProblem) register Bunny objects."""
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            return self._json(400, {"error": "missing_body"})
+        if length > 256 * 1024:
+            return self._json(413, {"error": "body_too_large"})
+        try:
+            payload = json.loads(self.rfile.read(length).decode() or "{}")
+        except Exception:
+            return self._json(400, {"error": "invalid_json"})
+        if not isinstance(payload, dict):
+            return self._json(400, {"error": "expected_object"})
+        try:
+            from clevertree_chat import inbox
+
+            source_user = inbox.sanitize_segment(
+                str(payload.get("source_user") or ""), fallback=""
+            )
+            object_id = inbox.sanitize_segment(
+                str(payload.get("object_id") or ""), fallback=""
+            )
+            if not source_user or not object_id:
+                return self._json(400, {"error": "source_user_and_object_id_required"})
+            owned = inbox.assert_same_owner(source_user, object_id, source_user)
+            # assert_same_owner compares claimed vs prior owner; for twin upsert
+            # of a new object prior is None. If prior exists under another user, reject.
+            if owned:
+                return self._json(403, owned)
+            prior = inbox.load_index(source_user, object_id)
+            record = {
+                "object_id": object_id,
+                "source_user": source_user,
+                "kind": inbox.normalize_kind(str(payload.get("kind") or "chat")),
+                "status": str(payload.get("status") or "pending"),
+                "urls": list(payload.get("urls") or ([payload.get("url")] if payload.get("url") else [])),
+                "paths": list(payload.get("paths") or ([payload.get("path")] if payload.get("path") else [])),
+                "filename": str(payload.get("filename") or ""),
+                "content_hash": str(payload.get("content_hash") or payload.get("sha256") or ""),
+                "mime": str(payload.get("mime") or ""),
+                "bytes": int(payload.get("bytes") or 0),
+                "updated_at": inbox._utc_now(),
+                "created_at": (prior or {}).get("created_at") or inbox._utc_now(),
+                "meta": payload.get("meta") if isinstance(payload.get("meta"), dict) else {},
+                "replaced": prior is not None,
+            }
+            inbox.upsert_index(record)
+            return self._json(200, {"ok": True, "object_id": object_id, "source_user": source_user})
+        except Exception as exc:
+            sys.stderr.write(traceback.format_exc())
+            return self._json(500, {"error": str(exc)})
 
     def _inbox_upload(self, parsed, replace: bool = False):
         """POST /api/inbox/upload or PUT /api/inbox/{object_id}."""

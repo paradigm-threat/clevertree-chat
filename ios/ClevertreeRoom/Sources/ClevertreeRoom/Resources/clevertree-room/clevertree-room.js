@@ -3876,9 +3876,13 @@
       fd.append("file", file, file.name || "upload.bin");
       fd.append("channel", channelSlug());
       if (kindHint) fd.append("kind", kindHint);
-      var res = await fetch(apiBase() + "/api/chat/media/upload", {
+      if (visitor) fd.append("visitor", visitor);
+      var headers = {};
+      if (visitor) headers["X-Visitor-Id"] = visitor;
+      var res = await fetch(apiBase() + "/api/inbox/upload", {
         method: "POST",
         body: fd,
+        headers: headers,
       });
       var data = {};
       try {
@@ -3886,13 +3890,32 @@
       } catch (e) {
         data = {};
       }
+      /* Fallback to legacy media upload when inbox endpoint is unavailable. */
+      if (!res.ok || !data.url) {
+        var fd2 = new FormData();
+        fd2.append("file", file, file.name || "upload.bin");
+        fd2.append("channel", channelSlug());
+        if (kindHint) fd2.append("kind", kindHint);
+        if (visitor) fd2.append("visitor", visitor);
+        res = await fetch(apiBase() + "/api/chat/media/upload", {
+          method: "POST",
+          body: fd2,
+          headers: headers,
+        });
+        try {
+          data = await res.json();
+        } catch (e2) {
+          data = {};
+        }
+      }
       if (!res.ok || !data.url) {
         throw new Error(data.error || "upload_" + res.status);
       }
       setReview(data.sha256, data.url, data.review || "pending");
-      var kind = data.kind || kindHint || "file";
+      var kind = data.kind || data.classified_kind || kindHint || "file";
       var marker =
         data.marker ||
+        data.marker_inbox ||
         "[[mp:media kind=" +
           kind +
           " url=" +
@@ -3908,6 +3931,7 @@
         kind: kind,
         url: data.url,
         sha256: data.sha256 || "",
+        object_id: data.object_id || "",
         name: file.name || kind,
         marker: marker,
       });

@@ -154,6 +154,9 @@
           ? crypto.randomUUID()
           : "00000000-0000-4000-8000-" +
             String(Date.now()).slice(-12).padStart(12, "0");
+      var inboxRefs = [];
+      if (objectId) inboxRefs.push(String(objectId));
+      if (url) inboxRefs.push(String(url));
       var res = await fetch(API_BASE + "/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,6 +167,7 @@
           visitor: visitor,
           name: "networker",
           source: "extension",
+          inbox_refs: inboxRefs,
         }),
       });
       var data = await res.json().catch(function () {

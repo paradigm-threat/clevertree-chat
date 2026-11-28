@@ -130,10 +130,10 @@ Helpers: `clevertree_chat.inbox`, `clevertree_chat.claim_queue`, `clevertree_cha
 
 1. **Queue store** — `var/clevertree-live/queue/` schema + helpers; no git. *(Done: `queue/claims/`, `queue/irc_log/`, `irc-logs/`, `inbox-index/`.)*
 2. **Live submit rewrite** — enqueue + provisional view; stop live `commit_changes` for new comments. *(Done behind `CLEVERTREE_ROOM_QUEUE_ONLY`, default on; set `0` to rollback.)*
-3. **View merge** — `view` / `board.snapshot` merge SoT + pending queue.
-4. **IRC** — [`irc_bridge.py`](../clevertree_chat/irc_bridge.py): PRIVMSG → claim enqueue; pending mirror. *(Ephemeral log + `irc_log` jobs live; align PRIVMSG with claim queue.)*
-5. **Batch consume** — drain claims + inbox-index refs first; accept → file/pair/position; reject → drop; then hooks on filed content. *(IRC transcripts: `drain_irc_logs` / `chat_transcript.accept_irc_log_job`.)*
+3. **View merge** — `view` / `board.snapshot` merge SoT + pending queue. *(Done: `view_topic.pending_claims` + coach “Pending batch review”.)*
+4. **IRC** — [`irc_bridge.py`](../clevertree_chat/irc_bridge.py): PRIVMSG → claim enqueue; pending mirror. *(Done: IRC → `action=submit` → claim queue when `CLEVERTREE_ROOM_QUEUE_ONLY=1`.)*
+5. **Batch consume** — drain claims + inbox-index refs first; accept → file/pair/position; reject → drop; then hooks on filed content. *(Done Phase 1: `action=drain_claims` / host tick heuristic; IRC transcripts: `drain_irc_logs`.)*
 6. **Tests** — submit creates no SoT comment files; accept writes SoT; reject leaves SoT clean; E2E provisional → filed. *(Unit: `tests/test_inbox_claim_queue.py`.)*
-7. **Ops / UI** — coach copy “Pending batch review”; purge Bunny per ephemeral-media after curation.
+7. **Ops / UI** — coach copy “Pending batch review”; purge Bunny per ephemeral-media after curation. *(Coach on provisional rows; purge still backlog.)*
 
 *Status: room-queue + Bunny inbox cutover **on** by default ([`batch-phases.md`](batch-phases.md)). Batch remains sole SoT writer for new claims.*

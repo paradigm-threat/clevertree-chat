@@ -129,5 +129,35 @@ class ClaimQueueTests(unittest.TestCase):
                 self.assertEqual(claim_queue.list_pending(), [])
 
 
+class InboxRefsAndDrainTests(unittest.TestCase):
+    def test_extract_inbox_refs(self):
+        from clevertree_chat.channel_media import extract_inbox_refs
+
+        refs = extract_inbox_refs(
+            "Networker [[mp:inbox id=oid-1 kind=networker url=https://cdn.example/inbox/a.json]]"
+        )
+        self.assertEqual(refs[0], "oid-1")
+        self.assertIn("https://cdn.example/inbox/a.json", refs)
+
+    def test_drain_rejects_spam_without_sot(self):
+        from clevertree_chat import claim_queue
+        from clevertree_chat import live_runtime
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.dict(os.environ, {"CLEVERTREE_LIVE_ROOT": tmp}):
+                claim_queue.enqueue_claim(
+                    topic="web",
+                    page="web",
+                    body="buy viagra now",
+                    visitor="vis-spam",
+                )
+                with mock.patch.object(live_runtime, "open_service") as svc:
+                    results = live_runtime.drain_claim_jobs(limit=5)
+                self.assertTrue(results)
+                self.assertEqual(results[0]["status"], "rejected")
+                svc.return_value.submit_for_page.assert_not_called()
+                self.assertEqual(claim_queue.list_pending(), [])
+
+
 if __name__ == "__main__":
     unittest.main()
